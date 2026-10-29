@@ -1,0 +1,10 @@
+# Vite dev server for docker compose. Code is bind-mounted at /app and
+# node_modules lives in a named volume, so hot reload works and the host's
+# node_modules is never used inside the container. pnpm comes from corepack at
+# the version in package.json's packageManager field.
+FROM node:24-slim
+RUN corepack enable
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
+    PNPM_STORE_DIR=/pnpm/store
+WORKDIR /app
+CMD ["pnpm", "dev"]

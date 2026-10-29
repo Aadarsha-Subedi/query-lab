@@ -1,0 +1,8 @@
+{% extends "account/email/base_message.txt" %}
+{% block content %}{% autoescape off %}Confirm that {{ email }} is your email address to finish setting up your Querylab account.
+
+{% if code %}Your confirmation code:
+
+{{ code }}{% else %}Confirm your email at {{ activate_url }}{% endif %}
+
+If you did not sign up for Querylab, you can ignore this email.{% endautoescape %}{% endblock content %}

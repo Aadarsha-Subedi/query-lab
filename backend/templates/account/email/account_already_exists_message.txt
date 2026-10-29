@@ -1,0 +1,4 @@
+{% extends "account/email/base_message.txt" %}
+{% block content %}{% autoescape off %}Someone tried to sign up for Querylab with {{ email }}, but an account with that address already exists. If it was you and you have forgotten your password, reset it at {{ password_reset_url }}
+
+If it was not you, you can ignore this email.{% endautoescape %}{% endblock content %}

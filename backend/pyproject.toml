@@ -1,0 +1,77 @@
+[project]
+name = "querylab-backend"
+version = "0.1.0"
+description = "Querylab backend: Django + django-ninja API for a text-to-SQL analyst with evals."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "cryptography>=50.0.2",
+    "css-inline>=0.23.1",
+    "disposable-email-domains>=0.0.287",
+    "django>=6.1.2",
+    "django-allauth[socialaccount]>=65.21.0",
+    "django-cors-headers>=4.9.0",
+    "django-environ>=0.14.0",
+    "django-ninja>=1.7.3",
+    "google-genai>=2.34.0",
+    "gunicorn>=26.2.0",
+    "huey>=3.5.3",
+    "openai>=3.41.0",
+    "psycopg[binary]>=3.3.6",
+    "redis>=8.1.0",
+]
+
+[dependency-groups]
+# test: what the dev container needs to run the suite.
+test = [
+    "pytest>=9.2.0",
+    "pytest-django>=4.14.0",
+]
+# lint: run on the host and in CI, never in a container.
+lint = [
+    "django-stubs>=6.1.2",
+    "mypy>=2.4.1",
+    "pre-commit>=4.7.0",
+    "ruff>=0.17.3",
+]
+# The container installs only [project].dependencies (the "main" set) in
+# production, plus `test` in the dev image. `offline` holds heavy tools that
+# never run in the container (clustering, dataset building, benchmarks,
+# fine-tuning); it is filled from step 2 on.
+offline = []
+
+[tool.uv]
+# `uv sync` on the host gets everything except `offline`.
+default-groups = ["test", "lint"]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+extend-exclude = ["**/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "DJ", "RUF", "BLE", "C4", "SIM"]
+# Django declares mutable class attributes (Meta.ordering, ...) by design.
+ignore = ["RUF012", "E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"config/settings/*.py" = ["F405"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["mypy_django_plugin.main"]
+strict_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+check_untyped_defs = true
+ignore_missing_imports = true
+exclude = ["/migrations/", "\\.venv/"]
+
+[tool.django-stubs]
+django_settings_module = "config.settings.test"
+
+[tool.pytest.ini_options]
+python_files = ["test_*.py"]
+# --ds beats a DJANGO_SETTINGS_MODULE already in the environment (the dev
+# container has one). No cache dir: tests run in a container on a bind mount.
+addopts = "--ds=config.settings.test --strict-markers -p no:cacheprovider"

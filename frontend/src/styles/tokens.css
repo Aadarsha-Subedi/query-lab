@@ -1,0 +1,234 @@
+/*
+ * Querylab design tokens (docs/design-system.md).
+ *
+ * Components use only the semantic tokens (--background, --primary, ...),
+ * through Tailwind utilities. Tokens that share a name with a Tailwind theme
+ * key carry a --ds- prefix (--ds-radius-md) so the two never reference
+ * each other.
+ * Raw scales (--n-*, --accent-*) exist only to build them.
+ *
+ * DRAFT: the four open decisions can be switched with attributes on <html>
+ * (set by the dev-only /design page): data-accent, data-neutral, data-font and
+ * data-size. :root holds the recommended defaults. Once the design system is
+ * final, the chosen values replace these defaults and the alternatives go.
+ */
+
+/* ── Neutral scales ─────────────────────────────────────────────────────── */
+
+:root,
+[data-neutral='stone'] {
+  --n-0: oklch(1 0 0);
+  --n-50: oklch(0.985 0.001 106.4);
+  --n-100: oklch(0.97 0.001 106.4);
+  --n-200: oklch(0.923 0.003 48.7);
+  --n-300: oklch(0.869 0.005 56.4);
+  --n-400: oklch(0.709 0.01 56.3);
+  --n-500: oklch(0.553 0.013 58.1);
+  --n-600: oklch(0.444 0.011 73.6);
+  --n-700: oklch(0.374 0.01 67.6);
+  --n-800: oklch(0.268 0.007 34.3);
+  --n-850: oklch(0.235 0.006 45);
+  --n-900: oklch(0.21 0.006 56);
+  --n-950: oklch(0.16 0.004 49);
+}
+
+[data-neutral='zinc'] {
+  --n-0: oklch(1 0 0);
+  --n-50: oklch(0.985 0 0);
+  --n-100: oklch(0.967 0.001 286.4);
+  --n-200: oklch(0.92 0.004 286.3);
+  --n-300: oklch(0.871 0.006 286.3);
+  --n-400: oklch(0.705 0.015 286.1);
+  --n-500: oklch(0.552 0.016 285.9);
+  --n-600: oklch(0.442 0.017 285.8);
+  --n-700: oklch(0.37 0.013 285.8);
+  --n-800: oklch(0.274 0.006 286);
+  --n-850: oklch(0.24 0.006 286);
+  --n-900: oklch(0.21 0.006 285.9);
+  --n-950: oklch(0.155 0.005 285.8);
+}
+
+/* ── Accent options (solid and subtle, for light and dark) ──────────────── */
+
+:root,
+[data-accent='indigo'] {
+  --accent-light: oklch(0.51 0.19 264);
+  --accent-dark: oklch(0.68 0.15 264);
+  --accent-subtle-light: oklch(0.95 0.025 264);
+  --accent-subtle-dark: oklch(0.29 0.07 264);
+}
+
+[data-accent='teal'] {
+  --accent-light: oklch(0.51 0.095 186);
+  --accent-dark: oklch(0.74 0.12 182);
+  --accent-subtle-light: oklch(0.95 0.03 185);
+  --accent-subtle-dark: oklch(0.29 0.05 185);
+}
+
+[data-accent='violet'] {
+  --accent-light: oklch(0.54 0.23 293);
+  --accent-dark: oklch(0.7 0.17 293);
+  --accent-subtle-light: oklch(0.95 0.03 293);
+  --accent-subtle-dark: oklch(0.29 0.08 293);
+}
+
+/* ── Font options ───────────────────────────────────────────────────────── */
+
+:root,
+[data-font='inter'] {
+  --font-family-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-family-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+[data-font='geist'] {
+  --font-family-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-family-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ── Type scale (base 14 px or 16 px) ───────────────────────────────────── */
+
+:root,
+[data-size='14'] {
+  --ds-text-display: 2.25rem;
+  --ds-text-h1: 1.75rem;
+  --ds-text-h2: 1.375rem;
+  --ds-text-h3: 1.125rem;
+  --ds-text-body-lg: 1rem;
+  --ds-text-body: 0.875rem;
+  --ds-text-small: 0.8125rem;
+  --ds-text-caption: 0.75rem;
+  --ds-text-code: 0.8125rem;
+}
+
+[data-size='16'] {
+  --ds-text-display: 2.5rem;
+  --ds-text-h1: 2rem;
+  --ds-text-h2: 1.5625rem;
+  --ds-text-h3: 1.25rem;
+  --ds-text-body-lg: 1.125rem;
+  --ds-text-body: 1rem;
+  --ds-text-small: 0.875rem;
+  --ds-text-caption: 0.8125rem;
+  --ds-text-code: 0.875rem;
+}
+
+/* ── Fixed tokens (no open decision) ────────────────────────────────────── */
+
+:root {
+  --leading-display: 1.15;
+  --leading-h1: 1.2;
+  --leading-h2: 1.25;
+  --leading-h3: 1.3;
+  --leading-body: 1.5;
+  --leading-body-lg: 1.55;
+  --leading-small: 1.45;
+  --leading-caption: 1.4;
+  --leading-code: 1.6;
+  --tracking-heading: -0.01em;
+  --tracking-caps: 0.02em;
+
+  --ds-radius-sm: 4px;
+  --ds-radius-md: 6px;
+  --ds-radius-lg: 10px;
+
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  --ds-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+  --row-compact: 36px;
+  --row-comfortable: 44px;
+  --content-max: 1280px;
+  --reading-max: 720px;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+}
+
+/* ── Semantic colours: light ────────────────────────────────────────────── */
+
+:root {
+  color-scheme: light;
+  --background: var(--n-50);
+  --foreground: var(--n-900);
+  --surface: var(--n-0);
+  --surface-muted: var(--n-100);
+  --border: var(--n-200);
+  --input: var(--n-300);
+  /* A step darker than n-500 so it passes 4.5:1 on surface-muted too. */
+  --muted-foreground: color-mix(in oklab, var(--n-500) 70%, var(--n-600));
+
+  --primary: var(--accent-light);
+  --primary-foreground: oklch(0.985 0 0);
+  --primary-subtle: var(--accent-subtle-light);
+
+  --success: oklch(0.52 0.13 152);
+  --success-subtle: oklch(0.96 0.04 152);
+  --success-foreground: oklch(0.4 0.1 152);
+  --warning: oklch(0.66 0.15 70);
+  --warning-subtle: oklch(0.96 0.05 85);
+  --warning-foreground: oklch(0.45 0.11 60);
+  --danger: oklch(0.55 0.2 27);
+  --danger-subtle: oklch(0.96 0.03 20);
+  --danger-foreground: oklch(0.47 0.18 27);
+  --info: oklch(0.56 0.11 235);
+  --info-subtle: oklch(0.96 0.025 235);
+  --info-foreground: oklch(0.45 0.1 240);
+
+  --ds-shadow-sm: 0 1px 2px oklch(0 0 0 / 0.06);
+  --ds-shadow-md: 0 4px 12px oklch(0 0 0 / 0.08), 0 1px 3px oklch(0 0 0 / 0.06);
+  --ds-shadow-lg: 0 12px 32px oklch(0 0 0 / 0.12), 0 2px 6px oklch(0 0 0 / 0.06);
+
+  /* Charts: 8 categorical colours, distinguishable with common colour blindness. */
+  --chart-1: oklch(0.55 0.15 255);
+  --chart-2: oklch(0.7 0.16 55);
+  --chart-3: oklch(0.6 0.1 180);
+  --chart-4: oklch(0.58 0.2 340);
+  --chart-5: oklch(0.62 0.12 120);
+  --chart-6: oklch(0.52 0.15 300);
+  --chart-7: oklch(0.72 0.11 220);
+  --chart-8: oklch(0.5 0.08 50);
+}
+
+/* ── Semantic colours: dark ─────────────────────────────────────────────── */
+
+.dark {
+  color-scheme: dark;
+  --background: var(--n-950);
+  --foreground: var(--n-100);
+  --surface: var(--n-900);
+  --surface-muted: var(--n-850);
+  --border: color-mix(in oklab, var(--n-700) 70%, var(--n-800));
+  --input: var(--n-700);
+  --muted-foreground: var(--n-400);
+
+  --primary: var(--accent-dark);
+  --primary-foreground: var(--n-950);
+  --primary-subtle: var(--accent-subtle-dark);
+
+  --success: oklch(0.72 0.14 152);
+  --success-subtle: oklch(0.27 0.05 152);
+  --success-foreground: oklch(0.8 0.13 152);
+  --warning: oklch(0.79 0.14 75);
+  --warning-subtle: oklch(0.29 0.05 75);
+  --warning-foreground: oklch(0.85 0.12 80);
+  --danger: oklch(0.7 0.17 25);
+  --danger-subtle: oklch(0.28 0.07 25);
+  --danger-foreground: oklch(0.8 0.13 25);
+  --info: oklch(0.74 0.11 230);
+  --info-subtle: oklch(0.28 0.05 235);
+  --info-foreground: oklch(0.82 0.09 230);
+
+  --ds-shadow-sm: none;
+  --ds-shadow-md: 0 4px 16px oklch(0 0 0 / 0.5);
+  --ds-shadow-lg: 0 12px 40px oklch(0 0 0 / 0.6);
+
+  --chart-1: oklch(0.7 0.14 255);
+  --chart-2: oklch(0.78 0.14 60);
+  --chart-3: oklch(0.72 0.1 180);
+  --chart-4: oklch(0.72 0.17 340);
+  --chart-5: oklch(0.75 0.12 120);
+  --chart-6: oklch(0.7 0.14 300);
+  --chart-7: oklch(0.8 0.09 220);
+  --chart-8: oklch(0.68 0.07 50);
+}

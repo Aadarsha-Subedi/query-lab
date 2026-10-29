@@ -1,0 +1,8 @@
+{% extends "account/email/base_message.txt" %}
+{% block content %}{% autoescape off %}{% block notification_message %}{% endblock notification_message %}
+
+If you did not make this change, reset your password straight away. The change came from:
+
+IP address: {{ ip }}
+Browser: {{ user_agent }}
+Date: {{ timestamp }}{% endautoescape %}{% endblock content %}

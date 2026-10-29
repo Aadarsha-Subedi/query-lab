@@ -1,0 +1,122 @@
+# Local development: every service on one network, querylab-network.
+# Run through the Makefile (`make dev`), which passes
+#   --project-directory . --env-file .env
+# so paths below are relative to the repo root and every ${VAR} comes from the
+# root .env. No variable has a default: a missing one stops compose.
+
+name: querylab
+
+# backend builds the dev image once; worker runs the same image.
+x-backend: &backend
+  image: querylab-backend:dev
+  env_file: ./backend/.env
+  volumes:
+    - ./backend:/app
+    - ./infra/sql:/infra/sql:ro
+    - ./infra/data/olist:/data/olist:ro
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  networks: [querylab-network]
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      # Keep the image's default database as `postgres`; otherwise it would be
+      # named after POSTGRES_USER and clash with the init script's `querylab`.
+      POSTGRES_DB: postgres
+    ports:
+      - "${POSTGRES_PORT:?}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/init-databases.sql:/docker-entrypoint-initdb.d/01-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d querylab"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [querylab-network]
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:?}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [querylab-network]
+
+  backend:
+    <<: *backend
+    build:
+      context: ./backend
+      target: dev
+      args:
+        UV_HTTP_TIMEOUT: ${UV_HTTP_TIMEOUT:?}
+        UV_CONCURRENT_DOWNLOADS: ${UV_CONCURRENT_DOWNLOADS:?}
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "${BACKEND_PORT:?}:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import socket; socket.create_connection(('localhost', 8000), 2)"
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  worker:
+    <<: *backend
+    # Built by the backend service; never pulled from a registry.
+    pull_policy: never
+    command: python manage.py run_huey
+    healthcheck:
+      # PID 1 is the command above; healthy while it is the Huey consumer.
+      test:
+        - CMD
+        - python
+        - -c
+        - "import sys; sys.exit(b'run_huey' not in open('/proc/1/cmdline', 'rb').read())"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    env_file: ./frontend/.env
+    command: sh -c "pnpm install --frozen-lockfile && pnpm dev"
+    ports:
+      - "${FRONTEND_PORT:?}:5173"
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+      - frontend-pnpm-store:/pnpm/store
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:5173').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+    networks: [querylab-network]
+
+volumes:
+  postgres-data:
+  frontend-node-modules:
+  frontend-pnpm-store:
+
+networks:
+  querylab-network:
+    name: querylab-network

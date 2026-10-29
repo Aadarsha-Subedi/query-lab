@@ -1,0 +1,38 @@
+import '@testing-library/jest-dom/vitest'
+
+// Browser APIs jsdom lacks but Radix and sonner use. Skipped in
+// node-environment tests (build.test.ts), which have no window.
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string): Partial<MediaQueryList> => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      dispatchEvent: () => false,
+    }),
+  })
+
+  class ResizeObserverStub {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  window.ResizeObserver = ResizeObserverStub
+
+  // Element.animate: resolve immediately, as if every animation had finished.
+  Element.prototype.animate = function animate() {
+    const animation: Partial<Animation> = {
+      finished: Promise.resolve() as unknown as Promise<Animation>,
+      cancel: () => undefined,
+      finish: () => undefined,
+      play: () => undefined,
+      pause: () => undefined,
+      onfinish: null,
+      oncancel: null,
+    }
+    return animation as Animation
+  }
+}

@@ -1,0 +1,39 @@
+# Secrets: every .env is local only; the .env.example files are committed.
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Local data (Olist CSVs and anything else downloaded). Never committed.
+infra/data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+staticfiles/
+
+# Node
+node_modules/
+dist/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# Editors and OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Tooling output
+graphify-out/
+
+# Committed test env for the backend (throwaway values only).
+!backend/.env.test
