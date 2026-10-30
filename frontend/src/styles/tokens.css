@@ -10,31 +10,13 @@
  * Primary is black (owner's choice): near-black in light mode, inverted to
  * near-white in dark mode so it keeps its contrast.
  *
- * DRAFT: the three open decisions can be switched with attributes on <html>
- * (set by the dev-only /design page): data-neutral, data-font and data-size.
- * :root holds the recommended defaults. Once the design system is final, the chosen values replace these defaults and the alternatives go.
+ * Final (approved 2026-10-30): Geist + Geist Mono, 16 px base, cool zinc
+ * neutrals, black primary. See docs/design-system.md.
  */
 
-/* ── Neutral scales ─────────────────────────────────────────────────────── */
+/* ── Neutral scale: cool zinc ───────────────────────────────────────────── */
 
-:root,
-[data-neutral='stone'] {
-  --n-0: oklch(1 0 0);
-  --n-50: oklch(0.985 0.001 106.4);
-  --n-100: oklch(0.97 0.001 106.4);
-  --n-200: oklch(0.923 0.003 48.7);
-  --n-300: oklch(0.869 0.005 56.4);
-  --n-400: oklch(0.709 0.01 56.3);
-  --n-500: oklch(0.553 0.013 58.1);
-  --n-600: oklch(0.444 0.011 73.6);
-  --n-700: oklch(0.374 0.01 67.6);
-  --n-800: oklch(0.268 0.007 34.3);
-  --n-850: oklch(0.235 0.006 45);
-  --n-900: oklch(0.21 0.006 56);
-  --n-950: oklch(0.16 0.004 49);
-}
-
-[data-neutral='zinc'] {
+:root {
   --n-0: oklch(1 0 0);
   --n-50: oklch(0.985 0 0);
   --n-100: oklch(0.967 0.001 286.4);
@@ -50,47 +32,18 @@
   --n-950: oklch(0.155 0.005 285.8);
 }
 
-/* ── Font options ───────────────────────────────────────────────────────── */
+/* ── Fonts: Geist + Geist Mono ──────────────────────────────────────────── */
 
-:root,
-[data-font='inter'] {
-  --font-family-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-family-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-
-[data-font='geist'] {
+:root {
   --font-family-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
   --font-family-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-/* ── Type scale (base 14 px or 16 px) ───────────────────────────────────── */
+/* ── Type scale: 16 px base, whole-pixel line heights ───────────────────── */
+/* Line heights are whole pixels (rem = 16 px), so every row of text, and every
+   icon centred against it, lands on the pixel grid. */
 
-:root,
-[data-size='14'] {
-  --ds-text-display: 2.25rem;
-  --ds-text-h1: 1.75rem;
-  --ds-text-h2: 1.375rem;
-  --ds-text-h3: 1.125rem;
-  --ds-text-body-lg: 1rem;
-  --ds-text-body: 0.875rem;
-  --ds-text-small: 0.8125rem;
-  --ds-text-caption: 0.75rem;
-  --ds-text-code: 0.8125rem;
-  /* Line heights in whole pixels (rem = 16 px), so every row of text, and every
-     icon centred against it, lands on the pixel grid. Fractional line heights
-     put icons on half pixels and soften their 1.5 px strokes. */
-  --leading-display: 2.5rem; /* 40px */
-  --leading-h1: 2.125rem; /* 34px */
-  --leading-h2: 1.75rem; /* 28px */
-  --leading-h3: 1.5rem; /* 24px */
-  --leading-body-lg: 1.5rem; /* 24px */
-  --leading-body: 1.25rem; /* 20px */
-  --leading-small: 1.125rem; /* 18px */
-  --leading-caption: 1rem; /* 16px */
-  --leading-code: 1.25rem; /* 20px */
-}
-
-[data-size='16'] {
+:root {
   --ds-text-display: 2.5rem;
   --ds-text-h1: 2rem;
   --ds-text-h2: 1.5625rem;
@@ -111,7 +64,7 @@
   --leading-code: 1.375rem; /* 22px */
 }
 
-/* ── Fixed tokens (no open decision) ────────────────────────────────────── */
+/* ── Radius, motion, layout ─────────────────────────────────────────────── */
 
 :root {
   --tracking-heading: -0.01em;
@@ -145,7 +98,7 @@
   --surface-muted: var(--n-100);
   --border: var(--n-200);
   --input: var(--n-300);
-  /* A step darker than n-500 so it passes 4.5:1 on surface-muted too. */
+  /* A step darker than zinc-500 so it passes 4.5:1 on surface-muted too. */
   --muted-foreground: color-mix(in oklab, var(--n-500) 70%, var(--n-600));
 
   --primary: var(--n-950);

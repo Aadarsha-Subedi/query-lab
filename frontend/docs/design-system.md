@@ -1,20 +1,18 @@
-# Querylab design system (draft for approval)
+# Querylab design system
 
-Status: **draft, being finalized on the dev-only `/design` page.** Tokens
-(`src/styles/tokens.css`), the Tailwind theme, fonts, typography and the base
-components are built as described here, with the three open decisions
-switchable live on `/design`. Once they are chosen, the chosen values become
-the only ones and this document is updated to match.
+Status: **final** (approved by Aadarsha on 2026-10-30). Implemented in
+`src/styles/tokens.css` (every token), `src/index.css` (Tailwind theme, fonts,
+base styles) and `src/components/` (typography and shadcn/ui components), and
+shown in every state on the dev-only `/design` page.
 
-Changes from the first draft: Animate UI was dropped for plain shadcn/ui
-(owner's choice). And light `muted-foreground` is a step darker than
-stone-500 (a 70/30 mix of the 500 and 600 steps). The live contrast check on
-`/design` showed stone-500 at 4.39:1 on `surface-muted`, below AA; the new
-value is 5.0:1 there and 5.3:1 on `background`. Every other text pair passes
-in both themes, for every option.
+Decisions: **black** primary, **Geist + Geist Mono**, **16 px** base text,
+**cool zinc** neutrals. Changes since the first draft: Animate UI was dropped
+for plain shadcn/ui (owner's choice); light `muted-foreground` is a 70/30 mix
+of the 500 and 600 neutral steps, because the 500 step alone measured 4.39:1
+on `surface-muted`, below AA.
 
-Questions for you are marked **Decide:**. Each has a recommended default, so
-"approve as is" is a complete answer.
+Changing anything here means changing the tokens and `/design` in the same
+commit.
 
 ---
 
@@ -37,40 +35,40 @@ illustrations in the app, no animation that delays reading.
 
 ## 2. Colour
 
-Neutral base: a warm-leaning grey (Tailwind's **stone**) so long reading
-sessions feel less clinical than pure grey. The primary is **black** (decided by
+Neutral base: a cool grey (Tailwind's **zinc**), crisp next to black and
+neutral under data colours. The primary is **black** (decided by
 Aadarsha, 2026-10-29): near-black in light mode, inverted to near-white in dark
 mode. It keeps every colour on the page for meaning: the green/amber/red/blue
-status colours and the chart palette. Values are given in OKLCH (what Tailwind v4 uses) with the hex
-approximation beside them.
+status colours and the chart palette. Neutral values refer to the zinc scale
+in `tokens.css` (`n-0` to `n-950`, OKLCH); hex values are approximate.
 
 ### 2.1 Semantic tokens
 
 Components only ever use these names, never a raw colour.
 
-| Token                | Use                                        | Light                            | Dark                            |
-| -------------------- | ------------------------------------------ | -------------------------------- | ------------------------------- |
-| `background`         | Page                                       | `oklch(0.985 0.001 106)` #fafaf9 | `oklch(0.16 0.004 49)` #141210  |
-| `foreground`         | Body text                                  | `oklch(0.216 0.006 56)` #1c1917  | `oklch(0.97 0.001 106)` #f5f5f4 |
-| `surface`            | Cards, panels, table body                  | `oklch(1 0 0)` #ffffff           | `oklch(0.21 0.006 56)` #1f1c1a  |
-| `surface-muted`      | Table headers, code blocks, sidebars       | `oklch(0.97 0.001 106)` #f5f5f4  | `oklch(0.25 0.006 34)` #292524  |
-| `border`             | Dividers, inputs, card edges               | `oklch(0.923 0.003 49)` #e7e5e4  | `oklch(0.32 0.006 34)` #3a3532  |
-| `muted-foreground`   | Secondary text, captions, placeholders     | `oklch(0.553 0.013 58)` #78716c  | `oklch(0.709 0.01 56)` #a8a29e  |
-| `primary`            | The main action, links, focus ring         | `n-950` #141210                  | `n-50` #fafaf9                  |
-| `primary-foreground` | Text on primary                            | `n-0` #ffffff                    | `n-950` #141210                 |
-| `primary-subtle`     | Selected rows, active nav item background  | `n-200` #e7e5e4                  | `n-800` #292524                 |
-| `success`            | Correct answer, healthy check, passed eval | `oklch(0.56 0.13 152)` #1f8a4c   | `oklch(0.72 0.14 152)` #4cc27a  |
-| `warning`            | Low confidence, needs approval, degraded   | `oklch(0.66 0.15 70)` #c4800f    | `oklch(0.79 0.14 75)` #e8ad3c   |
-| `danger`             | Errors, failed eval, destructive actions   | `oklch(0.55 0.2 27)` #d12f2f     | `oklch(0.7 0.17 25)` #f26d63    |
-| `info`               | Neutral notices, "the model is thinking"   | `oklch(0.58 0.11 230)` #2b86c0   | `oklch(0.74 0.11 230)` #5cb5e8  |
+| Token                | Use                                        | Light                           | Dark                            |
+| -------------------- | ------------------------------------------ | ------------------------------- | ------------------------------- |
+| `background`         | Page                                       | `n-50` ≈ #fafafa                | `n-950` ≈ #0f0f12               |
+| `foreground`         | Body text                                  | `n-900` ≈ #18181b               | `n-100` ≈ #f4f4f5               |
+| `surface`            | Cards, panels, table body                  | `n-0` #ffffff                   | `n-900` ≈ #18181b               |
+| `surface-muted`      | Table headers, code blocks, sidebars       | `n-100` ≈ #f4f4f5               | `n-850` ≈ #1f1f23               |
+| `border`             | Dividers, inputs, card edges               | `n-200` ≈ #e4e4e7               | 70% `n-700` + `n-800` ≈ #38383e |
+| `muted-foreground`   | Secondary text, captions, placeholders     | 70% `n-500` + `n-600` ≈ #6a6a73 | `n-400` ≈ #9f9fa9               |
+| `primary`            | The main action, links, focus ring         | `n-950` ≈ #0f0f12               | `n-50` ≈ #fafafa                |
+| `primary-foreground` | Text on primary                            | `n-0` #ffffff                   | `n-950` ≈ #0f0f12               |
+| `primary-subtle`     | Selected rows, active nav item background  | `n-200` ≈ #e4e4e7               | `n-800` ≈ #27272a               |
+| `success`            | Correct answer, healthy check, passed eval | `oklch(0.56 0.13 152)` #1f8a4c  | `oklch(0.72 0.14 152)` #4cc27a  |
+| `warning`            | Low confidence, needs approval, degraded   | `oklch(0.66 0.15 70)` #c4800f   | `oklch(0.79 0.14 75)` #e8ad3c   |
+| `danger`             | Errors, failed eval, destructive actions   | `oklch(0.55 0.2 27)` #d12f2f    | `oklch(0.7 0.17 25)` #f26d63    |
+| `info`               | Neutral notices, "the model is thinking"   | `oklch(0.58 0.11 230)` #2b86c0  | `oklch(0.74 0.11 230)` #5cb5e8  |
 
 Each status colour also gets a `-subtle` background (about 10% strength) and a
-`-foreground` text colour for badges and alerts, defined in 0.10.7.
+`-foreground` text colour for badges and alerts.
 
 Contrast targets: body text and `muted-foreground` at least 4.5:1 on
 `background` and `surface`; `primary` text on `surface` at least 4.5:1; focus
-rings at least 3:1 against what they surround. The values above are picked to
-meet these; 0.10.7 checks each pair and adjusts if one falls short.
+rings at least 3:1 against what they surround. `/design` computes every pair
+live; the lowest is 5.0:1.
 
 ### 2.2 Data colours (charts, step 4 and the eval dashboard)
 
@@ -84,7 +82,7 @@ rely on colour alone: values are labelled or shown on hover.
 With a black primary, links are always underlined (colour alone no longer marks
 them), and the focus ring has a 2 px gap in the background colour so it stays
 visible around a black button. The live check on `/design` found every text pair
-at 5.0:1 or better in both themes and both neutrals.
+at 5.0:1 or better in both themes.
 
 ## 3. Typography
 
@@ -92,40 +90,34 @@ Two families, both self-hosted through `@fontsource` packages (no request to
 Google at runtime, works offline, no layout shift with `font-display: swap` and
 matched fallbacks):
 
-- **Inter (variable)** for the interface: very legible at small sizes, has
+- **Geist (variable)** for the interface: clean, slightly technical, with
   tabular figures (`font-variant-numeric: tabular-nums`) for tables and scores.
-- **JetBrains Mono** for SQL, column names, IDs and trace payloads: clear
-  distinction between `0/O`, `1/l/I`, and good ligature-free defaults.
-
-**Decide:** fonts. Recommended: Inter + JetBrains Mono. Alternative: Geist +
-Geist Mono (a bit more character, slightly less proven at 12 to 13 px).
+- **Geist Mono (variable)** for SQL, column names, IDs and trace payloads, with
+  ligatures switched off so SQL reads exactly as typed.
 
 ### Scale
 
-Base size 14 px (dense app UI), 1.25 ratio for headings. Sizes in rem
-(1 rem = 16 px).
+Base size 16 px, about 1.25 ratio for headings. Sizes in rem (1 rem = 16 px).
+Line heights are whole pixels, so every text row, and every icon centred
+against it, lands on the pixel grid.
 
 | Token     | Size / line height         | Weight | Use                               |
 | --------- | -------------------------- | ------ | --------------------------------- |
-| `display` | 2.25 rem (36 px) / 40 px   | 600    | Landing page hero only            |
-| `h1`      | 1.75 rem (28 px) / 34 px   | 600    | Page title                        |
-| `h2`      | 1.375 rem (22 px) / 28 px  | 600    | Section title                     |
-| `h3`      | 1.125 rem (18 px) / 24 px  | 600    | Card / panel title                |
-| `body`    | 0.875 rem (14 px) / 20 px  | 400    | Default text                      |
-| `body-lg` | 1 rem (16 px) / 24 px      | 400    | Landing page, long explanations   |
-| `small`   | 0.8125 rem (13 px) / 18 px | 400    | Table cells, secondary text       |
-| `caption` | 0.75 rem (12 px) / 16 px   | 500    | Labels, badges, timestamps        |
-| `code`    | 0.8125 rem (13 px) / 20 px | 400    | SQL blocks and inline code (mono) |
-
-Line heights are whole pixels (in rem), so every text row, and every icon
-centred against it, lands on the pixel grid. The 16 px base option has its own
-whole-pixel set.
+| `display` | 2.5 rem (40 px) / 44 px    | 600    | Landing page hero only            |
+| `h1`      | 2 rem (32 px) / 38 px      | 600    | Page title                        |
+| `h2`      | 1.5625 rem (25 px) / 32 px | 600    | Section title                     |
+| `h3`      | 1.25 rem (20 px) / 26 px   | 600    | Card / panel title                |
+| `body-lg` | 1.125 rem (18 px) / 28 px  | 400    | Landing page, long explanations   |
+| `body`    | 1 rem (16 px) / 24 px      | 400    | Default text                      |
+| `small`   | 0.875 rem (14 px) / 20 px  | 400    | Table cells, secondary text       |
+| `caption` | 0.8125 rem (13 px) / 18 px | 500    | Labels, badges, timestamps        |
+| `code`    | 0.875 rem (14 px) / 22 px  | 400    | SQL blocks and inline code (mono) |
 
 Letter spacing: headings `-0.01em`; `caption` in uppercase only for table
 column group labels, `+0.02em`. Numbers in tables and metrics always use tabular
 figures. Maximum line length for prose: 70 characters.
 
-Components (0.10.8): `Heading` (level 1 to 3 and `display`), `Text` (`body`,
+Components: `Heading` (level 1 to 3 and `display`), `Text` (`body`,
 `body-lg`, `small`, `caption`, plus `muted`), `Code` (inline) and `CodeBlock`
 (SQL with syntax highlighting, copy button, line numbers optional).
 
@@ -247,7 +239,7 @@ and stores the choice in a persisted Zustand store. The theme is applied with a
   spacing).
 - Status is never colour alone (text or icon too); charts have labels.
 
-## 12. Components in scope for step 0 (0.10.9)
+## 12. Components
 
 Plain shadcn/ui components (Radix + Tailwind), themed with the tokens
 above, each shown in every state on `/design`: button (primary, secondary,
@@ -256,13 +248,3 @@ loading and disabled), input, label,
 form (react-hook-form + Zod messages), card, dialog, dropdown-menu, table,
 tabs, badge (neutral, primary, success, warning, danger, info), toast (sonner), skeleton,
 avatar, separator, tooltip.
-
----
-
-## Summary of decisions to approve
-
-1. Overall direction (sections 1, 4 to 11) as written.
-2. ~~Accent~~ **decided: black** (2026-10-29).
-3. **Fonts:** Inter + JetBrains Mono (recommended) / Geist + Geist Mono.
-4. **Base text size:** 14 px (recommended for a dense data app) / 16 px.
-5. **Neutral:** warm stone (recommended) / cool zinc.

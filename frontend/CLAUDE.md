@@ -33,10 +33,10 @@ src/
   components/ui/     base components (button, input, form, dialog, table, ...) - features import from here
   components/typography/  Heading, Text, Code, CodeBlock
   stores/theme.ts    theme preference (Zustand, persisted); index.html applies it before first paint
-  features/design/   DEV-ONLY /design showcase and the switchable design options
+  features/design/   DEV-ONLY /design showcase (every token and component, light and dark)
   test/setup.ts      jest-dom matchers, stubs for matchMedia, ResizeObserver, Element.animate
 build.test.ts        a production build must not contain the /design page
-docs/design-system.md   the design system; approved before any UI is built
+docs/design-system.md   the design system (final); change it together with tokens.css and /design
 ```
 
 Planned (0.10c): `src/routes/` with `(public)` and `(app)` groups,

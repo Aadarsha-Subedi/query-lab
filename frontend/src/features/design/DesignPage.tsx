@@ -2,33 +2,18 @@
  * DEV-ONLY design system showcase (/design). main.tsx loads it only when
  * import.meta.env.DEV is true, so production builds do not contain it.
  */
-import { Copy01Icon, Moon02Icon, RefreshIcon, Sun03Icon, ComputerIcon } from '@hugeicons/core-free-icons'
+import { ComputerIcon, Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons'
 import { useEffect, useState } from 'react'
 
 import { Heading } from '@/components/typography/Heading'
 import { Text } from '@/components/typography/Text'
-import { Button } from '@/components/ui/button'
 import { Icon } from '@/components/ui/icon'
 import { Toaster } from '@/components/ui/toast'
-import { toast } from '@/components/ui/toast-api'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ComponentSections } from '@/features/design/ComponentSections'
-import {
-  DESIGN_OPTIONS,
-  applyDesignChoices,
-  describeChoices,
-  useDesignOptions,
-  type DesignOptionKey,
-} from '@/features/design/options'
 import { TokenSections } from '@/features/design/TokenSections'
 import { cn } from '@/lib/utils'
 import { useThemeStore, type ThemePreference } from '@/stores/theme'
-
-const OPTION_TITLES: Record<DesignOptionKey, string> = {
-  font: 'Fonts',
-  size: 'Base text',
-  neutral: 'Neutral',
-}
 
 const THEMES: { value: ThemePreference; label: string; icon: typeof Sun03Icon }[] = [
   { value: 'system', label: 'System', icon: ComputerIcon },
@@ -79,51 +64,21 @@ function Segmented<T extends string>({
 }
 
 function ControlPanel() {
-  const { choices, choose, reset } = useDesignOptions()
   const { preference, setPreference } = useThemeStore()
-  const keys = Object.keys(DESIGN_OPTIONS) as DesignOptionKey[]
-
-  const copyChoices = () => {
-    void navigator.clipboard.writeText(describeChoices(choices, preference)).then(() => {
-      toast.success('Choices copied', { description: 'Paste them into the project thread.' })
-    })
-  }
-
   return (
     <div className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
-      <div className="mx-auto flex max-w-[var(--content-max)] flex-wrap items-end gap-4 px-6 py-3">
+      <div className="mx-auto flex max-w-[var(--content-max)] items-end gap-4 px-6 py-3">
         <Segmented label="Theme" options={THEMES} value={preference} onChange={setPreference} />
-        {keys.map((key) => (
-          <Segmented
-            key={key}
-            label={OPTION_TITLES[key]}
-            options={DESIGN_OPTIONS[key] as readonly Choice<string>[]}
-            value={choices[key]}
-            onChange={(value) => {
-              choose(key, value as never)
-            }}
-          />
-        ))}
-        <div className="ml-auto flex gap-2">
-          <Button variant="ghost" size="sm" icon={RefreshIcon} onClick={reset}>
-            Recommended
-          </Button>
-          <Button variant="secondary" size="sm" icon={Copy01Icon} onClick={copyChoices}>
-            Copy choices
-          </Button>
-        </div>
       </div>
     </div>
   )
 }
 
 export function DesignPage() {
-  const choices = useDesignOptions((state) => state.choices)
   const preference = useThemeStore((state) => state.preference)
-  useEffect(() => applyDesignChoices(choices), [choices])
 
   // Token values (and their contrast) are read from the live CSS, so re-read
-  // them after every change to the choices or the theme.
+  // them after every theme change.
   const [revision, setRevision] = useState(0)
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -132,7 +87,7 @@ export function DesignPage() {
     return () => {
       cancelAnimationFrame(frame)
     }
-  }, [choices, preference])
+  }, [preference])
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -145,8 +100,8 @@ export function DesignPage() {
             </Text>
             <Heading level="display">Querylabs design system</Heading>
             <Text variant="body-lg" muted className="max-w-[var(--reading-max)]">
-              Every token and base component in each state. Switch the open decisions above, compare, then
-              copy your choices into the project thread. The draft lives in frontend/docs/design-system.md.
+              Every token and base component in each state, in the light and dark themes. The reference is
+              frontend/docs/design-system.md.
             </Text>
           </header>
           <TokenSections revision={revision} />

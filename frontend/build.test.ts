@@ -37,6 +37,6 @@ describe('production build', () => {
     const text = allText(outDir)
     expect(text).toContain('Querylab') // the app itself is there
     expect(text).not.toContain('Querylab design system')
-    expect(text).not.toContain('querylab-design-options')
+    expect(text).not.toContain('Every token and base component')
   }, 60_000)
 })

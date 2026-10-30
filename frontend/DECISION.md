@@ -83,13 +83,13 @@ matches a Tailwind theme key carry a `--ds-` prefix (`--ds-radius-md`), so the
 theme never references itself. `cn()` uses `extendTailwindMerge` so our type
 scale (`text-h1`, `text-small`, ...) is not dropped as a colour conflict.
 
-## Draft decisions switchable on `/design`
+## Final design choices (2026-10-30, owner's choice)
 
-While the design system is finalized, the four open choices (accent, fonts, base
-size, neutral) are `data-*` attributes on `<html>` that `tokens.css` reacts to,
-set by a dev-only control panel and remembered in localStorage. Once chosen,
-the chosen values become the only ones and the switch goes away, together with
-the unused font packages.
+Geist + Geist Mono, 16 px base text and cool zinc neutrals, with the black
+primary decided the day before. They were compared live on `/design` (each
+option was a `data-*` attribute that `tokens.css` reacted to); once chosen,
+the alternatives, the option panel and the Inter and JetBrains Mono packages
+were removed. `/design` keeps only the light/dark/system toggle.
 
 ## `/design` without the router (for now)
 
@@ -100,9 +100,9 @@ for production and fails if the page is in the output.
 
 ## Self-hosted fonts
 
-`@fontsource` packages, bundled by Vite: no request to Google at runtime and no
-third-party font CDN. JetBrains Mono's ligatures are switched off so SQL reads
-exactly as typed (`>=` stays `>=`).
+`@fontsource` packages (Geist and Geist Mono, variable), bundled by Vite: no
+request to Google at runtime and no third-party font CDN. Ligatures are switched
+off in mono text so SQL reads exactly as typed.
 
 ## Small SQL highlighter, no shiki
 
