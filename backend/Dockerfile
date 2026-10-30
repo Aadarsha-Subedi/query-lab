@@ -35,6 +35,10 @@ ENV UV_COMPILE_BYTECODE=1
 COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,id=querylab-uv,target=/root/.cache/uv,sharing=locked \
     uv sync --frozen --no-install-project --no-default-groups
+# The app is English only (LANGUAGE_CODE en-us): drop every other translation
+# that the packages ship (about 20 MB), to stay inside the image budget.
+RUN find /opt/venv/lib/python3.12/site-packages -type d -path '*/locale/*' -prune \
+        ! -name 'en' ! -name 'en_*' -exec rm -rf {} +
 COPY . .
 
 # ── prod: the virtualenv and the code, run as a non-root user ────────────

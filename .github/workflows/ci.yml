@@ -134,9 +134,10 @@ jobs:
           --build-arg UV_HTTP_TIMEOUT=$UV_HTTP_TIMEOUT
           --build-arg UV_CONCURRENT_DOWNLOADS=$UV_CONCURRENT_DOWNLOADS
       - name: Check the size budget
+        # The files in the image (uncompressed), measured the same way on any
+        # Docker setup; `docker image inspect` sizes differ between stores.
         run: |
-          bytes=$(docker image inspect querylab-backend:ci --format '{{.Size}}')
-          mb=$((bytes / 1024 / 1024))
+          mb=$(docker run --rm --user root --entrypoint du querylab-backend:ci -sxm / | cut -f1)
           echo "Production image: ${mb} MB (budget ${IMAGE_SIZE_BUDGET_MB} MB)"
           if [ "$mb" -gt "$IMAGE_SIZE_BUDGET_MB" ]; then
             echo "::error::Image is ${mb} MB, over the ${IMAGE_SIZE_BUDGET_MB} MB budget"

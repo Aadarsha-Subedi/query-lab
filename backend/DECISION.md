@@ -163,13 +163,19 @@ from `READER_STATEMENT_TIMEOUT_MS`. The folder path is `DATA_SQL_DIR`.
 - **Image:** multi-stage `Dockerfile` on `python:3.12-slim`; the build stage runs
   `uv sync --frozen --no-dev`, the final stage copies only the virtualenv and the
   code and runs as a non-root user. Budget: under 300 MB (checked in CI with
-  `IMAGE_SIZE_BUDGET_MB`).
+  `IMAGE_SIZE_BUDGET_MB`). Measured on 2026-10-30: 291 MB of files (83 MB
+  compressed). The build drops every non-English translation the packages
+  ship (about 20 MB; the app is English only) and keeps the compiled
+  bytecode (about 40 MB) for faster cold starts after the container sleeps.
+  CI measures the image's files with `du` inside it, because
+  `docker image inspect` reports different sizes on different image stores.
 - **Web server:** gunicorn with threaded WSGI workers (`gthread`), with
   `WEB_CONCURRENCY` workers and `WEB_THREADS` threads. The plan said uvicorn
   workers; we chose gthread because the API is synchronous Django: under ASGI,
   sync views run through `sync_to_async(thread_sensitive=True)`, which serializes
   them on one thread, and we have no async code to gain from. It also drops the
-  uvicorn dependency. Target idle memory for web + worker: under 500 MB.
+  uvicorn dependency. Target idle memory for web + worker: under 500 MB; measured about 300 MB
+  (gunicorn master + 2 gthread workers + run_huey).
 - **Jobs:** `entrypoint.sh` starts `run_huey` beside gunicorn in the same
   container; a separate worker container would sleep without requests and stop
   consuming jobs. If either process exits, the container exits and restarts.
