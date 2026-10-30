@@ -25,7 +25,6 @@ import { cn } from '@/lib/utils'
 import { useThemeStore, type ThemePreference } from '@/stores/theme'
 
 const OPTION_TITLES: Record<DesignOptionKey, string> = {
-  accent: 'Accent',
   font: 'Fonts',
   size: 'Base text',
   neutral: 'Neutral',
@@ -106,12 +105,10 @@ function ControlPanel() {
           />
         ))}
         <div className="ml-auto flex gap-2">
-          <Button variant="ghost" size="sm" onClick={reset}>
-            <Icon icon={RefreshIcon} size="sm" />
+          <Button variant="ghost" size="sm" icon={RefreshIcon} onClick={reset}>
             Recommended
           </Button>
-          <Button variant="secondary" size="sm" onClick={copyChoices}>
-            <Icon icon={Copy01Icon} size="sm" />
+          <Button variant="secondary" size="sm" icon={Copy01Icon} onClick={copyChoices}>
             Copy choices
           </Button>
         </div>
@@ -146,7 +143,7 @@ export function DesignPage() {
             <Text variant="caption" muted className="tracking-[var(--tracking-caps)] uppercase">
               Dev only · not in production builds
             </Text>
-            <Heading level="display">Querylab design system</Heading>
+            <Heading level="display">Querylabs design system</Heading>
             <Text variant="body-lg" muted className="max-w-[var(--reading-max)]">
               Every token and base component in each state. Switch the open decisions above, compare, then
               copy your choices into the project thread. The draft lives in frontend/docs/design-system.md.

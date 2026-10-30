@@ -1,5 +1,5 @@
 /*
- * DEV-ONLY. The four open design decisions, switchable on /design. Each choice
+ * DEV-ONLY. The open design decisions (the accent is decided: black), switchable on /design. Each choice
  * is a data-* attribute on <html> that tokens.css reacts to. Removed once the
  * design system is final (the chosen values become the only ones).
  */
@@ -7,11 +7,6 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
 export const DESIGN_OPTIONS = {
-  accent: [
-    { value: 'indigo', label: 'Indigo-blue' },
-    { value: 'teal', label: 'Teal' },
-    { value: 'violet', label: 'Violet' },
-  ],
   font: [
     { value: 'inter', label: 'Inter + JetBrains Mono' },
     { value: 'geist', label: 'Geist + Geist Mono' },
@@ -30,7 +25,7 @@ export type DesignOptionKey = keyof typeof DESIGN_OPTIONS
 export type DesignChoices = { [K in DesignOptionKey]: (typeof DESIGN_OPTIONS)[K][number]['value'] }
 
 /** The draft's recommendations (also the :root defaults in tokens.css). */
-export const RECOMMENDED: DesignChoices = { accent: 'indigo', font: 'inter', size: '14', neutral: 'stone' }
+export const RECOMMENDED: DesignChoices = { font: 'inter', size: '14', neutral: 'stone' }
 
 type DesignOptionsState = {
   choices: DesignChoices

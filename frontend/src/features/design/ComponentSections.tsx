@@ -1,11 +1,21 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
+  ArrowDown01Icon,
+  ArrowRight01Icon,
+  Cancel01Icon,
+  CheckmarkCircle02Icon,
   Delete02Icon,
+  FolderOpenIcon,
+  InformationCircleIcon,
   Logout01Icon,
   MoreHorizontalIcon,
   PlayIcon,
   Settings02Icon,
+  SparklesIcon,
+  UserAdd01Icon,
   UserIcon,
+  Alert02Icon,
+  AlertCircleIcon,
 } from '@hugeicons/core-free-icons'
 import type { ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
@@ -95,35 +105,33 @@ function Buttons() {
         {BUTTON_VARIANTS.map((variant) => (
           <div key={variant} className="contents">
             <code className="font-mono text-caption text-muted-foreground">{variant}</code>
-            <Button variant={variant}>Run query</Button>
-            <Button variant={variant} size="sm">
+            <Button variant={variant} icon={PlayIcon}>
               Run query
             </Button>
-            <Button variant={variant} loading>
+            <Button variant={variant} size="sm" icon={PlayIcon}>
+              Run query
+            </Button>
+            <Button variant={variant} icon={PlayIcon} loading>
               Running
             </Button>
-            <Button variant={variant} disabled>
+            <Button variant={variant} icon={PlayIcon} disabled>
               Run query
             </Button>
           </div>
         ))}
       </div>
       <div className="flex items-center gap-3">
-        <Button>
-          <Icon icon={PlayIcon} size="sm" />
-          Approve and run
+        <Button icon={PlayIcon}>Approve and run</Button>
+        <Button variant="secondary" icon={ArrowRight01Icon} iconPosition="end">
+          Next step
         </Button>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="secondary" size="icon" aria-label="Settings">
-              <Icon icon={Settings02Icon} size="md" />
-            </Button>
+            <Button variant="secondary" size="icon" icon={Settings02Icon} aria-label="Settings" />
           </TooltipTrigger>
           <TooltipContent>Settings</TooltipContent>
         </Tooltip>
-        <Button variant="ghost" size="icon-sm" aria-label="More">
-          <Icon icon={MoreHorizontalIcon} size="sm" />
-        </Button>
+        <Button variant="ghost" size="icon-sm" icon={MoreHorizontalIcon} aria-label="More" />
       </div>
     </Demo>
   )
@@ -207,7 +215,7 @@ function SampleForm() {
               </FormItem>
             )}
           />
-          <Button type="submit" className="justify-self-start">
+          <Button type="submit" icon={UserAdd01Icon} className="justify-self-start">
             Create account
           </Button>
         </form>
@@ -231,7 +239,9 @@ function Cards() {
             </Text>
           </CardContent>
           <CardFooter>
-            <Button size="sm">Open</Button>
+            <Button size="sm" icon={FolderOpenIcon}>
+              Open
+            </Button>
             <Badge variant="primary">Demo</Badge>
           </CardFooter>
         </Card>
@@ -259,7 +269,9 @@ function Overlays() {
       <div className="flex flex-wrap items-center gap-3">
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="secondary">Open dialog</Button>
+            <Button variant="secondary" icon={Delete02Icon}>
+              Open dialog
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -270,10 +282,14 @@ function Overlays() {
             </DialogHeader>
             <DialogFooter>
               <DialogClose asChild>
-                <Button variant="secondary">Cancel</Button>
+                <Button variant="secondary" icon={Cancel01Icon}>
+                  Cancel
+                </Button>
               </DialogClose>
               <DialogClose asChild>
-                <Button variant="destructive">Delete workspace</Button>
+                <Button variant="destructive" icon={Delete02Icon}>
+                  Delete workspace
+                </Button>
               </DialogClose>
             </DialogFooter>
           </DialogContent>
@@ -281,7 +297,7 @@ function Overlays() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="secondary">
+            <Button variant="secondary" icon={ArrowDown01Icon} iconPosition="end">
               <Avatar className="size-5">
                 <AvatarFallback>AS</AvatarFallback>
               </Avatar>
@@ -312,7 +328,9 @@ function Overlays() {
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost">Hover for tooltip</Button>
+            <Button variant="ghost" icon={SparklesIcon}>
+              Hover for tooltip
+            </Button>
           </TooltipTrigger>
           <TooltipContent>The model is 62% confident</TooltipContent>
         </Tooltip>
@@ -320,6 +338,7 @@ function Overlays() {
         <Separator orientation="vertical" className="h-6" />
 
         <Button
+          icon={CheckmarkCircle02Icon}
           variant="secondary"
           size="sm"
           onClick={() => toast.success('Query finished', { description: '1,204 rows in 0.8 s' })}
@@ -327,6 +346,7 @@ function Overlays() {
           Success toast
         </Button>
         <Button
+          icon={Alert02Icon}
           variant="secondary"
           size="sm"
           onClick={() =>
@@ -336,6 +356,7 @@ function Overlays() {
           Warning toast
         </Button>
         <Button
+          icon={AlertCircleIcon}
           variant="secondary"
           size="sm"
           onClick={() => toast.error('Too many requests', { description: 'Try again in 30 seconds.' })}
@@ -343,6 +364,7 @@ function Overlays() {
           Error toast
         </Button>
         <Button
+          icon={InformationCircleIcon}
           variant="secondary"
           size="sm"
           onClick={() => toast.info('Agent is planning', { description: 'Step 2 of 4' })}

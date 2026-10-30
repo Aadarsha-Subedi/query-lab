@@ -2,7 +2,6 @@ import { Copy01Icon, Tick02Icon } from '@hugeicons/core-free-icons'
 import { useState, type ComponentProps, type ReactNode } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { Icon } from '@/components/ui/icon'
 import { cn } from '@/lib/utils'
 
 /** Inline code: column names, IDs, values. */
@@ -67,11 +66,10 @@ export function CodeBlock({ code, language = 'sql', className }: CodeBlockProps)
         variant="ghost"
         size="icon-sm"
         className="absolute top-2 right-2"
+        icon={copied ? Tick02Icon : Copy01Icon}
         onClick={copy}
         aria-label={copied ? 'Copied' : 'Copy code'}
-      >
-        <Icon icon={copied ? Tick02Icon : Copy01Icon} size="sm" />
-      </Button>
+      />
       <pre className="overflow-x-auto p-4 pr-12 font-mono text-code">
         <code>{language === 'sql' ? highlightSql(code) : code}</code>
       </pre>

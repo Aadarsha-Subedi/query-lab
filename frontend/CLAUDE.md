@@ -50,7 +50,8 @@ Planned (0.10c): `src/routes/` with `(public)` and `(app)` groups,
 - **State rule:** server data (user, health, later runs) lives in TanStack Query; UI-only state (theme, sidebar, modals) lives in Zustand. Never copy server data into Zustand.
 - **Route guard rule:** guards run in the router's `beforeLoad` using the `/api/me` query: signed in on a public route -> `/app`; signed out on an app route -> `/`.
 - **Use the design system, never ad-hoc styles.** Colours, spacing, radius, shadows and motion come from tokens; components come from `src/components/ui/`. No raw hex values or one-off pixel sizes in feature code.
-- Icons: Hugeicons only, always through `<Icon icon={...} size="sm|md|lg" />` from `components/ui/icon`.
+- Icons: Hugeicons only, always through `<Icon icon={...} size="sm|md|lg" />` from `components/ui/icon` (16/20/24 px, nothing else).
+- **Every button has an icon:** `<Button icon={PlayIcon}>Run query</Button>`; icon-only buttons use `size="icon"`/`"icon-sm"` and must have `aria-label`. TypeScript enforces both; don't work around it.
 - Toasts: render `<Toaster />` once; call `toast` from `components/ui/toast-api`.
 - Design showcase: `pnpm dev`, then open `/design` (dev only; `build.test.ts` checks it never ships).
 - Package manager: **pnpm** only (`packageManager` in package.json; `pnpm-lock.yaml` is the lockfile). Never run npm or yarn here: mixing them breaks node_modules.

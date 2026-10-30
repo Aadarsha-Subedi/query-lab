@@ -5,12 +5,14 @@
  * through Tailwind utilities. Tokens that share a name with a Tailwind theme
  * key carry a --ds- prefix (--ds-radius-md) so the two never reference
  * each other.
- * Raw scales (--n-*, --accent-*) exist only to build them.
+ * Raw scales (--n-*) exist only to build them.
  *
- * DRAFT: the four open decisions can be switched with attributes on <html>
- * (set by the dev-only /design page): data-accent, data-neutral, data-font and
- * data-size. :root holds the recommended defaults. Once the design system is
- * final, the chosen values replace these defaults and the alternatives go.
+ * Primary is black (owner's choice): near-black in light mode, inverted to
+ * near-white in dark mode so it keeps its contrast.
+ *
+ * DRAFT: the three open decisions can be switched with attributes on <html>
+ * (set by the dev-only /design page): data-neutral, data-font and data-size.
+ * :root holds the recommended defaults. Once the design system is final, the chosen values replace these defaults and the alternatives go.
  */
 
 /* ── Neutral scales ─────────────────────────────────────────────────────── */
@@ -48,30 +50,6 @@
   --n-950: oklch(0.155 0.005 285.8);
 }
 
-/* ── Accent options (solid and subtle, for light and dark) ──────────────── */
-
-:root,
-[data-accent='indigo'] {
-  --accent-light: oklch(0.51 0.19 264);
-  --accent-dark: oklch(0.68 0.15 264);
-  --accent-subtle-light: oklch(0.95 0.025 264);
-  --accent-subtle-dark: oklch(0.29 0.07 264);
-}
-
-[data-accent='teal'] {
-  --accent-light: oklch(0.51 0.095 186);
-  --accent-dark: oklch(0.74 0.12 182);
-  --accent-subtle-light: oklch(0.95 0.03 185);
-  --accent-subtle-dark: oklch(0.29 0.05 185);
-}
-
-[data-accent='violet'] {
-  --accent-light: oklch(0.54 0.23 293);
-  --accent-dark: oklch(0.7 0.17 293);
-  --accent-subtle-light: oklch(0.95 0.03 293);
-  --accent-subtle-dark: oklch(0.29 0.08 293);
-}
-
 /* ── Font options ───────────────────────────────────────────────────────── */
 
 :root,
@@ -98,6 +76,18 @@
   --ds-text-small: 0.8125rem;
   --ds-text-caption: 0.75rem;
   --ds-text-code: 0.8125rem;
+  /* Line heights in whole pixels (rem = 16 px), so every row of text, and every
+     icon centred against it, lands on the pixel grid. Fractional line heights
+     put icons on half pixels and soften their 1.5 px strokes. */
+  --leading-display: 2.5rem; /* 40px */
+  --leading-h1: 2.125rem; /* 34px */
+  --leading-h2: 1.75rem; /* 28px */
+  --leading-h3: 1.5rem; /* 24px */
+  --leading-body-lg: 1.5rem; /* 24px */
+  --leading-body: 1.25rem; /* 20px */
+  --leading-small: 1.125rem; /* 18px */
+  --leading-caption: 1rem; /* 16px */
+  --leading-code: 1.25rem; /* 20px */
 }
 
 [data-size='16'] {
@@ -110,20 +100,20 @@
   --ds-text-small: 0.875rem;
   --ds-text-caption: 0.8125rem;
   --ds-text-code: 0.875rem;
+  --leading-display: 2.75rem; /* 44px */
+  --leading-h1: 2.375rem; /* 38px */
+  --leading-h2: 2rem; /* 32px */
+  --leading-h3: 1.625rem; /* 26px */
+  --leading-body-lg: 1.75rem; /* 28px */
+  --leading-body: 1.5rem; /* 24px */
+  --leading-small: 1.25rem; /* 20px */
+  --leading-caption: 1.125rem; /* 18px */
+  --leading-code: 1.375rem; /* 22px */
 }
 
 /* ── Fixed tokens (no open decision) ────────────────────────────────────── */
 
 :root {
-  --leading-display: 1.15;
-  --leading-h1: 1.2;
-  --leading-h2: 1.25;
-  --leading-h3: 1.3;
-  --leading-body: 1.5;
-  --leading-body-lg: 1.55;
-  --leading-small: 1.45;
-  --leading-caption: 1.4;
-  --leading-code: 1.6;
   --tracking-heading: -0.01em;
   --tracking-caps: 0.02em;
 
@@ -158,9 +148,10 @@
   /* A step darker than n-500 so it passes 4.5:1 on surface-muted too. */
   --muted-foreground: color-mix(in oklab, var(--n-500) 70%, var(--n-600));
 
-  --primary: var(--accent-light);
-  --primary-foreground: oklch(0.985 0 0);
-  --primary-subtle: var(--accent-subtle-light);
+  --primary: var(--n-950);
+  --primary-foreground: var(--n-0);
+  /* Selected rows, active nav: a soft neutral tint, readable under black text. */
+  --primary-subtle: var(--n-200);
 
   --success: oklch(0.52 0.13 152);
   --success-subtle: oklch(0.96 0.04 152);
@@ -202,9 +193,9 @@
   --input: var(--n-700);
   --muted-foreground: var(--n-400);
 
-  --primary: var(--accent-dark);
+  --primary: var(--n-50);
   --primary-foreground: var(--n-950);
-  --primary-subtle: var(--accent-subtle-dark);
+  --primary-subtle: var(--n-800);
 
   --success: oklch(0.72 0.14 152);
   --success-subtle: oklch(0.27 0.05 152);

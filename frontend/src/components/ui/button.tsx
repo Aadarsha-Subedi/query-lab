@@ -1,53 +1,88 @@
 import { Loading03Icon } from '@hugeicons/core-free-icons'
-import * as React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
-import { cn } from '@/lib/utils'
 import { Slot } from 'radix-ui'
+import * as React from 'react'
 
-import { Icon } from '@/components/ui/icon'
+import { Icon, type IconSize, type IconSvgElement } from '@/components/ui/icon'
+import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-body font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow,transform] duration-fast outline-none active:translate-y-px focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  // Focus: a solid ring with a background-coloured gap, visible even around a black button.
+  'inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-body font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow,transform] duration-fast outline-none select-none active:translate-y-px focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive [&_svg]:pointer-events-none',
   {
     variants: {
       variant: {
-        primary: 'bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-sm',
+        primary: 'bg-primary text-primary-foreground hover:bg-primary/85 hover:shadow-sm',
         secondary: 'border bg-surface text-foreground shadow-sm hover:bg-surface-muted dark:border-input',
         ghost: 'text-foreground hover:bg-surface-muted',
-        destructive: 'bg-danger text-primary-foreground hover:bg-danger/90 focus-visible:ring-danger/30',
-        link: 'text-primary underline-offset-4 hover:underline',
+        destructive: 'bg-danger text-primary-foreground hover:bg-danger/90',
+        link: 'text-primary underline underline-offset-4 hover:decoration-2',
       },
       size: {
-        sm: 'h-8 gap-1.5 px-3 text-small has-[>svg]:px-2.5',
-        md: 'h-9 px-4 py-2 has-[>svg]:px-3',
+        sm: 'h-8 gap-1.5 px-3 text-small',
+        md: 'h-9 px-4',
         'icon-sm': 'size-8',
         icon: 'size-9',
       },
     },
-    defaultVariants: {
-      variant: 'primary',
-      size: 'md',
-    },
+    defaultVariants: { variant: 'primary', size: 'md' },
   },
 )
 
-/** shadcn/ui button with Querylab's variants and a `loading` state. */
+const ICON_SIZE: Record<NonNullable<VariantProps<typeof buttonVariants>['size']>, IconSize> = {
+  sm: 'sm',
+  md: 'md',
+  'icon-sm': 'sm',
+  icon: 'md',
+}
+
+type BaseProps = Omit<React.ComponentProps<'button'>, 'children' | 'aria-label'> &
+  Pick<VariantProps<typeof buttonVariants>, 'variant'> & {
+    /** Every button has an icon (design-system rule). */
+    icon: IconSvgElement
+    /** Which side of the label the icon sits on. */
+    iconPosition?: 'start' | 'end'
+    /** Swaps the icon for a spinner in the same spot (no layout shift), disables and sets aria-busy. */
+    loading?: boolean
+    asChild?: boolean
+  }
+
+type LabelledProps = BaseProps & {
+  size?: 'sm' | 'md'
+  children: React.ReactNode
+  'aria-label'?: string
+}
+
+/** Icon-only buttons have no visible text, so an aria-label is required. */
+type IconOnlyProps = BaseProps & {
+  size: 'icon' | 'icon-sm'
+  children?: never
+  'aria-label': string
+}
+
+export type ButtonProps = LabelledProps | IconOnlyProps
+
+/** shadcn/ui button with Querylab's variants, a required icon and a loading state. */
 function Button({
   className,
   variant = 'primary',
   size = 'md',
-  asChild = false,
+  icon,
+  iconPosition = 'start',
   loading = false,
+  asChild = false,
   disabled,
   children,
   ...props
-}: React.ComponentProps<'button'> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-    /** Shows a spinner, disables the button and sets aria-busy. */
-    loading?: boolean
-  }) {
+}: ButtonProps) {
   const Comp = asChild ? Slot.Root : 'button'
+  const glyph = (
+    <Icon
+      icon={loading ? Loading03Icon : icon}
+      size={ICON_SIZE[size]}
+      className={loading ? 'animate-spin' : undefined}
+    />
+  )
 
   return (
     <Comp
@@ -59,8 +94,9 @@ function Button({
       aria-busy={loading || undefined}
       {...props}
     >
-      {loading && !asChild && <Icon icon={Loading03Icon} size="sm" className="animate-spin" />}
-      {children}
+      {iconPosition === 'start' && glyph}
+      <Slot.Slottable>{children}</Slot.Slottable>
+      {iconPosition === 'end' && glyph}
     </Comp>
   )
 }

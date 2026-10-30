@@ -2,7 +2,7 @@
 
 Status: **draft, being finalized on the dev-only `/design` page.** Tokens
 (`src/styles/tokens.css`), the Tailwind theme, fonts, typography and the base
-components are built as described here, with the four open decisions
+components are built as described here, with the three open decisions
 switchable live on `/design`. Once they are chosen, the chosen values become
 the only ones and this document is updated to match.
 
@@ -38,9 +38,10 @@ illustrations in the app, no animation that delays reading.
 ## 2. Colour
 
 Neutral base: a warm-leaning grey (Tailwind's **stone**) so long reading
-sessions feel less clinical than pure grey. One accent: **indigo-blue**, chosen
-for "link / primary action" and because it stays distinct from the green/amber/red
-status colours. Values are given in OKLCH (what Tailwind v4 uses) with the hex
+sessions feel less clinical than pure grey. The primary is **black** (decided by
+Aadarsha, 2026-10-29): near-black in light mode, inverted to near-white in dark
+mode. It keeps every colour on the page for meaning: the green/amber/red/blue
+status colours and the chart palette. Values are given in OKLCH (what Tailwind v4 uses) with the hex
 approximation beside them.
 
 ### 2.1 Semantic tokens
@@ -55,9 +56,9 @@ Components only ever use these names, never a raw colour.
 | `surface-muted`      | Table headers, code blocks, sidebars       | `oklch(0.97 0.001 106)` #f5f5f4  | `oklch(0.25 0.006 34)` #292524  |
 | `border`             | Dividers, inputs, card edges               | `oklch(0.923 0.003 49)` #e7e5e4  | `oklch(0.32 0.006 34)` #3a3532  |
 | `muted-foreground`   | Secondary text, captions, placeholders     | `oklch(0.553 0.013 58)` #78716c  | `oklch(0.709 0.01 56)` #a8a29e  |
-| `primary`            | The main action, links, focus ring         | `oklch(0.51 0.19 264)` #3b55d9   | `oklch(0.68 0.15 264)` #7c93f5  |
-| `primary-foreground` | Text on primary                            | `oklch(0.985 0 0)` #fafafa       | `oklch(0.16 0.004 49)` #141210  |
-| `primary-subtle`     | Selected rows, active nav item background  | `oklch(0.95 0.025 264)` #e9edfd  | `oklch(0.28 0.06 264)` #243064  |
+| `primary`            | The main action, links, focus ring         | `n-950` #141210                  | `n-50` #fafaf9                  |
+| `primary-foreground` | Text on primary                            | `n-0` #ffffff                    | `n-950` #141210                 |
+| `primary-subtle`     | Selected rows, active nav item background  | `n-200` #e7e5e4                  | `n-800` #292524                 |
 | `success`            | Correct answer, healthy check, passed eval | `oklch(0.56 0.13 152)` #1f8a4c   | `oklch(0.72 0.14 152)` #4cc27a  |
 | `warning`            | Low confidence, needs approval, degraded   | `oklch(0.66 0.15 70)` #c4800f    | `oklch(0.79 0.14 75)` #e8ad3c   |
 | `danger`             | Errors, failed eval, destructive actions   | `oklch(0.55 0.2 27)` #d12f2f     | `oklch(0.7 0.17 25)` #f26d63    |
@@ -80,9 +81,10 @@ sequential scale (single-hue blue) for heatmaps and a diverging scale
 (red to blue through neutral) for "worse / better than baseline". Charts never
 rely on colour alone: values are labelled or shown on hover.
 
-**Decide:** accent colour. Recommended: indigo-blue as above. Alternatives: teal
-(more "data tool", but closer to the success green) or violet (more distinctive,
-less conventional for links).
+With a black primary, links are always underlined (colour alone no longer marks
+them), and the focus ring has a 2 px gap in the background colour so it stays
+visible around a black button. The live check on `/design` found every text pair
+at 5.0:1 or better in both themes and both neutrals.
 
 ## 3. Typography
 
@@ -103,17 +105,21 @@ Geist Mono (a bit more character, slightly less proven at 12 to 13 px).
 Base size 14 px (dense app UI), 1.25 ratio for headings. Sizes in rem
 (1 rem = 16 px).
 
-| Token     | Size / line height        | Weight | Use                               |
-| --------- | ------------------------- | ------ | --------------------------------- |
-| `display` | 2.25 rem (36 px) / 1.15   | 600    | Landing page hero only            |
-| `h1`      | 1.75 rem (28 px) / 1.2    | 600    | Page title                        |
-| `h2`      | 1.375 rem (22 px) / 1.25  | 600    | Section title                     |
-| `h3`      | 1.125 rem (18 px) / 1.3   | 600    | Card / panel title                |
-| `body`    | 0.875 rem (14 px) / 1.5   | 400    | Default text                      |
-| `body-lg` | 1 rem (16 px) / 1.55      | 400    | Landing page, long explanations   |
-| `small`   | 0.8125 rem (13 px) / 1.45 | 400    | Table cells, secondary text       |
-| `caption` | 0.75 rem (12 px) / 1.4    | 500    | Labels, badges, timestamps        |
-| `code`    | 0.8125 rem (13 px) / 1.6  | 400    | SQL blocks and inline code (mono) |
+| Token     | Size / line height         | Weight | Use                               |
+| --------- | -------------------------- | ------ | --------------------------------- |
+| `display` | 2.25 rem (36 px) / 40 px   | 600    | Landing page hero only            |
+| `h1`      | 1.75 rem (28 px) / 34 px   | 600    | Page title                        |
+| `h2`      | 1.375 rem (22 px) / 28 px  | 600    | Section title                     |
+| `h3`      | 1.125 rem (18 px) / 24 px  | 600    | Card / panel title                |
+| `body`    | 0.875 rem (14 px) / 20 px  | 400    | Default text                      |
+| `body-lg` | 1 rem (16 px) / 24 px      | 400    | Landing page, long explanations   |
+| `small`   | 0.8125 rem (13 px) / 18 px | 400    | Table cells, secondary text       |
+| `caption` | 0.75 rem (12 px) / 16 px   | 500    | Labels, badges, timestamps        |
+| `code`    | 0.8125 rem (13 px) / 20 px | 400    | SQL blocks and inline code (mono) |
+
+Line heights are whole pixels (in rem), so every text row, and every icon
+centred against it, lands on the pixel grid. The 16 px base option has its own
+whole-pixel set.
 
 Letter spacing: headings `-0.01em`; `caption` in uppercase only for table
 column group labels, `+0.02em`. Numbers in tables and metrics always use tabular
@@ -188,8 +194,18 @@ standard, pure CSS) at the durations below. Our rules:
   source. One style throughout: **stroke rounded**, 1.5 px stroke.
 - Sizes: 16 px inline with `small` / `body` text, 20 px in buttons and nav,
   24 px for empty states and page headers. Icons inherit `currentColor`.
-- An icon-only button always has an accessible label (and a tooltip). Icons next
-  to text are `aria-hidden`.
+- **Every button has an icon** next to its label (start by default, `end` for
+  "next" and menu chevrons). The `Button` component requires an `icon`, and
+  TypeScript rejects a button without one. While a button is loading, a spinner
+  takes the icon's place, so its width never changes.
+- An icon-only button always has an accessible label (`aria-label` is required
+  by the type) and a tooltip. Icons next to text are `aria-hidden`.
+- **Crisp rendering:** icons render only at 16, 20 or 24 px, through an explicit
+  size class (nothing can rescale them), with an absolute 1.5 px stroke at every
+  size, `overflow: visible` so stroke ends are never clipped, and `shrink-0` so
+  flex rows never squeeze them. Text line heights are whole pixels, so icons sit
+  on whole-pixel rows. Horizontal positions can still fall on a fraction of a
+  pixel after text of fractional width; CSS cannot snap those in every layout.
 - Icons support words, they don't replace them: status badges carry text
   ("Passed", "Low confidence"), not only a coloured icon.
 - A small wrapper (`<Icon icon={...} size="sm|md|lg" />`) in `src/components/ui/`
@@ -223,8 +239,8 @@ and stores the choice in a persisted Zustand store. The theme is applied with a
 
 ## 11. Accessibility baseline
 
-- WCAG 2.2 AA: contrast as in 2.1, visible focus ring (2 px `primary`, 2 px
-  offset) on every interactive element, never removed.
+- WCAG 2.2 AA: contrast as in 2.1, visible focus ring (2 px `primary` with a
+  2 px background-coloured gap) on every interactive element, never removed.
 - Everything works by keyboard; dialogs trap focus and return it on close
   (Radix handles this).
 - Hit targets at least 32 × 32 px (24 px minimum for dense table actions, with
@@ -235,9 +251,10 @@ and stores the choice in a persisted Zustand store. The theme is applied with a
 
 Plain shadcn/ui components (Radix + Tailwind), themed with the tokens
 above, each shown in every state on `/design`: button (primary, secondary,
-ghost, destructive, link; sizes sm/md; loading and disabled), input, label,
+ghost, destructive, link; sizes sm/md/icon/icon-sm; always with an icon;
+loading and disabled), input, label,
 form (react-hook-form + Zod messages), card, dialog, dropdown-menu, table,
-tabs, badge (neutral, success, warning, danger, info), toast (sonner), skeleton,
+tabs, badge (neutral, primary, success, warning, danger, info), toast (sonner), skeleton,
 avatar, separator, tooltip.
 
 ---
@@ -245,7 +262,7 @@ avatar, separator, tooltip.
 ## Summary of decisions to approve
 
 1. Overall direction (sections 1, 4 to 11) as written.
-2. **Accent:** indigo-blue (recommended) / teal / violet.
+2. ~~Accent~~ **decided: black** (2026-10-29).
 3. **Fonts:** Inter + JetBrains Mono (recommended) / Geist + Geist Mono.
 4. **Base text size:** 14 px (recommended for a dense data app) / 16 px.
 5. **Neutral:** warm stone (recommended) / cool zinc.

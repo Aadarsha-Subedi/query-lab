@@ -112,3 +112,25 @@ Shiki would be far heavier for a single language; revisit if we need more.
 ## Toasts: sonner
 
 The toast library shadcn recommends; small, accessible, themed with our tokens.
+
+## Black primary (2026-10-29, owner's choice)
+
+Primary is near-black in light mode and inverts to near-white in dark mode, so
+primary buttons keep their contrast. Colour is reserved for meaning: status
+colours and the chart palette are unchanged. Links are always underlined, and the
+focus ring is a solid ring with a background-coloured gap so it shows around a
+black button. The indigo, teal and violet options are gone from the tokens and
+`/design`.
+
+## Every button has an icon; icons render crisp
+
+Owner's rule. `Button` requires an `icon` (start or end) and, for icon-only sizes,
+an `aria-label`; TypeScript enforces both (`@ts-expect-error` cases in the
+component tests). Loading swaps the icon for a spinner in the same slot, so the
+width never changes. `Icon` renders only at 16/20/24 px through a size class (the
+shadcn button's own `[&_svg]:size-4` rule had been rescaling 20 px icons and
+blurring them), with an absolute 1.5 px stroke, `overflow: visible` and
+`shrink-0`. Line heights became whole pixels so icons sit on whole-pixel rows.
+Horizontal positions after fractional-width text can still be a fraction of a
+pixel; `calc-size()` width rounding was tried and rejected (it re-centres content
+by a fraction instead).

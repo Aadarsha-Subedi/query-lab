@@ -332,11 +332,11 @@ function MotionSection() {
           <Button
             variant="secondary"
             size="sm"
+            icon={PlayIcon}
             onClick={() => {
               setMoved((value) => !value)
             }}
           >
-            <Icon icon={PlayIcon} size="sm" />
             Play
           </Button>
         </div>

@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Delete02Icon, FloppyDiskIcon, PlayIcon } from '@hugeicons/core-free-icons'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useForm } from 'react-hook-form'
@@ -22,16 +23,42 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils'
 
 describe('Button', () => {
-  it('is disabled and busy while loading', () => {
-    render(<Button loading>Running</Button>)
+  it('renders its icon next to the label', () => {
+    render(<Button icon={PlayIcon}>Run query</Button>)
+    const button = screen.getByRole('button', { name: 'Run query' })
+    expect(button.querySelector('svg[data-slot="icon"]')).toHaveClass('size-5')
+  })
+
+  it('swaps the icon for a spinner in the same slot while loading', () => {
+    render(
+      <Button icon={PlayIcon} loading>
+        Running
+      </Button>,
+    )
     const button = screen.getByRole('button', { name: 'Running' })
     expect(button).toBeDisabled()
     expect(button).toHaveAttribute('aria-busy', 'true')
+    const icons = button.querySelectorAll('svg[data-slot="icon"]')
+    expect(icons).toHaveLength(1)
+    expect(icons[0]).toHaveClass('animate-spin', 'size-5')
   })
 
   it('applies the variant', () => {
-    render(<Button variant="destructive">Delete workspace</Button>)
+    render(
+      <Button variant="destructive" icon={Delete02Icon}>
+        Delete workspace
+      </Button>,
+    )
     expect(screen.getByRole('button')).toHaveClass('bg-danger')
+  })
+
+  it('is typed so every button has an icon and icon-only buttons have a label', () => {
+    // These lines are type checks: `pnpm typecheck` fails if any of them compiles.
+    // @ts-expect-error a button without an icon
+    const noIcon = <Button>Save</Button>
+    // @ts-expect-error an icon-only button without an aria-label
+    const noLabel = <Button size="icon" icon={FloppyDiskIcon} />
+    expect([noIcon, noLabel]).toHaveLength(2)
   })
 })
 
@@ -90,7 +117,9 @@ function SampleForm() {
             </FormItem>
           )}
         />
-        <Button type="submit">Save</Button>
+        <Button type="submit" icon={FloppyDiskIcon}>
+          Save
+        </Button>
       </form>
     </Form>
   )
