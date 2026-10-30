@@ -238,7 +238,7 @@ The backend will deploy as one Cloudflare Container on the basic instance. Conta
       - `make dev`: `docker compose up` for every service in one terminal, with logs prefixed per service; Ctrl+C stops everything,
       - `make migrate`, `make bootstrap-db`, `make load-demo`,
       - `make test`, `make lint`, `make typecheck`.
-- [ ] **0.11.3** Check that a fresh clone gets from zero to a working login with `make setup`, filling in `.env`, then `make dev`.
+- [x] **0.11.3** Check that a fresh clone gets from zero to a working login with `make setup`, filling in `.env`, then `make dev`. Done on 2026-10-30 from a clean clone with fresh volumes: `make setup`, `make dev`, migrate, bootstrap, load-demo, health all ok, login and logout through the Postman collection (16/16). Signup needs real Gmail settings in `backend/.env`: with the example placeholders the confirmation email cannot be sent and signup answers 500.
 
 ## 0.12 Project documents
 
@@ -248,7 +248,7 @@ The backend will deploy as one Cloudflare Container on the basic instance. Conta
 - [x] **0.12.4** `frontend/CLAUDE.md`: commands, folder layout, state rule, route guard rule, "use the design system, never ad-hoc styles".
 - [x] **0.12.5** `frontend/FLOW.md`: app boot (env check → `/api/me` → route group), login flows (email, Google, GitHub).
 - [x] **0.12.6** `frontend/DECISION.md`: Vite + React + TS, Tailwind + shadcn base + Animate UI + Hugeicons, TanStack Router + Query, Zustand, design-system-first.
-- [ ] **0.12.7** Tick step 0 in the root README.
+- [x] **0.12.7** Tick step 0 in the root README.
 
 ## 0.13 CI (GitHub Actions)
 
