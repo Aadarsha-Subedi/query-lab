@@ -11,6 +11,7 @@ import { Icon } from '@/components/ui/icon'
 import { Toaster } from '@/components/ui/toast'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ComponentSections } from '@/features/design/ComponentSections'
+import { DataStateSections } from '@/features/design/DataStateSections'
 import { TokenSections } from '@/features/design/TokenSections'
 import { cn } from '@/lib/utils'
 import { useThemeStore, type ThemePreference } from '@/stores/theme'
@@ -106,6 +107,7 @@ export function DesignPage() {
           </header>
           <TokenSections revision={revision} />
           <ComponentSections />
+          <DataStateSections />
         </main>
       </div>
       <Toaster />

@@ -78,6 +78,10 @@
   --duration-base: 200ms;
   --duration-slow: 320ms;
   --ds-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  /* Boot screen: the spinner appears only after boot-delay, then stays at least
+     boot-min-visible, so fast boots never flicker. */
+  --boot-delay: 200ms;
+  --boot-min-visible: 400ms;
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
 
   --row-compact: 36px;

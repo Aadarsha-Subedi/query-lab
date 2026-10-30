@@ -248,3 +248,111 @@ loading and disabled), input, label,
 form (react-hook-form + Zod messages), card, dialog, dropdown-menu, table,
 tabs, badge (neutral, primary, success, warning, danger, info), toast (sonner), skeleton,
 avatar, separator, tooltip.
+
+## 13. Data states (draft for approval)
+
+Every component that reads data from the backend **owns its own loading, error,
+empty and success states**. They render inside that component's own box (its
+card, panel, table or chart), never as a page-level spinner or error page. If
+one component fails, the rest of the page keeps working: the user can still
+read, type and use every other feature on it.
+
+### 13.1 Rules
+
+1. **No automatic retries, ever.** A failed request stays failed, whatever the
+   status code (TanStack Query `retry: false` for queries and mutations; the API
+   client never retries). No refetch on window focus or reconnect either, so
+   nothing changes behind the user's back.
+2. **The user retries on purpose**: with the component's own **Try again**
+   button (refetches only that component's data), or by refreshing or hard
+   reloading the page.
+3. **One component, one request scope.** A component fetches what it shows. Its
+   states never leak out: a failed "Run history" card does not grey out the
+   question box next to it.
+4. **Same footprint in every state.** Loading, error, empty and success occupy
+   the same box size, so nothing on the page jumps when data arrives.
+5. **Exceptions that are global by nature:** a 401 (session ended) sends the user
+   to sign in, and a 429 also shows a toast with the time to wait. The component
+   that got the 429 still shows its own error state.
+
+### 13.2 The four states
+
+| State       | When                                    | Shows                                                                                              |
+| ----------- | --------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Loading** | First load, or after **Try again**      | A skeleton shaped like the real content (rows, lines, bars). `aria-busy="true"` on the component.  |
+| **Error**   | The request failed (any status)         | Inline panel: danger icon, what happened, what to do next, a **Try again** button, the request id. |
+| **Empty**   | The request worked but there is no data | Neutral icon, what this area will show, and the next step (for example "Ask a question").          |
+| **Success** | Data arrived                            | The content itself. Nothing announces success unless the user triggered an action.                 |
+
+### 13.3 Anatomy
+
+**Loading**
+
+- Skeletons, not spinners, for content: a table gets skeleton rows at the real
+  row height, a card gets lines at the real text heights. Spinners are only for
+  actions the user started (a button's loading state) and the boot screen.
+- Skeletons use `surface-muted` with a gentle pulse; with reduced motion the
+  pulse stops and the skeleton stays static.
+- The component sets `aria-busy="true"` while loading; screen readers hear the
+  result once (`aria-live="polite"` on the component's status line), not every
+  skeleton.
+
+**Error** (inline, inside the component)
+
+- Danger icon (`AlertCircleIcon`, 20 px) and a one-line title saying what
+  happened in plain words: "Couldn't load run history."
+- One line saying why, if we know it, and what to do: "The server didn't
+  answer. Try again, or refresh the page." For a 429: "Too many requests. Try
+  again in 30 seconds." For a 403: "You don't have access to this workspace."
+- A **Try again** button (secondary, `RefreshIcon`, per the icon-on-every-button
+  rule). While retrying it shows its spinner and the component goes back to its
+  loading state.
+- The request id in `caption` mono text ("Request 4f1c…"), copyable, so a bug
+  report can point at the exact log line.
+- `role="alert"` on the error panel so it is announced once.
+- Never a raw error, stack trace or status code alone; no "Oops", no blame.
+
+**Empty**
+
+- Neutral icon (24 px, `muted-foreground`), a title naming what will appear
+  ("No runs yet"), one line on how to get there, and at most one action button.
+
+**Success**
+
+- Just the content. When the user caused the change (saved, deleted, ran a
+  query), confirm with a toast; passive loads never toast.
+
+### 13.4 Actions (mutations)
+
+- The button that started the action shows its loading spinner and is disabled;
+  the rest of the component stays usable.
+- A failed action is shown next to where it happened: form field errors under
+  the fields, other errors as an inline message in the form or component, plus
+  an error toast when the user may have scrolled away. The user resubmits; we
+  never resubmit for them.
+
+## 14. Boot screen (draft for approval)
+
+The one global loading state: shown **only on the first load of the page**,
+while the app starts (env check, then the `/api/me` sign-in check, then the
+first route). It never appears again during navigation; after boot, every
+loading state belongs to a component (section 13).
+
+- **What it shows:** the page background, the Querylab wordmark centred, and a
+  small spinner under it with "Loading Querylab" for screen readers. Nothing
+  else: no tips, no progress percentages.
+- **Theme:** it follows the stored light/dark preference from the first frame,
+  because it is plain HTML and CSS in `index.html` that renders before any
+  JavaScript runs.
+- **No flash on fast loads:** the spinner fades in only after a short delay
+  (`boot-delay`, 200 ms), so a fast boot shows a calm blank page for an instant
+  instead of a flickering spinner. Once the spinner has appeared, it stays for at
+  least `boot-min-visible` (400 ms) so it never blinks. Both are design tokens.
+- **Leaving:** it fades out over `duration-base` when the first route is ready.
+  With reduced motion it disappears without a fade.
+- **Boot failure:** if the app cannot start (the API does not answer the
+  sign-in check), the boot screen turns into a full-page message: danger icon,
+  "Querylab can't reach the server", "Check your connection and reload the
+  page", and a **Reload page** button (`RefreshIcon`). This is the only
+  full-page error, because nothing on the page can work without the sign-in
+  check. A 401 is not a failure: it means signed out, and the public pages load.
