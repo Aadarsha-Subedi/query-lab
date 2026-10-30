@@ -156,8 +156,8 @@ Both projects have a `backend/common` app. Querylab gets its own `common` app bu
 - [x] **0.8.3c** Management command `send_test_emails <address>` that sends each template once, so you can check them in your own inbox.
 - [x] **0.8.3d** Tests: each email renders both HTML and text versions, and the HTML contains no `<style>` blocks left uninlined.
 - [x] **0.8.4** Configure the Google and GitHub providers from env (`*_CLIENT_ID`, `*_CLIENT_SECRET`), with no database setup needed.
-- [ ] **0.8.5** (You) Create a Google OAuth client in Google Cloud Console with redirect URI `http://localhost:<backend port>/accounts/google/login/callback/`.
-- [ ] **0.8.6** (You) Create a GitHub OAuth App (Settings → Developer settings → OAuth Apps) with callback `http://localhost:<backend port>/accounts/github/login/callback/`.
+- [ ] **0.8.5** (You) Create a Google OAuth client in Google Cloud Console with redirect URI `http://localhost:3000/accounts/google/login/callback/` (the frontend origin: the dev server proxies `/accounts` to Django and keeps the browser's host).
+- [ ] **0.8.6** (You) Create a GitHub OAuth App (Settings → Developer settings → OAuth Apps) with callback `http://localhost:3000/accounts/github/login/callback/` (the frontend origin, as above).
 - [x] **0.8.7** Social signup links accounts by verified email, so someone who signed up with email and later uses Google with the same address lands in one account.
 - [x] **0.8.8** `GET /api/me` (ninja) returns the current user or 401. The frontend uses it to decide which routes to allow.
 - [x] **0.8.9** Tests: email signup sends a verification email, login is blocked until verified, `/api/me` returns 401 when logged out and the user when logged in.

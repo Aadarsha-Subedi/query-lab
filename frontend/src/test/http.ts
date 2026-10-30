@@ -1,7 +1,7 @@
 /** Test helpers: a fake fetch that answers by path. */
 import { vi } from 'vitest'
 
-export const TEST_BASE_URL = 'http://localhost:5173'
+export const TEST_BASE_URL = 'http://localhost:3000'
 
 type Answer = { status: number; body?: unknown; headers?: Record<string, string> }
 
