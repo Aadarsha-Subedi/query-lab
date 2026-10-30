@@ -1,0 +1,55 @@
+{
+  "id": "3b00a2af-824d-5507-90af-528f6aac65c6",
+  "name": "Querylab local",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "frontendUrl",
+      "value": "http://localhost:5173",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "email",
+      "value": "you@example.com",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "password",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "newPassword",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "csrfToken",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "verificationKey",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "resetKey",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

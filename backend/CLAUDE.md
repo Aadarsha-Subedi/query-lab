@@ -40,6 +40,7 @@ common/            shared building blocks (from resolve-ai / Pro-Goal, rewritten
   email/           plain text -> styled HTML email (CSS inlined with css-inline)
   llm/             provider interface, OpenAI + Gemini, fake provider (bring-your-own-key)
   models/ validators/ cache/ crypto.py redis.py tasks.py
+postman/           Postman collection + local environment for every endpoint
 templates/         allauth email text templates (account/email/*) - override allauth's
 ../infra/sql/      SQL applied to the data DB by bootstrap_data_db, in numeric order
 ```
@@ -49,6 +50,7 @@ templates/         allauth email text templates (account/email/*) - override all
 - `main` is protected; work happens on branches; Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, `test:`).
 - Claude commits locally only. It never pushes, opens PRs or merges; Aadarsha reviews each commit and pushes.
 - One small commit per atomic task.
+- Every new or changed endpoint is added to `postman/collection.json` in the same commit.
 - Every endpoint (except `/api/health`) answers in the envelope from `common/response/domain.py`; errors raise an `AppException` subclass.
 - New dependencies: runtime ones only if they fit the container budget (image < 300 MB, idle web + worker < 500 MB). Test tools go in `test`, lint/type/hook tools in `lint` (host and CI only), heavy tools in `offline`.
 

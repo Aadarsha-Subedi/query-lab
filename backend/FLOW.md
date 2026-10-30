@@ -118,3 +118,9 @@ make load-demo      core/demo.py: TRUNCATE demo.*, then per CSV:
                     COPY -> temp text table -> INSERT ... SELECT (translate categories,
                     shift dates by DEMO_DATE_SHIFT_DAYS); one transaction
 ```
+
+## Trying the API by hand
+
+`backend/postman/` holds a Postman collection for every endpoint and a local
+environment (see its README). Run *Get CSRF cookie and current user* first; the
+collection then sends the CSRF token on every write.

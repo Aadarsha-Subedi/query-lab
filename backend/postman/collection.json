@@ -1,0 +1,1038 @@
+{
+  "info": {
+    "_postman_id": "9004db7c-8bdf-5c53-a892-e92c30054132",
+    "name": "Querylab API (step 0)",
+    "description": "Every endpoint the backend has after step 0: health, the current user, and allauth's headless (browser) API.\n\n**Setup:** import this collection and `environment.json`, select the *Querylab local* environment, fill in `email`, `password` and `newPassword`.\n\n**CSRF:** run *Get CSRF cookie and current user* first. A collection test script copies the `csrftoken` cookie into `{{csrfToken}}` after every response (Django rotates it at login), and a collection pre-request script sends it as `X-CSRFToken` on every write.\n\n**Responses:** `/api/*` uses Querylab's envelope (`success`, `data`, ...; `/api/health` is unwrapped). `/_allauth/*` uses allauth's own shape (`status`, `data`, `meta`).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Send the CSRF token on every write (Django checks it on POST/PUT/PATCH/DELETE).",
+          "const unsafe = ['POST', 'PUT', 'PATCH', 'DELETE'];",
+          "const token = pm.environment.get('csrfToken');",
+          "if (unsafe.includes(pm.request.method) && token) {",
+          "  pm.request.headers.upsert({ key: 'X-CSRFToken', value: token });",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Keep {{csrfToken}} in step with the csrftoken cookie (it rotates at login).",
+          "const cookie = pm.cookies.get('csrftoken');",
+          "if (cookie) pm.environment.set('csrfToken', cookie);"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health and docs",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            },
+            "description": "Every backend dependency: `querylab_app`, `querylab`, the read-only reader, Redis and the Huey worker. 200 with `status: ok`, or 503 with `status: degraded` and the failing check marked `fail`. Not wrapped in the envelope."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 503]', () => pm.expect(pm.response.code).to.be.oneOf([200, 503]));",
+                  "pm.test('reports every check', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.keys('status', 'app_db', 'data_db', 'data_reader', 'redis', 'worker');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "OpenAPI schema",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/openapi.json",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "openapi.json"
+              ]
+            },
+            "description": "The generated OpenAPI document for `/api/` (the interactive docs are at `/api/docs` in a browser)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200]', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "pm.test('is OpenAPI', () => pm.expect(pm.response.json()).to.have.property('openapi'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Current user",
+      "item": [
+        {
+          "name": "Get CSRF cookie and current user (GET /api/me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "me"
+              ]
+            },
+            "description": "**Run this first.** Returns the signed-in user (200, envelope) or 401 when signed out. Either way it sets the `csrftoken` cookie, which the collection copies into `{{csrfToken}}` for every write."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401]));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('success envelope', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.success).to.equal(true);",
+                  "    pm.expect(body).to.have.property('data');",
+                  "  });",
+                  "  pm.test('returns the user', () => pm.expect(pm.response.json().data).to.include.keys('id', 'email'));",
+                  "} else {",
+                  "  pm.test('error envelope', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.success).to.equal(false);",
+                  "    pm.expect(body).to.have.keys('success', 'status_code', 'message', 'code', 'errors');",
+                  "  });",
+                  "}",
+                  "pm.test('csrftoken cookie is set', () => pm.expect(pm.cookies.has('csrftoken')).to.equal(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Sign up and verify email",
+      "description": "Signup and resend send real email through the SMTP settings in backend/.env.",
+      "item": [
+        {
+          "name": "Config",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/config",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "config"
+              ]
+            },
+            "description": "What allauth allows: login methods (email only), signup open, email verification by link, the configured providers (Google, GitHub)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200]', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "pm.test('allauth response shape', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('status', pm.response.code);",
+                  "});",
+                  "pm.test('email login only', () => pm.expect(pm.response.json().data.account.login_methods).to.eql(['email']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sign up",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/auth/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "auth",
+                "signup"
+              ]
+            },
+            "description": "Creates the account and **sends a verification email** (Gmail SMTP from backend/.env). Answers 401 with the pending `verify_email` flow: verification is mandatory before the first login. 400 if the email is taken, disposable or the password is weak.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [401, 400]', () => pm.expect(pm.response.code).to.be.oneOf([401, 400]));",
+                  "pm.test('allauth response shape', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('status', pm.response.code);",
+                  "});",
+                  "if (pm.response.code === 401) {",
+                  "  pm.test('verification is pending', () => {",
+                  "    const flows = pm.response.json().data.flows.map((f) => f.id);",
+                  "    pm.expect(flows).to.include('verify_email');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Email verification: inspect key",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Email-Verification-Key",
+                "value": "{{verificationKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/auth/email/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "auth",
+                "email",
+                "verify"
+              ]
+            },
+            "description": "Checks a verification key before using it. Paste the key from the email link (`.../verify-email/<key>`, URL-decoded) into `{{verificationKey}}`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]));",
+                  "pm.test('allauth response shape', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('status', pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Email verification: confirm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/auth/email/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "auth",
+                "email",
+                "verify"
+              ]
+            },
+            "description": "Confirms the address with `{{verificationKey}}`. 200 signs you in (ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION); 400 `invalid_or_expired_key` otherwise.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"{{verificationKey}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401]));",
+                  "pm.test('allauth response shape', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('status', pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Email verification: resend",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/auth/email/verify/resend",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "auth",
+                "email",
+                "verify",
+                "resend"
+              ]
+            },
+            "description": "Sends the verification email again for the pending signup in this session. Rate limited by RATE_LIMIT_CONFIRM_EMAIL (1 per 3 minutes); 429 when too soon."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 409, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 409, 429]));",
+                  "pm.test('allauth response shape', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('status', pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Log in and session",
+      "item": [
+        {
+          "name": "Log in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Email + password. 200 signed in; 400 `email_password_mismatch`; 400 `too_many_login_attempts` after RATE_LIMIT_LOGIN_FAILED; 401 with a pending `verify_email` flow if the address is not verified yet.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401]));",
+                  "pm.test('allauth response shape', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('status', pm.response.code);",
+                  "});",
+                  "if (pm.response.code === 200) pm.test('authenticated', () => pm.expect(pm.response.json().meta.is_authenticated).to.equal(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Session",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/auth/session",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "auth",
+                "session"
+              ]
+            },
+            "description": "The current session: 200 with the user when signed in, 401 when signed out."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401]));",
+                  "pm.test('allauth response shape', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('status', pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reauthenticate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/auth/reauthenticate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "auth",
+                "reauthenticate"
+              ]
+            },
+            "description": "Confirms the password again before a sensitive action (allauth asks for it on some account changes).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401]));",
+                  "pm.test('allauth response shape', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('status', pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Account (signed in)",
+      "item": [
+        {
+          "name": "Email addresses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/account/email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "account",
+                "email"
+              ]
+            },
+            "description": "Signed in only: the account's email addresses and whether each is verified and primary."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401]));",
+                  "pm.test('allauth response shape', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('status', pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Connected providers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/account/providers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "account",
+                "providers"
+              ]
+            },
+            "description": "Signed in only: the Google/GitHub accounts connected to this user."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401]));",
+                  "pm.test('allauth response shape', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('status', pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/account/password/change",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "account",
+                "password",
+                "change"
+              ]
+            },
+            "description": "Signed in only. Changes `{{password}}` to `{{newPassword}}` and sends the 'password changed' email. Rate limited by RATE_LIMIT_CHANGE_PASSWORD. Afterwards, swap the two variables if you want to log in again.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"{{password}}\",\n  \"new_password\": \"{{newPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401]));",
+                  "pm.test('allauth response shape', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('status', pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Password reset",
+      "description": "The request sends a real email.",
+      "item": [
+        {
+          "name": "Request password reset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/auth/password/request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "auth",
+                "password",
+                "request"
+              ]
+            },
+            "description": "**Sends a reset email** to `{{email}}` (or an 'unknown account' email). Answers the same whether or not the account exists. Rate limited by RATE_LIMIT_RESET_PASSWORD.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 429]));",
+                  "pm.test('allauth response shape', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('status', pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Password reset: inspect key",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Password-Reset-Key",
+                "value": "{{resetKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/auth/password/reset",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "auth",
+                "password",
+                "reset"
+              ]
+            },
+            "description": "Checks a reset key. Paste it from the email link (`.../reset-password/<key>`, URL-decoded) into `{{resetKey}}`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]));",
+                  "pm.test('allauth response shape', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('status', pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Password reset: set new password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/auth/password/reset",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "auth",
+                "password",
+                "reset"
+              ]
+            },
+            "description": "Sets `{{newPassword}}` using `{{resetKey}}`. 200 or 401 (signed in or not, depending on settings); 400 for a bad key or weak password.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"{{resetKey}}\",\n  \"password\": \"{{newPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401]));",
+                  "pm.test('allauth response shape', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('status', pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "7. Social sign-in (browser only)",
+      "item": [
+        {
+          "name": "Start Google sign-in",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "provider",
+                  "value": "google"
+                },
+                {
+                  "key": "process",
+                  "value": "login"
+                },
+                {
+                  "key": "callback_url",
+                  "value": "{{frontendUrl}}/auth/callback"
+                },
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrfToken}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/auth/provider/redirect",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "auth",
+                "provider",
+                "redirect"
+              ]
+            },
+            "description": "Reference only. A form POST that answers with a redirect to Google; the OAuth flow can only finish in a browser. With placeholder client ids, the provider's own error page is the expected result. Turn off 'Automatically follow redirects' to see the 302."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [302, 200]', () => pm.expect(pm.response.code).to.be.oneOf([302, 200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Start GitHub sign-in",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "provider",
+                  "value": "github"
+                },
+                {
+                  "key": "process",
+                  "value": "login"
+                },
+                {
+                  "key": "callback_url",
+                  "value": "{{frontendUrl}}/auth/callback"
+                },
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrfToken}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/auth/provider/redirect",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "auth",
+                "provider",
+                "redirect"
+              ]
+            },
+            "description": "Reference only. A form POST that answers with a redirect to GitHub; the OAuth flow can only finish in a browser. With placeholder client ids, the provider's own error page is the expected result. Turn off 'Automatically follow redirects' to see the 302."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [302, 200]', () => pm.expect(pm.response.code).to.be.oneOf([302, 200]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "8. Log out",
+      "item": [
+        {
+          "name": "Log out",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/_allauth/browser/v1/auth/session",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "_allauth",
+                "browser",
+                "v1",
+                "auth",
+                "session"
+              ]
+            },
+            "description": "Ends the session. allauth answers 401 (no longer authenticated), which is the expected result."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [401]', () => pm.expect(pm.response.code).to.be.oneOf([401]));",
+                  "pm.test('allauth response shape', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('status', pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
