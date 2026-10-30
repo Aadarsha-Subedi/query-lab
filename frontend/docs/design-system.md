@@ -6,7 +6,8 @@ base styles) and `src/components/` (typography and shadcn/ui components), and
 shown in every state on the dev-only `/design` page.
 
 Decisions: **black** primary, **Geist + Geist Mono**, **16 px** base text,
-**cool zinc** neutrals. Changes since the first draft: Animate UI was dropped
+**cool zinc** neutrals; data states and the boot screen (sections 13 and 14)
+approved on 2026-10-30. Changes since the first draft: Animate UI was dropped
 for plain shadcn/ui (owner's choice); light `muted-foreground` is a 70/30 mix
 of the 500 and 600 neutral steps, because the 500 step alone measured 4.39:1
 on `surface-muted`, below AA.
@@ -249,7 +250,7 @@ form (react-hook-form + Zod messages), card, dialog, dropdown-menu, table,
 tabs, badge (neutral, primary, success, warning, danger, info), toast (sonner), skeleton,
 avatar, separator, tooltip.
 
-## 13. Data states (draft for approval)
+## 13. Data states
 
 Every component that reads data from the backend **owns its own loading, error,
 empty and success states**. They render inside that component's own box (its
@@ -264,8 +265,8 @@ read, type and use every other feature on it.
    client never retries). No refetch on window focus or reconnect either, so
    nothing changes behind the user's back.
 2. **The user retries on purpose**: with the component's own **Try again**
-   button (refetches only that component's data), or by refreshing or hard
-   reloading the page.
+   button, which refetches that component's data only (nothing else on the
+   page reloads), or by refreshing or hard reloading the page.
 3. **One component, one request scope.** A component fetches what it shows. Its
    states never leak out: a failed "Run history" card does not grey out the
    question box next to it.
@@ -331,7 +332,7 @@ read, type and use every other feature on it.
   an error toast when the user may have scrolled away. The user resubmits; we
   never resubmit for them.
 
-## 14. Boot screen (draft for approval)
+## 14. Boot screen
 
 The one global loading state: shown **only on the first load of the page**,
 while the app starts (env check, then the `/api/me` sign-in check, then the

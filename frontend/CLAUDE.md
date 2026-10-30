@@ -52,6 +52,8 @@ Planned (0.10c): `src/routes/` with `(public)` and `(app)` groups,
 - **Use the design system, never ad-hoc styles.** Colours, spacing, radius, shadows and motion come from tokens; components come from `src/components/ui/`. No raw hex values or one-off pixel sizes in feature code.
 - Icons: Hugeicons only, always through `<Icon icon={...} size="sm|md|lg" />` from `components/ui/icon` (16/20/24 px, nothing else).
 - **Every button has an icon:** `<Button icon={PlayIcon}>Run query</Button>`; icon-only buttons use `size="icon"`/`"icon-sm"` and must have `aria-label`. TypeScript enforces both; don't work around it.
+- **Data states (design-system.md §13):** every component that fetches owns its loading (skeleton), error (`ErrorState` with a Try again that refetches only its own data), empty (`EmptyState`) and success states, inside its own box and at the same size. Never a page-level spinner or error for component data. No automatic retries and no refetch on focus/reconnect, anywhere.
+- **Boot screen (§14):** the only global loading state, first page load only; the only full-page error is "can't reach the server" at boot.
 - Toasts: render `<Toaster />` once; call `toast` from `components/ui/toast-api`.
 - Design showcase: `pnpm dev`, then open `/design` (dev only; `build.test.ts` checks it never ships).
 - Package manager: **pnpm** only (`packageManager` in package.json; `pnpm-lock.yaml` is the lockfile). Never run npm or yarn here: mixing them breaks node_modules.

@@ -127,7 +127,7 @@ export function DataStateSections() {
     <>
       <Section
         id="data-states"
-        title="Data states (draft)"
+        title="Data states"
         intro="Every component that fetches owns its loading, error, empty and success states, inside its own box. No automatic retries: the user presses Try again or reloads."
       >
         <div className="grid gap-4 sm:grid-cols-2">
@@ -142,7 +142,7 @@ export function DataStateSections() {
       </Section>
       <Section
         id="boot"
-        title="Boot screen (draft)"
+        title="Boot screen"
         intro="Shown only on the first page load, while the app checks the environment and who is signed in."
       >
         <div className="grid gap-4 sm:grid-cols-2">

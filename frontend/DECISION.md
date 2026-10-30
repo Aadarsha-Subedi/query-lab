@@ -134,3 +134,14 @@ blurring them), with an absolute 1.5 px stroke, `overflow: visible` and
 Horizontal positions after fractional-width text can still be a fraction of a
 pixel; `calc-size()` width rounding was tried and rejected (it re-centres content
 by a fraction instead).
+
+## Data states and no retries (2026-10-30, owner's rules)
+
+Every component that reads from the backend owns its loading, error, empty and
+success states inside its own box, so one failure never blocks the rest of the
+page. Nothing retries automatically, whatever the status code, and nothing
+refetches on window focus or reconnect; the user retries with that component's
+own Try again (its data only) or by reloading the page. The only global loading
+state is the boot screen on first load (plain HTML in index.html, spinner after
+200 ms, shown at least 400 ms), and the only full-page error is the boot screen's
+"can't reach the server". See design-system.md sections 13 and 14.
