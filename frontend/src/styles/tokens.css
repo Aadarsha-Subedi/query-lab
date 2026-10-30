@@ -82,6 +82,8 @@
      boot-min-visible, so fast boots never flicker. */
   --boot-delay: 200ms;
   --boot-min-visible: 400ms;
+  /* One full turn of a loading spinner. */
+  --duration-spin: 1s;
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
 
   --row-compact: 36px;

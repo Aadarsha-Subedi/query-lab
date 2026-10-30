@@ -2,10 +2,18 @@ import { parseEnv } from './env'
 
 describe('env', () => {
   it('accepts a complete env', () => {
-    const result = parseEnv({ VITE_API_BASE_URL: 'http://localhost:5173', VITE_APP_NAME: 'Querylab' })
+    const result = parseEnv({
+      VITE_API_BASE_URL: 'http://localhost:5173',
+      VITE_APP_NAME: 'Querylab',
+      VITE_QUERY_STALE_TIME_MS: '30000',
+    })
     expect(result).toEqual({
       ok: true,
-      env: { VITE_API_BASE_URL: 'http://localhost:5173', VITE_APP_NAME: 'Querylab' },
+      env: {
+        VITE_API_BASE_URL: 'http://localhost:5173',
+        VITE_APP_NAME: 'Querylab',
+        VITE_QUERY_STALE_TIME_MS: 30000,
+      },
     })
   })
 

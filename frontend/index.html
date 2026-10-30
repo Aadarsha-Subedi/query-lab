@@ -15,8 +15,115 @@
         if (dark) document.documentElement.classList.add('dark')
       } catch (e) {}
     </script>
+    <!-- Tokens and the boot screen's own styles load before any JavaScript, so
+         the boot screen is themed from the first frame. -->
+    <link rel="stylesheet" href="/src/styles/tokens.css" />
+    <link rel="stylesheet" href="/src/styles/boot.css" />
   </head>
   <body>
+    <!-- Boot screen (design-system.md section 14): first page load only.
+         src/boot.ts removes it, or switches it to the failure state. -->
+    <div id="boot" class="boot" data-state="loading">
+      <span class="boot-wordmark">Querylab</span>
+      <div class="boot-status" role="status">
+        <svg
+          class="boot-spinner"
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path d="M12 3V6" stroke="currentColor" stroke-linecap="round" stroke-width="1.80" />
+          <path d="M12 18V21" stroke="currentColor" stroke-linecap="round" stroke-width="1.80" />
+          <path d="M21 12L18 12" stroke="currentColor" stroke-linecap="round" stroke-width="1.80" />
+          <path d="M6 12L3 12" stroke="currentColor" stroke-linecap="round" stroke-width="1.80" />
+          <path
+            d="M18.3635 5.63672L16.2422 7.75804"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-width="1.80"
+          />
+          <path
+            d="M7.75804 16.2422L5.63672 18.3635"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-width="1.80"
+          />
+          <path
+            d="M18.3635 18.3635L16.2422 16.2422"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-width="1.80"
+          />
+          <path
+            d="M7.75804 7.75804L5.63672 5.63672"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-width="1.80"
+          />
+        </svg>
+        <span class="boot-sr">Loading Querylab</span>
+      </div>
+      <div class="boot-error" role="alert">
+        <svg
+          class="boot-error-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.50"
+          />
+          <path
+            d="M12 8V12"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.50"
+          />
+          <path
+            d="M12.125 15.75H12M12.25 15.75C12.25 15.8881 12.1381 16 12 16C11.8619 16 11.75 15.8881 11.75 15.75C11.75 15.6119 11.8619 15.5 12 15.5C12.1381 15.5 12.25 15.6119 12.25 15.75Z"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.50"
+          />
+        </svg>
+        <p class="boot-error-title">Querylab can't reach the server</p>
+        <p class="boot-error-text">Check your connection and reload the page.</p>
+        <button type="button" class="boot-button" data-boot-reload>
+          <svg
+            class="boot-button-icon"
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M20.0092 2V5.13219C20.0092 5.42605 19.6418 5.55908 19.4537 5.33333C17.6226 3.2875 14.9617 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2.25"
+            />
+          </svg>
+          Reload page
+        </button>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

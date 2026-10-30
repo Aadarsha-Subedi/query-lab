@@ -145,3 +145,28 @@ own Try again (its data only) or by reloading the page. The only global loading
 state is the boot screen on first load (plain HTML in index.html, spinner after
 200 ms, shown at least 400 ms), and the only full-page error is the boot screen's
 "can't reach the server". See design-system.md sections 13 and 14.
+
+## Routing: file routes with pathless layouts (0.10c)
+
+TanStack Router file-based routes. A group needs a layout route to run a guard,
+so the plan's `(public)` and `(app)` groups are the pathless layouts `_public`
+and `_app` (the underscore keeps them out of the URL). Guards read `meQuery`
+through `queryClient.query({ ...meQuery, staleTime: 'static' })`, so the answer
+fetched at boot is reused and navigation never re-asks. Route-level code
+splitting (`autoCodeSplitting`) keeps the main chunk under 500 kB.
+
+## Boot: sign-in check before the first render
+
+`main.tsx` asks `/api/me` once before rendering, so the boot screen can show
+the only full-page error ("can't reach the server") when that fails; a 401 just
+means signed out. The boot screen itself is static HTML styled by `tokens.css`
+and `boot.css`, both linked from `index.html`, so it is themed from the first
+frame; `boot.ts` only times its exit or shows the failure.
+
+## One API client, CSRF from /api/me
+
+`src/lib/api` is the only way to call the backend: cookies included, the
+`X-CSRFToken` header on writes, the response envelope unwrapped into data or a
+typed `ApiError` (with the request id), a toast on 429, and no retries. Django
+sets the `csrftoken` cookie only when asked, so `GET /api/me` (called at every
+boot) carries `ensure_csrf_cookie`.

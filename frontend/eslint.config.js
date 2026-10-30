@@ -40,4 +40,14 @@ export default defineConfig([
       '@typescript-eslint/no-unnecessary-type-conversion': 'off',
     },
   },
+  {
+    // TanStack Router: route files export `Route` next to their components (the
+    // router plugin handles hot reload), and redirect() / notFound() are thrown
+    // on purpose.
+    files: ['src/routes/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+      '@typescript-eslint/only-throw-error': 'off',
+    },
+  },
 ])

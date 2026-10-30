@@ -146,3 +146,15 @@ def test_social_login_links_to_the_existing_account_by_verified_email() -> None:
     account = SocialAccount.objects.get(provider="google", uid="google-123")
     assert account.user == user
     assert User.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_me_sets_the_csrf_cookie_signed_in_or_not(client: Client) -> None:
+    response = client.get("/api/me")
+    assert response.status_code == 401
+    assert response.cookies["csrftoken"].value
+    user = User.objects.create_user(email="ada@example.com", password=PASSWORD)
+    client.force_login(user)
+    response = client.get("/api/me")
+    assert response.status_code == 200
+    assert response.cookies["csrftoken"].value

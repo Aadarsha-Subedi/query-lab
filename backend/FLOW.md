@@ -57,7 +57,9 @@ frontend form POST /_allauth/browser/v1/auth/provider/redirect
   -> redirect to callback_url; the frontend calls /api/me
 ```
 
-`GET /api/me` returns the user or 401; the frontend's route guards use it.
+`GET /api/me` returns the user or 401; the frontend's route guards use it. It
+also sets the `csrftoken` cookie (`ensure_csrf_cookie`), signed in or not: the
+frontend calls it at every boot, so its first POST already has a token.
 
 ## Rate limits
 

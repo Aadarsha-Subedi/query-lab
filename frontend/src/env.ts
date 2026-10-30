@@ -8,6 +8,8 @@ import { z } from 'zod'
 export const clientEnvSchema = z.object({
   VITE_API_BASE_URL: z.url(),
   VITE_APP_NAME: z.string().min(1),
+  // How long fetched data counts as fresh before a remount refetches it.
+  VITE_QUERY_STALE_TIME_MS: z.coerce.number().int().nonnegative(),
 })
 
 export type ClientEnv = z.infer<typeof clientEnvSchema>

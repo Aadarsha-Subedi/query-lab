@@ -1,0 +1,142 @@
+/*
+ * The boot screen (design-system.md section 14). Plain CSS on the tokens,
+ * linked from index.html so it applies before any JavaScript runs.
+ */
+
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  text-align: center;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-family-sans);
+  transition: opacity var(--duration-base) var(--ds-ease-standard);
+}
+
+.boot[data-state='leaving'] {
+  opacity: 0;
+}
+
+.boot-wordmark {
+  font-size: var(--ds-text-h3);
+  line-height: var(--leading-h3);
+  font-weight: 600;
+  letter-spacing: var(--tracking-heading);
+}
+
+.boot-status {
+  display: flex;
+  height: 20px;
+}
+
+/* Appears only after --boot-delay, so a fast boot never shows it. */
+.boot-spinner {
+  display: block;
+  color: var(--muted-foreground);
+  opacity: 0;
+  animation:
+    boot-appear var(--duration-base) var(--ds-ease-standard) var(--boot-delay) forwards,
+    boot-spin var(--duration-spin) linear infinite;
+}
+
+.boot-error {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.boot[data-state='error'] .boot-status {
+  display: none;
+}
+
+.boot[data-state='error'] .boot-error {
+  display: flex;
+}
+
+.boot-error-icon {
+  display: block;
+  color: var(--danger-foreground);
+}
+
+.boot-error-title {
+  margin: 0;
+  font-size: var(--ds-text-body);
+  line-height: var(--leading-body);
+  font-weight: 500;
+}
+
+.boot-error-text {
+  margin: 0;
+  font-size: var(--ds-text-small);
+  line-height: var(--leading-small);
+  color: var(--muted-foreground);
+}
+
+.boot-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  margin-top: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--ds-radius-md);
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  font-size: var(--ds-text-small);
+  line-height: var(--leading-small);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.boot-button:hover {
+  background: var(--surface-muted);
+}
+
+.boot-button:focus-visible {
+  outline: var(--focus-ring-width) solid var(--primary);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.boot-button-icon {
+  display: block;
+}
+
+.boot-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@keyframes boot-appear {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes boot-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot {
+    transition: none;
+  }
+  .boot-spinner {
+    animation: boot-appear 0s linear var(--boot-delay) forwards;
+  }
+}

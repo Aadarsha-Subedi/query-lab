@@ -2,7 +2,6 @@
 @import 'tw-animate-css';
 @import '@fontsource-variable/geist';
 @import '@fontsource-variable/geist-mono';
-@import './styles/tokens.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -102,6 +101,8 @@
   outline: var(--focus-ring-width) solid var(--primary);
   outline-offset: var(--focus-ring-offset);
 }
+
+/* tokens.css is linked from index.html (before JavaScript, for the boot screen). */
 
 @layer base {
   * {

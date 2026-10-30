@@ -1,5 +1,5 @@
 /*
- * DEV-ONLY design system showcase (/design). main.tsx loads it only when
+ * DEV-ONLY design system showcase, mounted by src/routes/design.tsx only when
  * import.meta.env.DEV is true, so production builds do not contain it.
  */
 import { ComputerIcon, Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons'
@@ -8,8 +8,6 @@ import { useEffect, useState } from 'react'
 import { Heading } from '@/components/typography/Heading'
 import { Text } from '@/components/typography/Text'
 import { Icon } from '@/components/ui/icon'
-import { Toaster } from '@/components/ui/toast'
-import { TooltipProvider } from '@/components/ui/tooltip'
 import { ComponentSections } from '@/features/design/ComponentSections'
 import { DataStateSections } from '@/features/design/DataStateSections'
 import { TokenSections } from '@/features/design/TokenSections'
@@ -91,7 +89,7 @@ export function DesignPage() {
   }, [preference])
 
   return (
-    <TooltipProvider delayDuration={300}>
+    <>
       <div className="min-h-screen bg-background">
         <ControlPanel />
         <main className="mx-auto flex max-w-[var(--content-max)] flex-col gap-12 px-6 py-10">
@@ -110,7 +108,6 @@ export function DesignPage() {
           <DataStateSections />
         </main>
       </div>
-      <Toaster />
-    </TooltipProvider>
+    </>
   )
 }
