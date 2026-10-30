@@ -1,0 +1,144 @@
+# CI for Querylab: lint, types and tests for the backend and frontend, and the
+# production image size budget. Needs no secrets: tests use backend/.env.test
+# (throwaway values, committed) and the build uses throwaway build args.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Production image budget for the Cloudflare basic container (0.10.30).
+  IMAGE_SIZE_BUDGET_MB: 300
+  # uv download tuning for the image build (required build args, no defaults).
+  UV_HTTP_TIMEOUT: 120
+  UV_CONCURRENT_DOWNLOADS: 8
+
+jobs:
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'infra/sql/**'
+              - '.github/workflows/ci.yml'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/ci.yml'
+
+  backend:
+    name: backend
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    # Run inside a container so the service containers are reachable as
+    # `postgres` and `redis`, the hosts backend/.env.test uses.
+    container: python:3.12-slim
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: querylab
+          POSTGRES_PASSWORD: querylab
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd "pg_isready -U querylab"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      UV_PROJECT_ENVIRONMENT: /opt/venv
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Install dependencies (test + lint groups)
+        run: uv sync --frozen
+      - name: Ruff
+        run: uv run ruff check . && uv run ruff format --check .
+      - name: Mypy
+        run: uv run mypy .
+      - name: Create the two databases
+        # Locally infra/postgres/init-databases.sql does this; service
+        # containers cannot mount it before checkout.
+        run: >-
+          uv run python -c "import psycopg;
+          c = psycopg.connect('postgresql://querylab:querylab@postgres:5432/postgres', autocommit=True);
+          [c.execute(f'CREATE DATABASE {name}') for name in ('querylab_app', 'querylab')]"
+      - name: Migrate (querylab_app)
+        run: uv run python manage.py migrate --noinput
+      - name: Bootstrap the data database (querylab)
+        run: uv run python manage.py bootstrap_data_db
+      - name: Pytest
+        run: uv run pytest
+
+  frontend:
+    name: frontend
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm format:check
+      - run: pnpm test
+      - run: pnpm build
+
+  image:
+    name: image
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the production image
+        run: >-
+          docker build backend --target prod --tag querylab-backend:ci
+          --build-arg UV_HTTP_TIMEOUT=$UV_HTTP_TIMEOUT
+          --build-arg UV_CONCURRENT_DOWNLOADS=$UV_CONCURRENT_DOWNLOADS
+      - name: Check the size budget
+        run: |
+          bytes=$(docker image inspect querylab-backend:ci --format '{{.Size}}')
+          mb=$((bytes / 1024 / 1024))
+          echo "Production image: ${mb} MB (budget ${IMAGE_SIZE_BUDGET_MB} MB)"
+          if [ "$mb" -gt "$IMAGE_SIZE_BUDGET_MB" ]; then
+            echo "::error::Image is ${mb} MB, over the ${IMAGE_SIZE_BUDGET_MB} MB budget"
+            exit 1
+          fi

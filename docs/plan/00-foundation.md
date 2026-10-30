@@ -226,7 +226,7 @@ The backend will deploy as one Cloudflare Container on the basic instance. Conta
 - [x] **0.10.27** Nothing is stored on local disk. Uploads stream straight into Postgres (or to R2 later if we need files), and logs go to stdout.
 - [x] **0.10.28** Heavy work never runs in the container: Spider benchmark runs, trace clustering and LoRA training run locally, in CI or on Colab, and write their results to the database.
 - [x] **0.10.29** The frontend is not in the container. It's a static Vite build served from Cloudflare (Workers static assets or Pages) on the same domain as the API, so session cookies keep working.
-- [ ] **0.10.30** CI check: build the image and fail if it's over the size budget (`IMAGE_SIZE_BUDGET_MB` in the workflow).
+- [x] **0.10.30** CI check: build the image and fail if it's over the size budget (`IMAGE_SIZE_BUDGET_MB` in the workflow).
 - [x] **0.10.31** Record all of the above in `backend/DECISION.md` as "Deployment target: Cloudflare Container, basic".
 
 ## 0.11 One-command local run (Makefile)
@@ -255,9 +255,9 @@ The backend will deploy as one Cloudflare Container on the basic instance. Conta
 ### What the workflow does
 
 Claude writes and commits `.github/workflows/ci.yml` locally. The workflow only runs once **you** push it.
-- [ ] **0.13.1** Backend job: start Postgres and Redis as service containers, write a CI `.env` from the workflow's `env:` block, then `uv sync`, `ruff check`, `ruff format --check`, `mypy`, `migrate`, `bootstrap_data_db`, `pytest`.
-- [ ] **0.13.2** Frontend job: `pnpm install --frozen-lockfile`, `lint`, `typecheck`, `test`, `build`.
-- [ ] **0.13.3** Triggers on pull requests and pushes to `main`, with path filters per folder.
+- [x] **0.13.1** Backend job (inside a `python:3.12-slim` container, so services answer as `postgres` and `redis`, the hosts the committed `backend/.env.test` uses; no CI `.env` needed): start Postgres and Redis as service containers, then `uv sync`, `ruff check`, `ruff format --check`, `mypy`, `migrate`, `bootstrap_data_db`, `pytest`.
+- [x] **0.13.2** Frontend job: `pnpm install --frozen-lockfile`, `lint`, `typecheck`, `test`, `build`.
+- [x] **0.13.3** Triggers on pull requests and pushes to `main`, with path filters per folder.
 
 CI uses its own throwaway values (fake OAuth IDs, a dummy secret key). It never needs your real Google, GitHub or Neon credentials, so **no GitHub secrets are needed for step 0**.
 
