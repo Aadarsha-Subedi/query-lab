@@ -200,6 +200,7 @@ def test_unknown_model_is_refused() -> None:
 def test_known_models_get_the_right_provider() -> None:
     assert runner.build_provider("gemini-3.5-flash")[0] == "gemini"
     assert runner.build_provider("gpt-5-mini")[0] == "openai"
+    assert runner.build_provider("claude-haiku-5-5")[0] == "anthropic"
 
 
 def test_spider_run_on_the_fixture(spider_dir: Path, monkeypatch) -> None:

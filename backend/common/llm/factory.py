@@ -5,14 +5,18 @@ Querylab is bring-your-own-key: every provider is built from a user's own key.
 
 from django.conf import settings
 
+from common.llm.anthropic_provider import AnthropicProvider
 from common.llm.base import LLMProvider
-from common.llm.constants import PROVIDER_GEMINI, PROVIDER_OPENAI
+from common.llm.constants import PROVIDER_ANTHROPIC, PROVIDER_GEMINI, PROVIDER_OPENAI
 from common.llm.gemini import GeminiProvider
 from common.llm.openai_provider import OpenAIProvider
 
-_PROVIDER_CLASSES: dict[str, type[GeminiProvider] | type[OpenAIProvider]] = {
+_PROVIDER_CLASSES: dict[
+    str, type[GeminiProvider] | type[OpenAIProvider] | type[AnthropicProvider]
+] = {
     PROVIDER_GEMINI: GeminiProvider,
     PROVIDER_OPENAI: OpenAIProvider,
+    PROVIDER_ANTHROPIC: AnthropicProvider,
 }
 
 
@@ -21,6 +25,7 @@ def allowed_models(provider: str) -> list[str]:
     return {
         PROVIDER_GEMINI: settings.LLM_GEMINI_MODELS,
         PROVIDER_OPENAI: settings.LLM_OPENAI_MODELS,
+        PROVIDER_ANTHROPIC: settings.LLM_ANTHROPIC_MODELS,
     }[provider]
 
 

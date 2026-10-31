@@ -310,10 +310,12 @@ comparison are plain Python plus sqlglot (already present). The only additions t
 image are the `evals` app, two small tables and management commands. Evals run in
 the dev container, one question at a time, and never in the production container.
 
-**Rate limits.** `run_eval` pauses `EVAL_CALL_DELAY_SECONDS` between questions so a free-tier key stays under its requests-per-minute limit, and retries 429, 503 and timeouts with doubling backoff (`EVAL_RETRY_BACKOFF_SECONDS`, `EVAL_LLM_RETRIES`). No Claude provider: the baselines are Gemini and OpenAI only (owner's choice, 2026-10-31).
+**Rate limits.** `run_eval` pauses `EVAL_CALL_DELAY_SECONDS` between questions so a free-tier key stays under its requests-per-minute limit, and retries 429, 503 and timeouts with doubling backoff (`EVAL_RETRY_BACKOFF_SECONDS`, `EVAL_LLM_RETRIES`).
+
+**Claude (eval-only).** Added on the owner's request after the Gemini free tier kept returning 429. `AnthropicProvider` calls the Messages API over `httpx` (already installed), so the image gains no SDK. It is not in `PROVIDERS`, so users cannot save a Claude key; only the harness uses it. Models in `LLM_ANTHROPIC_MODELS`. No temperature is sent (newer models may reject it) and no JSON mode exists, so the reply contract in the prompt does the work. `EVAL_MODEL_PRICES` has no Claude entry yet, so reports show no cost for it.
 
 **Keys.** The Gemini baseline reuses `LLM_DEFAULT_GEMINI_API_KEY`; the OpenAI
-baseline uses `EVAL_OPENAI_API_KEY`. Both live only in `.env`. `EVAL_MODEL_PRICES`
+baseline uses `EVAL_OPENAI_API_KEY`; the Claude baseline uses `EVAL_ANTHROPIC_API_KEY`. Both live only in `.env`. `EVAL_MODEL_PRICES`
 is an estimate for reports, not billing.
 
 **Baseline results:** to be recorded here after the runs in plan step 2.9 (model,

@@ -47,7 +47,8 @@ common/            shared building blocks (from resolve-ai / Pro-Goal, rewritten
   throttling/      AnonThrottle, UserThrottle, AskThrottle (rates from settings)
   logger/ observability/       request id, request logging, JSON logs, Server-Timing
   email/utils.py   normalize_email, mask_email
-  llm/             provider interface, OpenAI + Gemini, fake provider (bring-your-own-key)
+  llm/             provider interface, OpenAI + Gemini (bring-your-own-key), Claude over httpx
+                   (eval harness only), fake provider
   models/ validators/ cache/ crypto.py redis.py tasks.py
 postman/           Postman collection + local environment for every endpoint
 ../infra/sql/      SQL applied to the data DB by bootstrap_data_db, in numeric order
