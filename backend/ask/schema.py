@@ -168,14 +168,16 @@ def _comment(text: str | None) -> str:
     return " ".join(text.split()) if text else ""
 
 
-def render(schema: Schema) -> str:
-    """Compact DDL-style text: one CREATE TABLE per table, descriptions as comments."""
+def render(schema: Schema, *, qualify: bool = True) -> str:
+    """Compact DDL-style text: one CREATE TABLE per table, descriptions as comments.
+    `qualify=False` leaves table names bare, for databases without schemas (SQLite)."""
+    prefix = f"{schema.name}." if qualify else ""
     blocks = []
     for table in schema.tables:
         lines = []
         if table.comment:
             lines.append(f"-- {_comment(table.comment)}")
-        lines.append(f"CREATE TABLE {schema.name}.{table.name} (")
+        lines.append(f"CREATE TABLE {prefix}{table.name} (")
         parts = []
         for column in table.columns:
             note = _comment(column.comment)
@@ -191,7 +193,7 @@ def render(schema: Schema) -> str:
             constraints.append(f"  PRIMARY KEY ({', '.join(table.primary_key)})")
         constraints.extend(
             f"  FOREIGN KEY ({', '.join(fk.columns)}) REFERENCES "
-            f"{schema.name}.{fk.ref_table} ({', '.join(fk.ref_columns)})"
+            f"{prefix}{fk.ref_table} ({', '.join(fk.ref_columns)})"
             for fk in table.foreign_keys
         )
         total = len(parts) + len(constraints)

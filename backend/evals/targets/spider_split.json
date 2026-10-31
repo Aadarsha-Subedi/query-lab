@@ -1,0 +1,26 @@
+{
+  "tune": [
+    "car_1",
+    "concert_singer",
+    "course_teach",
+    "employee_hire_evaluation",
+    "network_1",
+    "poker_player",
+    "singer",
+    "student_transcripts_tracking",
+    "world_1",
+    "wta_1"
+  ],
+  "held-out": [
+    "battle_death",
+    "cre_Doc_Template_Mgt",
+    "dog_kennels",
+    "flight_2",
+    "museum_visit",
+    "orchestra",
+    "pets_1",
+    "real_estate_properties",
+    "tvshow",
+    "voter_1"
+  ]
+}
