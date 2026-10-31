@@ -8,7 +8,7 @@ from django.conf import settings
 from django.db import IntegrityError, transaction
 
 from accounts.models import User
-from workspaces import connections, ddl_log, naming, provisioning
+from workspaces import connections, ddl_log, naming, provisioning, schema_version
 from workspaces.errors import (
     WorkspaceLimitReached,
     WorkspaceNameTaken,
@@ -97,4 +97,5 @@ def delete(workspace: Workspace, actor: User) -> None:
     workspace.save(update_fields=["status", "updated_at"])
     _drop(workspace)
     ddl_log.record(workspace.pk, actor, "drop: schema and login roles")
+    schema_version.forget(workspace.pk)
     workspace.delete()

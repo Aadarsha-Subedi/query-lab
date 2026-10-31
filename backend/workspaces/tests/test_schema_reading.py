@@ -71,3 +71,25 @@ def test_a_cached_schema_is_per_workspace(two: None) -> None:
     assert cache.get(schema.cache_key(ref_for(B), False)) is None
     other = schema.get_schema(ref_for(B))
     assert other.name == f"ws_{B}"
+
+
+def test_a_bump_makes_the_next_read_fresh_and_nothing_else_does(
+    provision: Callable[[int], int],
+) -> None:
+    provision(A)
+    ref = ref_for(A)
+    assert schema.get_schema(ref).tables == ()
+    with connect(A, "rw") as rw:
+        rw.execute("CREATE TABLE added (id int)")
+    assert schema.get_schema(ref).tables == ()  # still the cached one
+    schema_version.bump(A)
+    assert [t.name for t in schema.get_schema(ref).tables] == ["added"]
+    with connect(A, "rw") as rw:
+        rw.execute("ALTER TABLE added ADD COLUMN note text")
+        rw.execute("COMMENT ON TABLE added IS 'now described'")
+    schema_version.bump(A)
+    table = schema.get_schema(ref).table("added")
+    assert table and [c.name for c in table.columns] == ["id", "note"]
+    assert table.comment == "now described"
+    schema_version.forget(A)
+    assert schema_version.current(ref) == 0
