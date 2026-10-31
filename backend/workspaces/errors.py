@@ -44,3 +44,11 @@ class DemoWorkspaceReadOnly(ConflictException):
 class WorkspaceProvisioningFailed(ServiceUnavailableException):
     message = "The workspace could not be created. Nothing was kept; try again."
     error_code = "workspace_provisioning_failed"
+
+
+class WorkspaceGone(NotFoundException):
+    """A run points at a workspace that was deleted: its trace stays readable,
+    but nothing can run against it any more."""
+
+    message = "The workspace this run used no longer exists."
+    error_code = "workspace_gone"

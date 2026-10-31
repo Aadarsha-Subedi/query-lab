@@ -6,6 +6,7 @@ from django.core.cache import cache
 from django.db import connections
 
 from ask import schema as ask_schema
+from workspaces.context import DEMO
 
 pytestmark = pytest.mark.usefixtures("data_connections")
 
@@ -78,4 +79,4 @@ def test_get_schema_uses_the_cache() -> None:
         ask_schema.get_schema()
     assert queries == []
     ask_schema.clear_schema_cache()
-    assert cache.get(ask_schema.cache_key("demo", False)) is None
+    assert cache.get(ask_schema.cache_key(DEMO, False)) is None

@@ -10,9 +10,10 @@ from dataclasses import dataclass, field
 
 from django.conf import settings
 from django.core.cache import cache
-from django.db import connections
 
-from core.datadb import DEMO_SCHEMA
+from workspaces import schema_version
+from workspaces.context import DEMO, WorkspaceRef
+from workspaces.reader import read_cursor
 
 TEXT_TYPES = ("text", "character varying", "character")
 
@@ -105,11 +106,12 @@ class Schema:
 
 
 def read_schema(
-    schema_name: str = DEMO_SCHEMA, *, include_samples: bool = False
+    workspace: WorkspaceRef = DEMO, *, include_samples: bool = False
 ) -> Schema:
-    """Read the schema fresh from the database as the reader role."""
-    connection = connections[settings.DATA_READER_DB_ALIAS]
-    with connection.cursor() as cursor:
+    """Read the schema fresh from the database as the workspace's reader role
+    (querylab_reader for the demo). The schema name is a bound parameter."""
+    schema_name = workspace.schema_name
+    with read_cursor(workspace) as cursor:
         cursor.execute(COLUMNS_SQL, [schema_name])
         column_rows = cursor.fetchall()
         cursor.execute(KEYS_SQL, [schema_name])
@@ -221,22 +223,27 @@ def render(schema: Schema, *, qualify: bool = True) -> str:
     return "\n\n".join(blocks)
 
 
-def cache_key(schema_name: str, include_samples: bool) -> str:
-    return f"ask:schema:{schema_name}:{int(include_samples)}"
+def cache_key(workspace: WorkspaceRef, include_samples: bool) -> str:
+    """Per workspace and per schema version, so a change reads fresh."""
+    version = schema_version.current(workspace)
+    return (
+        f"ask:schema:{workspace.id if workspace.id is not None else 'demo'}"
+        f":v{version}:{int(include_samples)}"
+    )
 
 
 def get_schema(
-    schema_name: str = DEMO_SCHEMA, *, include_samples: bool = False
+    workspace: WorkspaceRef = DEMO, *, include_samples: bool = False
 ) -> Schema:
     """The schema from the cache, read from the database on a miss."""
-    key = cache_key(schema_name, include_samples)
+    key = cache_key(workspace, include_samples)
     cached = cache.get(key)
     if cached is not None:
         return cached
-    schema = read_schema(schema_name, include_samples=include_samples)
+    schema = read_schema(workspace, include_samples=include_samples)
     cache.set(key, schema, settings.ASK_SCHEMA_CACHE_SECONDS)
     return schema
 
 
-def clear_schema_cache(schema_name: str = DEMO_SCHEMA) -> None:
-    cache.delete_many([cache_key(schema_name, flag) for flag in (False, True)])
+def clear_schema_cache(workspace: WorkspaceRef = DEMO) -> None:
+    cache.delete_many([cache_key(workspace, flag) for flag in (False, True)])

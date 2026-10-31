@@ -17,6 +17,8 @@ class WorkspaceRef:
 
     id: int | None
     schema_name: str
+    # Which derived password the workspace's roles currently have.
+    credential_version: int = 1
 
     @property
     def is_demo(self) -> bool:

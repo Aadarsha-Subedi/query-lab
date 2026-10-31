@@ -46,7 +46,11 @@ class Workspace(TimeStampModel):
 
     @property
     def ref(self) -> WorkspaceRef:
-        return WorkspaceRef(id=self.pk, schema_name=self.schema_name)
+        return WorkspaceRef(
+            id=self.pk,
+            schema_name=self.schema_name,
+            credential_version=self.credential_version,
+        )
 
 
 class WorkspaceDDLLog(TimeStampModel):
