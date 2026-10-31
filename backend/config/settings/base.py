@@ -282,6 +282,7 @@ EVAL_CONFIDENCE_BUCKETS = sorted(
     float(edge) for edge in env.list("EVAL_CONFIDENCE_BUCKETS")
 )
 EVAL_LLM_RETRIES = env.int("EVAL_LLM_RETRIES")
+EVAL_RETRY_BACKOFF_SECONDS = env.int("EVAL_RETRY_BACKOFF_SECONDS")
 EVAL_CONFIRM_ABOVE_CALLS = env.int("EVAL_CONFIRM_ABOVE_CALLS")
 # model -> (input, output) USD per million tokens; an estimate for reports only.
 EVAL_MODEL_PRICES = {

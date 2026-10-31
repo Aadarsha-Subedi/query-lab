@@ -1,14 +1,16 @@
 """The harness end to end with scripted LLMs: Olist on the real demo data and
 Spider on the fixture database."""
 
+import json
 from pathlib import Path
 
 import pytest
+from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import override_settings
 
-from common.llm import LLMRateLimitedError
+from common.llm import LLMRateLimitedError, LLMUnavailableError
 from evals import runner
 from evals.models import EvalResult, EvalRun
 from evals.targets import olist, spider
@@ -129,7 +131,7 @@ def test_provider_rate_limit_is_retried_then_succeeds() -> None:
     question = target.questions("all")[0]
     outcome = runner.ask_once(target, question, Flaky(gold_answers), sleep=slept.append)
     assert outcome.outcome == EvalResult.OUTCOME_CORRECT
-    assert slept == [runner.BACKOFF_BASE_SECONDS]
+    assert slept == [settings.EVAL_RETRY_BACKOFF_SECONDS]
 
 
 @override_settings(EVAL_LLM_RETRIES=1)
@@ -250,6 +252,37 @@ def test_cost_guard_needs_yes(spider_dir: Path, monkeypatch) -> None:
     assert provider.calls == 0
 
 
-def test_command_refuses_unreviewed_olist_questions() -> None:
+def test_command_refuses_unreviewed_olist_questions(tmp_path, monkeypatch) -> None:
+    unreviewed = tmp_path / "golden.jsonl"
+    unreviewed.write_text(
+        "".join(
+            json.dumps({**item, "reviewed": False}) + "\n"
+            for item in olist.read_golden()
+        )
+    )
+    monkeypatch.setattr(olist, "GOLDEN_FILE", unreviewed)
+    provider = ScriptedProvider(gold_answers)
+    monkeypatch.setattr(runner, "build_provider", lambda model: ("gemini", provider))
     with pytest.raises(CommandError, match="review"):
-        call_command("run_eval", target="olist", model="gemini-3.5-flash", yes=True)
+        call_command("run_eval", target="olist", model="m", yes=True)
+    assert provider.calls == 0
+
+
+def test_provider_overload_is_retried_too() -> None:
+    state = {"failed": False}
+
+    class Overloaded(ScriptedProvider):
+        def generate(self, request):
+            if not state["failed"]:
+                state["failed"] = True
+                raise LLMUnavailableError()
+            return super().generate(request)
+
+    target = olist_target()
+    outcome = runner.ask_once(
+        target,
+        target.questions("all")[0],
+        Overloaded(gold_answers),
+        sleep=lambda seconds: None,
+    )
+    assert outcome.outcome == EvalResult.OUTCOME_CORRECT

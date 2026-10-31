@@ -29,8 +29,8 @@ from evals.targets.base import EvalQuestion, Target
 
 logger = logging.getLogger(__name__)
 
-RATE_LIMIT_CODES = {"llm_rate_limited"}
-BACKOFF_BASE_SECONDS = 5
+# Provider hiccups worth another try; a bad key or a bad answer is not.
+RETRY_CODES = {"llm_rate_limited", "llm_unavailable", "llm_timeout"}
 
 
 class EvalConfigError(Exception):
@@ -95,11 +95,8 @@ def ask_once(
                 dialect=target.dialect,
             )
         except LLMFailed as error:
-            if (
-                error.error_code in RATE_LIMIT_CODES
-                and retry < settings.EVAL_LLM_RETRIES
-            ):
-                sleep(BACKOFF_BASE_SECONDS * 2**retry)
+            if error.error_code in RETRY_CODES and retry < settings.EVAL_LLM_RETRIES:
+                sleep(settings.EVAL_RETRY_BACKOFF_SECONDS * 2**retry)
                 continue
             return _failed(trace, *_error_outcome(error))
         except NotAnswerable:
