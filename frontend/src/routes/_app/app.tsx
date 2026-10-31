@@ -12,7 +12,7 @@ function AppHome() {
   return (
     <PlaceholderPage
       title="Your workspaces"
-      note={`Signed in as ${me.email}. The workspace list and the Olist demo arrive in step 0.10d.`}
+      note={`Signed in as ${me.email}. The workspace list and the Olist demo arrive in step 9.`}
     >
       <HealthPanel />
     </PlaceholderPage>

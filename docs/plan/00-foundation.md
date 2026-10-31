@@ -7,7 +7,7 @@
 **Done when:**
 - `make dev` starts everything in Docker (Postgres, Redis, the Django server, the background worker and the React dev server), with hot reload, all on one Docker network, `querylab-network`.
 - The backend refuses to start if any variable in `.env` is missing. No setting has a fallback value.
-- A visitor can sign up with email (with verification), Google or GitHub, log in and log out **through the API** (proven by pytest and the Postman collection in `backend/postman/`). Every email is a styled HTML email with a plain-text fallback.
+- A visitor can sign in with Google or GitHub and log out **through the API** (proven by pytest and the Postman collection in `backend/postman/`). There are no email/password accounts and the backend sends no email (owner's choice, 2026-10-30).
 - Everyone must sign up; there is no anonymous demo. (Showing the Olist demo workspace after signup moved to step 5 for the API and step 9 for the screen.)
 - The design system (tokens, base components, data states, boot screen) is approved and visible on the dev-only `/design` page.
 - `GET /api/health` reports `ok` for `querylab_app`, `querylab`, the reader connection, Redis and the Huey worker.
@@ -38,10 +38,10 @@ Each atomic task is one small commit. **(You)** marks a task only you can do (ac
       - Databases: `APP_DATABASE_URL`, `DATA_PRIMARY_URL`, `DATA_READER_URL`
       - Reader limits: `READER_STATEMENT_TIMEOUT_MS`
       - Redis and Huey: `REDIS_URL`, `HUEY_WORKERS`, `HUEY_IMMEDIATE`
-      - Email: `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL`
+      - Email *(removed 2026-10-30 with email sign-in)*: `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL`
       - OAuth: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`
       - Cache: `CACHE_URL`
-      - Rate limits: `RATE_LIMIT_LOGIN`, `RATE_LIMIT_LOGIN_FAILED`, `RATE_LIMIT_SIGNUP`, `RATE_LIMIT_CONFIRM_EMAIL`, `RATE_LIMIT_RESET_PASSWORD`, `RATE_LIMIT_CHANGE_PASSWORD`, `THROTTLE_ANON_RATE`, `THROTTLE_USER_RATE`, `THROTTLE_ASK_RATE`, `TRUSTED_PROXY_COUNT`
+      - Rate limits (the `RATE_LIMIT_*` keys were removed 2026-10-30 with email sign-in): `RATE_LIMIT_LOGIN`, `RATE_LIMIT_LOGIN_FAILED`, `RATE_LIMIT_SIGNUP`, `RATE_LIMIT_CONFIRM_EMAIL`, `RATE_LIMIT_RESET_PASSWORD`, `RATE_LIMIT_CHANGE_PASSWORD`, `THROTTLE_ANON_RATE`, `THROTTLE_USER_RATE`, `THROTTLE_ASK_RATE`, `TRUSTED_PROXY_COUNT`
       - Health: `HEALTH_CHECK_TIMEOUT_SECONDS`
       - Workspaces: `MAX_WORKSPACES_PER_USER` (3; used from step 5)
 - [x] **0.2.2** Create `frontend/.env.example` with `VITE_API_BASE_URL` and `VITE_APP_NAME`.
@@ -89,7 +89,7 @@ Both projects have a `backend/common` app. Querylab gets its own `common` app bu
 - [x] **0.4.13** `crypto.py` (Fernet encryption with key rotation). We'll use it to encrypt users' own LLM API keys at rest. Adds `ENCRYPTION_KEYS` to `.env`.
 - [x] **0.4.14** `cache/manager.py`, with its timeout from `.env` instead of the 300-second default.
 - [x] **0.4.15** `models/` (timestamps, soft delete, bulk helpers) and `validators/` (email, disposable email, password, date) from Pro-Goal.
-- [x] **0.4.16** `email/render.py` + `templates/email/base.html` from Pro-Goal: plain text in, branded HTML plus text out. This replaces the email layout in 0.8.3a, restyled to Querylab's design system and with Querylab's link-to-button labels.
+- [x] **0.4.16** *(Removed 2026-10-30 with email sign-in.)* `email/render.py` + `templates/email/base.html` from Pro-Goal: plain text in, branded HTML plus text out. This replaces the email layout in 0.8.3a, restyled to Querylab's design system and with Querylab's link-to-button labels.
 - [x] **0.4.17** `llm/` from resolve-ai (provider interface, typed errors, OpenAI and Gemini providers, factory, fake provider for tests). It already builds a provider from a user's own key, which is exactly our bring-your-own-key model. Model lists and limits (timeout, max tokens, temperature) move to `.env`; the "app's own key" path is dropped unless we want one.
 
 **Rewrite for django-ninja (keep the idea, not the code):**
@@ -148,6 +148,8 @@ Both projects have a `backend/common` app. Querylab gets its own `common` app bu
 
 ## 0.8 Authentication (django-allauth)
 
+**Changed on 2026-10-30 (owner's choice):** sign-in is Google or GitHub only (`SOCIALACCOUNT_ONLY`). Email/password signup, login, verification, reset and every email (0.8.2, 0.8.3, 0.8.3a to 0.8.3d) were built, then removed; so were the allauth rate limits (0.8.11), which only covered those endpoints. Accounts are not merged: the same email through Google and through GitHub is two separate users (0.8.7 reversed; `User.email` is no longer unique). The items below keep their original text for the record.
+
 - [x] **0.8.1** Install allauth in **headless** mode (JSON API for a React app instead of Django-rendered pages), with `allauth.account`, `allauth.socialaccount`, and the Google and GitHub providers.
 - [x] **0.8.2** Account settings: login by email only, email required and unique, verification **mandatory** before first login.
 - [x] **0.8.3** Email backend from `EMAIL_BACKEND`: SMTP with your Gmail settings locally and in production (a Gmail App Password, which needs 2-step verification on the account; Gmail allows roughly 500 emails a day). Test settings use Django's in-memory backend, so tests never send real mail.
@@ -158,7 +160,7 @@ Both projects have a `backend/common` app. Querylab gets its own `common` app bu
 - [x] **0.8.4** Configure the Google and GitHub providers from env (`*_CLIENT_ID`, `*_CLIENT_SECRET`), with no database setup needed.
 - [ ] **0.8.5** (You) Create a Google OAuth client in Google Cloud Console with redirect URI `http://localhost:3000/accounts/google/login/callback/` (the frontend origin: the dev server proxies `/accounts` to Django and keeps the browser's host).
 - [ ] **0.8.6** (You) Create a GitHub OAuth App (Settings → Developer settings → OAuth Apps) with callback `http://localhost:3000/accounts/github/login/callback/` (the frontend origin, as above).
-- [x] **0.8.7** Social signup links accounts by verified email, so someone who signed up with email and later uses Google with the same address lands in one account.
+- [x] **0.8.7** *(Reversed 2026-10-30: each provider account is its own user; nothing links by email.)* Social signup links accounts by verified email, so someone who signed up with email and later uses Google with the same address lands in one account.
 - [x] **0.8.8** `GET /api/me` (ninja) returns the current user or 401. The frontend uses it to decide which routes to allow.
 - [x] **0.8.9** Tests: email signup sends a verification email, login is blocked until verified, `/api/me` returns 401 when logged out and the user when logged in.
 
@@ -213,7 +215,7 @@ Built early (commit `ad1496e`) and kept: folder layout, the API client (cookies,
 
 ### 0.10d Auth screens → step 9
 
-Moved to step 9 (Frontend): login (email, Google, GitHub), signup, check-your-email and verify-email pages, logout from the user menu, the landing page and the workspace list. The backend for all of them is done and tested in step 0.
+Moved to step 9 (Frontend) and simplified (2026-10-30): one sign-in page with two buttons, "Continue with Google" and "Continue with GitHub", the OAuth callback page, logout from the user menu, the landing page and the workspace list. There is no signup, verify-email or password page. The backend for all of them is done and tested in step 0.
 
 ## 0.10e Fit for Cloudflare Containers (basic: 1/4 vCPU, 1 GiB RAM, 4 GB disk)
 

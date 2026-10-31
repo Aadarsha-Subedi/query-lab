@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { Heading } from '@/components/typography/Heading'
 import { Text } from '@/components/typography/Text'
 
-/** Temporary page frame until the real screens land (step 0.10d). */
+/** Temporary page frame until the real screens land (step 9). */
 export function PlaceholderPage({
   title,
   note,

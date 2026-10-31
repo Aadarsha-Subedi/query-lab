@@ -1,4 +1,0 @@
-{% extends "account/email/base_message.txt" %}
-{% block content %}{% autoescape off %}Someone tried to reset the password for {{ email }}, but there is no Querylab account with that address. If it was you, you can create an account at {{ signup_url }}
-
-If it was not you, you can ignore this email.{% endautoescape %}{% endblock content %}

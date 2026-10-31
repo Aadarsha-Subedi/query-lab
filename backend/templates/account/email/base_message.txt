@@ -1,5 +1,0 @@
-{% autoescape off %}Hi,
-
-{% block content %}{% endblock content %}
-
-The Querylab team{% endautoescape %}

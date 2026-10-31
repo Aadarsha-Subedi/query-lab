@@ -65,7 +65,7 @@ ASGI_APPLICATION = "config.asgi.application"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -136,31 +136,38 @@ AUTH_PASSWORD_VALIDATORS = [
 
 BLOCK_DISPOSABLE_EMAILS = env.bool("BLOCK_DISPOSABLE_EMAILS")
 
-# allauth: email-only login, mandatory verification, JSON (headless) API only.
-ACCOUNT_ADAPTER = "accounts.adapters.AccountAdapter"
-ACCOUNT_LOGIN_METHODS = {"email"}
-ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*"]
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
-ACCOUNT_EMAIL_SUBJECT_PREFIX = ""
-ACCOUNT_CONFIRM_EMAIL_ON_GET = False
-
+# allauth, sign-in with Google or GitHub only (owner's choice, 2026-10-30):
+# no email/password signup or login, so no verification, reset or other
+# account emails. JSON (headless) API only.
+SOCIALACCOUNT_ONLY = True
 HEADLESS_ONLY = True
+# No local login method at all: every sign-in goes through a provider.
+ACCOUNT_LOGIN_METHODS: set[str] = set()
+ACCOUNT_SIGNUP_FIELDS = ["email*"]
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_QUERY_EMAIL = True
 HEADLESS_FRONTEND_URLS = {
-    "account_confirm_email": f"{FRONTEND_URL}/verify-email/{{key}}",
-    "account_reset_password_from_key": f"{FRONTEND_URL}/reset-password/{{key}}",
-    "account_signup": f"{FRONTEND_URL}/signup",
     "socialaccount_login_error": f"{FRONTEND_URL}/auth/callback",
 }
 
-# Social login links to an existing account by verified email, so one person
-# signing in with email and later with Google lands in the same account.
-SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
-SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
-SOCIALACCOUNT_EMAIL_REQUIRED = True
-SOCIALACCOUNT_QUERY_EMAIL = True
+# Identity is the provider account (provider + uid), never the email. The same
+# email through Google and through GitHub gives two separate users: no
+# linking by email (SOCIALACCOUNT_EMAIL_AUTHENTICATION stays off), and emails
+# are not unique (ACCOUNT_UNIQUE_EMAIL; the User.email column too).
+ACCOUNT_UNIQUE_EMAIL = False
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = False
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = False
+SOCIALACCOUNT_AUTO_SIGNUP = True
+
+# Checks that assume a local (email/password) login, which Querylab does not
+# have: auth.W004 (USERNAME_FIELD email is not unique; it only shows who is
+# signed in), account.W001 (no local login method to cross-check against the
+# signup fields) and mail.W001 (no mailer, on purpose; see MAILERS below).
+SILENCED_SYSTEM_CHECKS = ["auth.W004", "account.W001", "mail.W001"]
+
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "APPS": [
@@ -185,17 +192,10 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 # ── Rate limits ───────────────────────────────────────────────────────────
-# allauth limits its own endpoints; ninja throttles limit ours. Both count in
-# the Django cache (Redis), so limits hold across every process.
+# Our endpoints use ninja throttles, counted in the Django cache (Redis), so
+# limits hold across every process. allauth's own limits cover only the
+# email/password endpoints, which are off (SOCIALACCOUNT_ONLY).
 
-ACCOUNT_RATE_LIMITS = {
-    "login": env.str("RATE_LIMIT_LOGIN"),
-    "login_failed": env.str("RATE_LIMIT_LOGIN_FAILED"),
-    "signup": env.str("RATE_LIMIT_SIGNUP"),
-    "confirm_email": env.str("RATE_LIMIT_CONFIRM_EMAIL"),
-    "reset_password": env.str("RATE_LIMIT_RESET_PASSWORD"),
-    "change_password": env.str("RATE_LIMIT_CHANGE_PASSWORD"),
-}
 THROTTLE_ANON_RATE = env.str("THROTTLE_ANON_RATE")
 THROTTLE_USER_RATE = env.str("THROTTLE_USER_RATE")
 THROTTLE_ASK_RATE = env.str("THROTTLE_ASK_RATE")
@@ -231,23 +231,9 @@ HUEY = {
 HEALTH_CHECK_TIMEOUT_SECONDS = env.float("HEALTH_CHECK_TIMEOUT_SECONDS")
 
 # ── Email ─────────────────────────────────────────────────────────────────
-
-# Django 6.1 mailers (replace the deprecated EMAIL_* settings). The test runner
-# swaps the default mailer for the in-memory one, so tests never send mail.
-MAILERS = {
-    "default": {
-        "BACKEND": env.str("EMAIL_BACKEND"),
-        "OPTIONS": {
-            "host": env.str("EMAIL_HOST"),
-            "port": env.int("EMAIL_PORT"),
-            "username": env.str("EMAIL_HOST_USER"),
-            "password": env.str("EMAIL_HOST_PASSWORD"),
-            "use_tls": env.bool("EMAIL_USE_TLS"),
-            "timeout": env.int("EMAIL_TIMEOUT_SECONDS"),
-        },
-    }
-}
-DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL")
+# Querylab sends no email (sign-in is Google/GitHub only). An explicitly empty
+# MAILERS means any attempt to send fails loudly instead of using a default.
+MAILERS: dict[str, dict[str, object]] = {}
 
 # ── Secrets at rest and LLM providers ─────────────────────────────────────
 

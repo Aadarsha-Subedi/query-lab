@@ -7,6 +7,8 @@ export type User = {
   email: string
   first_name: string
   last_name: string
+  /** The provider this user signed in with: 'google' or 'github'. */
+  providers: string[]
 }
 
 const UNAUTHORIZED = 401

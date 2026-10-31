@@ -5,7 +5,6 @@ description = "Querylab backend: Django + django-ninja API for a text-to-SQL ana
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "cryptography>=50.0.2",
-    "css-inline>=0.23.1",
     "disposable-email-domains>=0.0.287",
     "django>=6.1.2",
     "django-allauth[socialaccount]>=65.21.0",

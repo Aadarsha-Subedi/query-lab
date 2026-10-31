@@ -15,10 +15,7 @@ import { Route as DesignRouteImport } from './routes/design'
 import { Route as AppAppRouteImport } from './routes/_app/app'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
-import { Route as PublicSignupRouteImport } from './routes/_public/signup'
 import { Route as PublicAuthCallbackRouteImport } from './routes/_public/auth.callback'
-import { Route as PublicVerifyEmailIndexRouteImport } from './routes/_public/verify-email/index'
-import { Route as PublicVerifyEmailKeyRouteImport } from './routes/_public/verify-email/$key'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -48,24 +45,9 @@ const PublicLoginRoute = PublicLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => PublicRoute,
 } as any)
-const PublicSignupRoute = PublicSignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => PublicRoute,
-} as any)
 const PublicAuthCallbackRoute = PublicAuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
-  getParentRoute: () => PublicRoute,
-} as any)
-const PublicVerifyEmailIndexRoute = PublicVerifyEmailIndexRouteImport.update({
-  id: '/verify-email/',
-  path: '/verify-email/',
-  getParentRoute: () => PublicRoute,
-} as any)
-const PublicVerifyEmailKeyRoute = PublicVerifyEmailKeyRouteImport.update({
-  id: '/verify-email/$key',
-  path: '/verify-email/$key',
   getParentRoute: () => PublicRoute,
 } as any)
 
@@ -74,20 +56,14 @@ export interface FileRoutesByFullPath {
   '/design': typeof DesignRoute
   '/app': typeof AppAppRoute
   '/login': typeof PublicLoginRoute
-  '/signup': typeof PublicSignupRoute
   '/auth/callback': typeof PublicAuthCallbackRoute
-  '/verify-email/$key': typeof PublicVerifyEmailKeyRoute
-  '/verify-email/': typeof PublicVerifyEmailIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/design': typeof DesignRoute
   '/app': typeof AppAppRoute
   '/login': typeof PublicLoginRoute
-  '/signup': typeof PublicSignupRoute
   '/auth/callback': typeof PublicAuthCallbackRoute
-  '/verify-email/$key': typeof PublicVerifyEmailKeyRoute
-  '/verify-email': typeof PublicVerifyEmailIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -96,33 +72,14 @@ export interface FileRoutesById {
   '/design': typeof DesignRoute
   '/_app/app': typeof AppAppRoute
   '/_public/login': typeof PublicLoginRoute
-  '/_public/signup': typeof PublicSignupRoute
   '/_public/': typeof PublicIndexRoute
   '/_public/auth/callback': typeof PublicAuthCallbackRoute
-  '/_public/verify-email/$key': typeof PublicVerifyEmailKeyRoute
-  '/_public/verify-email/': typeof PublicVerifyEmailIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/design'
-    | '/app'
-    | '/login'
-    | '/signup'
-    | '/auth/callback'
-    | '/verify-email/$key'
-    | '/verify-email/'
+  fullPaths: '/' | '/design' | '/app' | '/login' | '/auth/callback'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/design'
-    | '/app'
-    | '/login'
-    | '/signup'
-    | '/auth/callback'
-    | '/verify-email/$key'
-    | '/verify-email'
+  to: '/' | '/design' | '/app' | '/login' | '/auth/callback'
   id:
     | '__root__'
     | '/_app'
@@ -130,11 +87,8 @@ export interface FileRouteTypes {
     | '/design'
     | '/_app/app'
     | '/_public/login'
-    | '/_public/signup'
     | '/_public/'
     | '/_public/auth/callback'
-    | '/_public/verify-email/$key'
-    | '/_public/verify-email/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -187,32 +141,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicLoginRouteImport
       parentRoute: typeof PublicRoute
     }
-    '/_public/signup': {
-      id: '/_public/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof PublicSignupRouteImport
-      parentRoute: typeof PublicRoute
-    }
     '/_public/auth/callback': {
       id: '/_public/auth/callback'
       path: '/auth/callback'
       fullPath: '/auth/callback'
       preLoaderRoute: typeof PublicAuthCallbackRouteImport
-      parentRoute: typeof PublicRoute
-    }
-    '/_public/verify-email/': {
-      id: '/_public/verify-email/'
-      path: '/verify-email'
-      fullPath: '/verify-email/'
-      preLoaderRoute: typeof PublicVerifyEmailIndexRouteImport
-      parentRoute: typeof PublicRoute
-    }
-    '/_public/verify-email/$key': {
-      id: '/_public/verify-email/$key'
-      path: '/verify-email/$key'
-      fullPath: '/verify-email/$key'
-      preLoaderRoute: typeof PublicVerifyEmailKeyRouteImport
       parentRoute: typeof PublicRoute
     }
   }
@@ -230,20 +163,14 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface PublicRouteChildren {
   PublicLoginRoute: typeof PublicLoginRoute
-  PublicSignupRoute: typeof PublicSignupRoute
   PublicIndexRoute: typeof PublicIndexRoute
   PublicAuthCallbackRoute: typeof PublicAuthCallbackRoute
-  PublicVerifyEmailKeyRoute: typeof PublicVerifyEmailKeyRoute
-  PublicVerifyEmailIndexRoute: typeof PublicVerifyEmailIndexRoute
 }
 
 const PublicRouteChildren: PublicRouteChildren = {
   PublicLoginRoute: PublicLoginRoute,
-  PublicSignupRoute: PublicSignupRoute,
   PublicIndexRoute: PublicIndexRoute,
   PublicAuthCallbackRoute: PublicAuthCallbackRoute,
-  PublicVerifyEmailKeyRoute: PublicVerifyEmailKeyRoute,
-  PublicVerifyEmailIndexRoute: PublicVerifyEmailIndexRoute,
 }
 
 const PublicRouteWithChildren =

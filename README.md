@@ -15,7 +15,7 @@ step 9 on the approved design system, just before deployment.
 
 | # | Milestone | Covers |
 |---|-----------|--------|
-| 0 | Foundation | Repo layout, Django + django-ninja, Docker Compose, two databases + read-only reader, Redis + Huey, auth API (allauth), CI; frontend tooling and the approved design system |
+| 0 | Foundation | Repo layout, Django + django-ninja, Docker Compose, two databases + read-only reader, Redis + Huey, auth API (allauth: Google and GitHub sign-in), CI; frontend tooling and the approved design system |
 | 1 | Text-to-SQL core | Item 6: schema + question prompt, sqlglot guard, read-only replica run, confidence score, results + SQL (API) |
 | 2 | Eval harness skeleton | Item 4d: Spider with a held-out split, execution accuracy, API-model baseline |
 | 3 | Agent | Item 2: plan / act / reflect, typed tools, Redis state, approval checkpoint, step logs + replay |
@@ -24,7 +24,7 @@ step 9 on the approved design system, just before deployment.
 | 6 | Trace-driven evals | Item 4: trace API, clustering, LLM-drafted expected SQL with hand review, eval results API, regression gate |
 | 7 | LoRA fine-tune *(time-boxed stretch)* | Item 5: instruction dataset, 4-bit load, PEFT adapters, W&B tracking, merge + benchmark |
 | 8 | Schema-RAG + semantic cache *(optional)* | Retrieve table and business definitions before writing SQL; cache question → SQL |
-| 9 | Frontend | The whole UI on the design system: auth screens (login, signup, verify email, Google / GitHub, logout), landing page, analyst chat with schema panel, approve / edit / cancel, history, workspaces + CSV upload, trace viewer, eval dashboard |
+| 9 | Frontend | The whole UI on the design system: a sign-in page (Continue with Google / GitHub) and logout, landing page, analyst chat with schema panel, approve / edit / cancel, history, workspaces + CSV upload, trace viewer, eval dashboard |
 | 10 | Deploy + portfolio polish | Hosting (Cloudflare Container + static frontend), public read-only eval dashboard, demo script, final results |
 
 - [x] 0. Foundation (your GitHub and OAuth setup tasks remain)

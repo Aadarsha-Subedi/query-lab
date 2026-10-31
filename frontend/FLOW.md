@@ -23,8 +23,7 @@ index.html            boot screen (plain HTML + tokens.css + boot.css), themed b
 __root            ThemeController, TooltipProvider, Toaster
 _public           beforeLoad: signed in -> redirect /app
   /                 landing (placeholder)
-  /login /signup    placeholders (0.10d)
-  /verify-email     "check your email";  /verify-email/$key  confirmation
+  /login            sign-in placeholder (Google / GitHub buttons in step 9)
   /auth/callback    OAuth return
 _app              beforeLoad: signed out -> redirect /; adds { me } to the route context
   /app              workspaces (placeholder) + HealthPanel
@@ -56,27 +55,20 @@ sees one origin: session and CSRF cookies are same-origin, and allauth builds
 OAuth callback URLs on the frontend origin. In production the static build and
 the API share one domain, so the same paths work without a proxy.
 
-## Login flows (built in 0.10d, against allauth's headless API)
+## Sign-in (screens built in step 9, against allauth's headless API)
 
-Email:
+Google or GitHub only; there are no email/password accounts.
 
 ```
-/signup  POST /_allauth/browser/v1/auth/signup {email, password}
-         <- 401 + pending flow verify_email -> /verify-email (check your inbox)
-email link FRONTEND_URL/verify-email/<key>
-         POST /_allauth/browser/v1/auth/email/verify {key} -> signed in -> /app
-/login   POST /_allauth/browser/v1/auth/login {email, password}
-         400 email_password_mismatch | 400 too_many_login_attempts | 401 unverified | 200
+/login   "Continue with Google" | "Continue with GitHub"
+         form POST /_allauth/browser/v1/auth/provider/redirect
+           {provider, process: login, callback_url: <origin>/auth/callback, csrfmiddlewaretoken}
+  -> provider -> /accounts/<provider>/login/callback/ (proxied) -> /auth/callback
+  -> refetch /api/me -> /app
 logout   DELETE /_allauth/browser/v1/auth/session -> /
 ```
 
-Google / GitHub:
-
-```
-"Continue with ..." -> form POST /_allauth/browser/v1/auth/provider/redirect
-     {provider, process: login, callback_url: <origin>/auth/callback}
-  -> provider -> /accounts/<provider>/login/callback/ (proxied) -> /auth/callback
-  -> refetch /api/me -> /app
-```
+The same email through Google and through GitHub is two different users;
+`/api/me` says which provider (`providers`).
 
 Every request goes through `src/lib/api` (see "Data in a component").

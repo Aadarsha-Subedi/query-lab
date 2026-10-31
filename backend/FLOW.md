@@ -24,50 +24,40 @@ Responses: `{success, status_code, message, data, meta}` or
 `{success: false, status_code, message, code, errors: [{field, message}]}`.
 `/api/health` is the exception: it returns its fields directly.
 
-## Auth flow (allauth headless)
+## Auth flow (allauth headless, social only)
 
-Email signup:
-
-```
-POST /_allauth/browser/v1/auth/signup {email, password}
-  -> AccountAdapter.clean_email (refuses disposable domains)
-  -> password validators (length from PASSWORD_MIN_LENGTH, mixed case, common, numeric)
-  -> confirmation email: templates/account/email/* rendered as text,
-     AccountAdapter.render_mail adds the HTML version (common/email/render.py)
-  <- 401 with flows: [verify_email pending]   (verification is mandatory)
-user clicks FRONTEND_URL/verify-email/<key>
-  frontend POST /_allauth/browser/v1/auth/email/verify {key}
-  <- 200, signed in (ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION)
-```
-
-Login: `POST /_allauth/browser/v1/auth/login` (blocked with 401 until the
-address is verified; 429 after RATE_LIMIT_LOGIN_FAILED). Logout:
-`DELETE /_allauth/browser/v1/auth/session`. Session cookie + CSRF cookie are
-shared by the frontend and API (same origin through the proxy).
-
-Google / GitHub:
+Sign-in is Google or GitHub only (`SOCIALACCOUNT_ONLY`): there is no email or
+password signup, login, verification or reset, and the backend sends no email.
 
 ```
 frontend form POST /_allauth/browser/v1/auth/provider/redirect
      {provider, callback_url: FRONTEND_URL/auth/callback, process: login}
   -> provider consent screen
   -> GET /accounts/<provider>/login/callback/   (through the same origin)
-  -> existing verified email? log in to that account and connect the provider
-     (SOCIALACCOUNT_EMAIL_AUTHENTICATION + AUTO_CONNECT); otherwise sign up
+  -> SocialAccount (provider, uid) exists? sign in as its user
+     otherwise create a new user (SOCIALACCOUNT_AUTO_SIGNUP) with the provider's email
   -> redirect to callback_url; the frontend calls /api/me
 ```
 
-`GET /api/me` returns the user or 401; the frontend's route guards use it. It
-also sets the `csrftoken` cookie (`ensure_csrf_cookie`), signed in or not: the
-frontend calls it at every boot, so its first POST already has a token.
+Identity is the provider account (provider + uid), never the email: the same
+email through Google and through GitHub gives two separate users, and nothing
+links accounts by email (`SOCIALACCOUNT_EMAIL_AUTHENTICATION` is off, emails are
+not unique).
+
+Logout: `DELETE /_allauth/browser/v1/auth/session`. Session cookie + CSRF cookie
+are shared by the frontend and API (same origin through the proxy).
+
+`GET /api/me` returns the user (with `providers`: `google` or `github`) or 401;
+the frontend's route guards use it. It also sets the `csrftoken` cookie
+(`ensure_csrf_cookie`), signed in or not: the frontend calls it at every boot,
+so its first POST already has a token.
 
 ## Rate limits
 
 ```
-allauth endpoints  -> ACCOUNT_RATE_LIMITS (RATE_LIMIT_* from .env) -> Django cache (Redis)
 ninja endpoints    -> AnonThrottle / UserThrottle (+ AskThrottle per route) -> Django cache
 throttled          -> 429 + Retry-After
-client IP          -> TRUSTED_PROXY_COUNT hops (allauth + ninja)
+client IP          -> TRUSTED_PROXY_COUNT hops (ninja; allauth's IP lookup too)
 ```
 
 ## Background jobs (Huey)

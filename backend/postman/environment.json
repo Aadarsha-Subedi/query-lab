@@ -15,37 +15,7 @@
       "enabled": true
     },
     {
-      "key": "email",
-      "value": "you@example.com",
-      "type": "default",
-      "enabled": true
-    },
-    {
-      "key": "password",
-      "value": "",
-      "type": "secret",
-      "enabled": true
-    },
-    {
-      "key": "newPassword",
-      "value": "",
-      "type": "secret",
-      "enabled": true
-    },
-    {
       "key": "csrfToken",
-      "value": "",
-      "type": "default",
-      "enabled": true
-    },
-    {
-      "key": "verificationKey",
-      "value": "",
-      "type": "default",
-      "enabled": true
-    },
-    {
-      "key": "resetKey",
       "value": "",
       "type": "default",
       "enabled": true

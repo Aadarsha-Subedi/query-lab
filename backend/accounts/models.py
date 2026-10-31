@@ -33,9 +33,13 @@ class UserManager(BaseUserManager["User"]):
 
 
 class User(AbstractBaseUser, PermissionsMixin, TimeStampModel):
-    """Signs in with email; there is no username."""
+    """A person signed in through one provider account (Google or GitHub).
 
-    email = models.EmailField(unique=True)
+    Identity is that provider account, not the email: the same email through
+    Google and through GitHub belongs to two separate users, so email is not
+    unique. There is no username and no password login."""
+
+    email = models.EmailField(db_index=True)
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
     is_active = models.BooleanField(default=True)

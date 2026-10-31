@@ -42,8 +42,8 @@ describe('route guards', () => {
 
   it('lets a signed-out visitor see public pages', async () => {
     mockFetch({ '/api/me': signedOut })
-    const router = await openAt('/signup')
-    expect(router.state.location.pathname).toBe('/signup')
-    expect(await screen.findByRole('heading', { name: 'Create your account' })).toBeInTheDocument()
+    const router = await openAt('/login')
+    expect(router.state.location.pathname).toBe('/login')
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
   })
 })

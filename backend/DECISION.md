@@ -81,39 +81,44 @@ it (the Olist loader) work in a throwaway schema and drop it.
 ## allauth in headless mode
 
 The React app talks to allauth's JSON API (`/_allauth/browser/v1/...`); Django
-renders no auth pages (`HEADLESS_ONLY`). Email login only, verification mandatory,
-Google and GitHub configured from `.env` (no SocialApp rows). Social logins link to
-an existing account with the same verified email
-(`SOCIALACCOUNT_EMAIL_AUTHENTICATION` + `AUTO_CONNECT`). Custom email-based `User`
-model created before the first migration.
+renders no auth pages (`HEADLESS_ONLY`). Google and GitHub are configured from
+`.env` (no SocialApp rows). Custom `User` model created before the first
+migration.
 
-## Styled emails: Pro-Goal's renderer + css-inline (not premailer)
+## Sign-in with Google or GitHub only; one user per provider account (2026-10-30, owner's choice)
 
-Every allauth email is written as plain text (`templates/account/email/*.txt`);
-`AccountAdapter.render_mail` adds an HTML version built by
-`common/email/render.py`: the first link becomes a button, and the layout's CSS
-is moved inline. The plan named `premailer`; we use `css-inline` instead: one
-Rust wheel with no dependencies, versus premailer's lxml + cssutils + requests
-stack (~25 MB). The email palette is a placeholder until the design system is
-approved.
+Email/password accounts were dropped (`SOCIALACCOUNT_ONLY`): no signup form,
+password login, verification, reset or change-password endpoints (allauth does
+not even mount them), and so no email at all. That also removed the Gmail SMTP
+settings (every `EMAIL_*` key and `DEFAULT_FROM_EMAIL`), the styled email
+templates and renderer, `css-inline`, `send_test_emails` and allauth's
+`RATE_LIMIT_*` keys, which only covered the email/password endpoints.
+`MAILERS` is empty on purpose, so an accidental send fails loudly.
+
+Accounts are **not** merged: the same email through Google and through GitHub
+creates two separate users. Identity is the provider account (provider + uid).
+`SOCIALACCOUNT_EMAIL_AUTHENTICATION` is off, `ACCOUNT_UNIQUE_EMAIL` is false and
+`User.email` is no longer unique (migration `0002_email_not_unique`; it stays
+indexed). Email is still `USERNAME_FIELD` for display; with no password logins
+nothing authenticates by it, so Django's `auth.W004` warning is silenced, as are
+allauth's `account.W001` (no local login method) and Django's `mail.W001` (no
+mailer). `/api/me` reports the user's provider in `providers`.
 
 ## Huey, not Celery
 
-Background jobs (eval runs, CSV imports, emails) use Huey on Redis: one small
+Background jobs (eval runs, CSV imports) use Huey on Redis: one small
 package, thread workers, no separate beat process. Celery is far heavier than a
 1/4 vCPU, 1 GiB container can afford. Tests run Huey in immediate mode
 (`HUEY_IMMEDIATE`).
 
-## Rate limits: allauth + ninja throttles, counted in Redis
+## Rate limits: ninja throttles, counted in Redis
 
-allauth limits its own endpoints (`ACCOUNT_RATE_LIMITS`, every rate from `.env`).
 Our endpoints use ninja throttles: `AnonThrottle` (signed out, by IP) and
 `UserThrottle` (signed in, by user) on the whole API, `AskThrottle` per route for
 LLM calls. They key on Django's session user rather than ninja's `request.auth`,
 so a signed-in visitor on a public route is not counted as anonymous. Rates are
-read from settings on every request. Both systems count in the Django cache
-(Redis), so limits hold across processes. `TRUSTED_PROXY_COUNT` sets the real
-client IP for both.
+read from settings on every request. They count in the Django cache (Redis), so limits
+hold across processes. `TRUSTED_PROXY_COUNT` sets the real client IP.
 
 ## One response envelope; `/api/health` is unwrapped
 

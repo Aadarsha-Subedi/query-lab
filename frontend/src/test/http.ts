@@ -24,7 +24,7 @@ export function mockFetch(routes: Record<string, () => Answer>) {
   return fetchMock
 }
 
-export const ME = { id: 1, email: 'ada@example.com', first_name: 'Ada', last_name: '' }
+export const ME = { id: 1, email: 'ada@example.com', first_name: 'Ada', last_name: '', providers: ['google'] }
 export const signedIn = () => ({
   status: 200,
   body: { success: true, status_code: 200, message: '', data: ME, meta: {} },
