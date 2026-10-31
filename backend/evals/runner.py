@@ -22,7 +22,7 @@ from ask.errors import (
 )
 from common.exception.domain import AppException
 from common.llm import LLMProvider, allowed_models, create_provider
-from common.llm.constants import PROVIDER_ANTHROPIC, PROVIDER_GEMINI, PROVIDER_OPENAI
+from common.llm.constants import PROVIDER_GEMINI, PROVIDER_OPENAI
 from evals import compare
 from evals.models import EvalResult, EvalRun
 from evals.targets.base import EvalQuestion, Target
@@ -42,12 +42,11 @@ def build_provider(model: str) -> tuple[str, LLMProvider]:
     for provider, key in (
         (PROVIDER_GEMINI, settings.LLM_DEFAULT_GEMINI_API_KEY),
         (PROVIDER_OPENAI, settings.EVAL_OPENAI_API_KEY),
-        (PROVIDER_ANTHROPIC, settings.EVAL_ANTHROPIC_API_KEY),
     ):
         if model in allowed_models(provider):
             return provider, create_provider(provider, key, model)
     raise EvalConfigError(
-        f"Model not in LLM_GEMINI_MODELS, LLM_OPENAI_MODELS or LLM_ANTHROPIC_MODELS: {model}"
+        f"Model not in LLM_GEMINI_MODELS or LLM_OPENAI_MODELS: {model}"
     )
 
 
