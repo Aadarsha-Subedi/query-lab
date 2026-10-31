@@ -78,3 +78,6 @@ Every request goes through `src/lib/api` (see "Data in a component").
 - `POST /api/ask {question}` returns `{sql, columns, rows, row_count, truncated, confidence, rationale, model, latency_ms}`; errors carry a stable `code` (`question_invalid`, `guard_rejected`, `query_failed`, `query_timeout`, `default_key_limit`, `llm_*`) and 429 has `Retry-After`.
 - `GET /api/llm-keys`, `PUT` / `DELETE /api/llm-keys/{provider}` manage the user's own OpenAI or Gemini key (the key is never returned; only `key_last4`).
 
+## Evals (from backend step 2, used by step 6 and 9)
+
+- Eval runs are stored in the app database (`EvalRun`, `EvalResult`); step 6 exposes them through an API for the eval dashboard. No frontend change in step 2.

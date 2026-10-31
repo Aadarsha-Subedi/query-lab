@@ -16,6 +16,7 @@ Run from the repo root (everything goes through Docker Compose):
 | Create the demo schema, reader role and grants (`querylab`) | `make bootstrap-db` |
 | Load the Olist CSVs into `demo` | `make load-demo` |
 | Tests (re-bootstraps the test reader role first) | `make test-backend` |
+| Eval commands in the dev container (step 2) | `make eval ARGS="run_eval --target olist --model gemini-3.5-flash"` |
 | Lint / format | `make lint-backend` / `make format` |
 | Types (on the host) | `make typecheck-backend` |
 
@@ -33,6 +34,10 @@ core/              health checks, DB router, data-DB SQL (datadb.py), Olist load
 ask/               text-to-SQL (step 1): schema.py, prompt.py, guard.py (sqlglot), runner.py,
                    confidence.py, keys.py (own/default LLM key), service.py, api.py (/ask, /llm-keys),
                    models UserLLMKey and AskLog
+evals/             eval harness (step 2): compare.py (execution accuracy), runner.py, scoring.py,
+                   targets/{olist,spider}.py + olist_golden.jsonl + spider_split.json,
+                   commands run_eval, eval_report, review_golden, check_spider,
+                   models EvalRun and EvalResult
 accounts/          User model (one per Google/GitHub account; email not unique), /api/me,
                    dev.py + templates/dev (dev-only OAuth test page, see FLOW.md)
 common/            shared building blocks (from resolve-ai / Pro-Goal, rewritten for ninja):
@@ -71,3 +76,4 @@ postman/           Postman collection + local environment for every endpoint
 8. **SQL from an LLM is untrusted.** It runs only after `ask.guard.check` and only through `ask.runner.run`, which uses the reader connection. Never execute model SQL any other way, never loosen the guard to make a test pass, and never put result rows into a prompt or an `AskLog`.
 9. **Keys:** a user's LLM key is stored only encrypted (`common.crypto`) and never returned, logged or echoed (only its last four characters). QueryLab's default key lives only in `.env` (`LLM_DEFAULT_GEMINI_API_KEY`).
 10. **`ask` settings** (`ASK_*`, `CONFIDENCE_*`, `LLM_DEFAULT_*`) follow rule 2: add new ones to `.env.example`, `.env.test` and settings together.
+11. **Evals run in the dev container, never in the production one** (`make eval ARGS=...`). Gold SQL and gold rows never reach a prompt, and `EvalResult` stores SQL, never result rows. Spider is read from `EVAL_SPIDER_DIR` and never committed or put in the image. The Olist target goes through the real guard and reader connection; Spider runs on a read-only SQLite file (`mode=ro`, `query_only`, a read-only authorizer). New `EVAL_*` settings follow rule 2 (`.env.example`, `.env.test`, settings together).

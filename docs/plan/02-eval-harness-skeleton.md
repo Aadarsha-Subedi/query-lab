@@ -66,37 +66,37 @@ The step 1 `answer(user, question)` mixes key lookup, daily limits and `AskLog` 
 
 ## 2.5 Spider target (offline, SQLite)
 
-- [ ] **2.5.1** (You) Download Spider and unpack it into `infra/data/spider/` (CC BY-SA 4.0; never committed). The command prints the exact steps and checks the layout (`dev.json`, `tables.json`, `database/`).
-- [ ] **2.5.2** Check `.gitignore` and `.dockerignore` cover `infra/data/spider/`, so the data never enters git or the image.
-- [ ] **2.5.3** Spider loader: read `dev.json` and `tables.json`; yield `(db_id, question, gold_sql)`. Skip the known malformed examples; list the skipped ids in the output.
-- [ ] **2.5.4** Split: assign each of the 20 dev databases to `tune` or `held-out` once (stratified by size), write the lists to `evals/targets/spider_split.json`, commit it. A test fails if a database is in both or neither.
-- [ ] **2.5.5** SQLite schema renderer: `CREATE TABLE` text from `PRAGMA table_info` / `foreign_key_list`, with a few sample values per low-cardinality text column (same limits as the Postgres side).
-- [ ] **2.5.6** SQLite executor: open the file with `mode=ro`, set a time limit through the progress handler, cap rows at `EVAL_MAX_COMPARE_ROWS`. The Postgres guard is not used here; the read-only open mode is the wall.
-- [ ] **2.5.7** Tests on a tiny fixture SQLite database: schema rendering, execution, row cap, timeout, and a write attempt that must fail.
+- [ ] **2.5.1** (You) Download Spider and unpack it into `infra/data/spider/` (CC BY-SA 4.0; never committed). `make eval ARGS=check_spider` prints the exact steps and checks the layout and the split.
+- [x] **2.5.2** Check `.gitignore` and `.dockerignore` cover `infra/data/spider/`, so the data never enters git or the image.
+- [x] **2.5.3** Spider loader: read `dev.json` and `tables.json`; yield `(db_id, question, gold_sql)`. Skip the known malformed examples; list the skipped ids in the output.
+- [x] **2.5.4** Split: assign each of the 20 dev databases to `tune` or `held-out` once (stratified by size), write the lists to `evals/targets/spider_split.json`, commit it. A test fails if a database is in both or neither.
+- [x] **2.5.5** SQLite schema renderer: `CREATE TABLE` text from `PRAGMA table_info` / `foreign_key_list`, with a few sample values per low-cardinality text column (same limits as the Postgres side).
+- [x] **2.5.6** SQLite executor: open the file with `mode=ro`, set a time limit through the progress handler, cap rows at `EVAL_MAX_COMPARE_ROWS`. The Postgres guard is not used here; the read-only open mode is the wall.
+- [x] **2.5.7** Tests on a tiny fixture SQLite database: schema rendering, execution, row cap, timeout, and a write attempt that must fail.
 
 ## 2.6 Olist target (real pipeline)
 
-- [ ] **2.6.1** Write the golden set: about 40 questions in `evals/targets/olist_golden.jsonl` (`id`, `question`, `gold_sql`, `tags`). Mix: counts, joins across 3 or more tables, date logic, top-N with deterministic tie-breaks, category-name translation, and 4 unanswerable questions (expected outcome `not_answerable`).
-- [ ] **2.6.2** (You) Review each gold query: run it, look at the rows, confirm it answers the question. Mark reviewed in the file. Unreviewed questions are skipped.
-- [ ] **2.6.3** Olist executor: gold SQL runs through the same `runner` and the reader connection. Predicted SQL goes through the full pipeline (guard included).
-- [ ] **2.6.4** Handle unanswerable questions: correct when the model declines (`not_answerable`), wrong when it returns SQL.
-- [ ] **2.6.5** Tests with the fake LLM returning gold SQL (all correct), wrong SQL (all wrong), hostile SQL (guard rejected), and a decline.
+- [x] **2.6.1** Write the golden set: about 40 questions in `evals/targets/olist_golden.jsonl` (`id`, `question`, `gold_sql`, `tags`). Mix: counts, joins across 3 or more tables, date logic, top-N with deterministic tie-breaks, category-name translation, and 4 unanswerable questions (expected outcome `not_answerable`).
+- [ ] **2.6.2** (You) Review each gold query: run it, look at the rows, confirm it answers the question. `make eval ARGS=review_golden` prints each query with its rows; when you are satisfied, `make eval ARGS="review_golden --mark-reviewed"`. Unreviewed questions are skipped by `run_eval`.
+- [x] **2.6.3** Olist executor: gold SQL runs through the same `runner` and the reader connection. Predicted SQL goes through the full pipeline (guard included).
+- [x] **2.6.4** Handle unanswerable questions: correct when the model declines (`not_answerable`), wrong when it returns SQL.
+- [x] **2.6.5** Tests with the fake LLM returning gold SQL (all correct), wrong SQL (all wrong), hostile SQL (guard rejected), and a decline.
 
 ## 2.7 Runner and command
 
-- [ ] **2.7.1** `run_eval` builds a provider for a model from `.env` keys (no user, no `UserLLMKey`), and refuses a model not listed in `LLM_*_MODELS`.
-- [ ] **2.7.2** Loop over the questions: one at a time, no threads (rule: 1/4 vCPU). On a provider rate limit, back off and retry a bounded number of times, then record `llm_failed`.
-- [ ] **2.7.3** Options: `--target`, `--split`, `--model`, `--limit N` (sample), `--seed`, `--resume <run id>` so a crashed run does not start over.
-- [ ] **2.7.4** Write each `EvalResult` as it completes (so progress survives a crash), then close the run with totals.
-- [ ] **2.7.5** Cost guard: print the planned number of LLM calls before starting and require `--yes` above a threshold.
-- [ ] **2.7.6** Tests: a full run with the fake LLM on a small fixture set, resume after an interrupted run, and the cost guard.
+- [x] **2.7.1** `run_eval` builds a provider for a model from `.env` keys (no user, no `UserLLMKey`), and refuses a model not listed in `LLM_*_MODELS`.
+- [x] **2.7.2** Loop over the questions: one at a time, no threads (rule: 1/4 vCPU). On a provider rate limit, back off and retry a bounded number of times, then record `llm_failed`.
+- [x] **2.7.3** Options: `--target`, `--split`, `--model`, `--limit N` (sample), `--seed`, `--resume <run id>` so a crashed run does not start over.
+- [x] **2.7.4** Write each `EvalResult` as it completes (so progress survives a crash), then close the run with totals.
+- [x] **2.7.5** Cost guard: print the planned number of LLM calls before starting and require `--yes` above a threshold.
+- [x] **2.7.6** Tests: a full run with the fake LLM on a small fixture set, resume after an interrupted run, and the cost guard.
 
 ## 2.8 Scoring and confidence check
 
-- [ ] **2.8.1** `scoring.summarise(run)`: execution accuracy, outcome counts, accuracy by tag, mean and p95 latency, tokens, and a rough cost estimate from a price table in `DECISION.md` terms (prices in settings, not code).
-- [ ] **2.8.2** Confidence calibration: accuracy per bucket from `EVAL_CONFIDENCE_BUCKETS`, with counts, and a simple rank correlation between confidence and correctness.
-- [ ] **2.8.3** `eval_report --run <id>` prints both as plain text; `--compare <id> <id>` shows two runs side by side.
-- [ ] **2.8.4** Tests on a hand-built run: known accuracy, known buckets.
+- [x] **2.8.1** `scoring.summarise(run)`: execution accuracy, outcome counts, accuracy by tag, mean and p95 latency, tokens, and a rough cost estimate from a price table in `DECISION.md` terms (prices in settings, not code).
+- [x] **2.8.2** Confidence calibration: accuracy per bucket from `EVAL_CONFIDENCE_BUCKETS`, with counts, and a simple rank correlation between confidence and correctness.
+- [x] **2.8.3** `eval_report --run <id>` prints both as plain text; `--compare <id> <id>` shows two runs side by side.
+- [x] **2.8.4** Tests on a hand-built run: known accuracy, known buckets.
 
 ## 2.9 Baselines
 
@@ -108,11 +108,11 @@ The step 1 `answer(user, question)` mixes key lookup, daily limits and `AskLog` 
 
 ## 2.10 Project documents
 
-- [ ] **2.10.1** `backend/CLAUDE.md`: the `evals` app layout, the rule "eval runs happen on the host, never in the container", the new `.env` keys, and the rule that gold SQL never reaches a prompt.
-- [ ] **2.10.2** `backend/FLOW.md`: the eval flow (question set to model to execute both SQLs to compare to store to report) for each target.
-- [ ] **2.10.3** `backend/DECISION.md`: execution accuracy and its limits, the Spider split by database, comparing by multiset, Olist goes through the real pipeline and Spider does not, no heavy dependencies, the baseline numbers (from 2.9.5).
-- [ ] **2.10.4** `frontend/` docs get one line noting step 6 will expose eval results to the dashboard (no code).
-- [ ] **2.10.5** Tick step 2 in the root README and update its status line.
+- [x] **2.10.1** `backend/CLAUDE.md`: the `evals` app layout, the rule "eval runs happen on the host, never in the container", the new `.env` keys, and the rule that gold SQL never reaches a prompt.
+- [x] **2.10.2** `backend/FLOW.md`: the eval flow (question set to model to execute both SQLs to compare to store to report) for each target.
+- [x] **2.10.3** `backend/DECISION.md`: execution accuracy and its limits, the Spider split by database, comparing by multiset, Olist goes through the real pipeline and Spider does not, no heavy dependencies, the baseline numbers (from 2.9.5).
+- [x] **2.10.4** `frontend/` docs get one line noting step 6 will expose eval results to the dashboard (no code).
+- [x] **2.10.5** Tick step 2 in the root README and update its status line.
 
 ---
 

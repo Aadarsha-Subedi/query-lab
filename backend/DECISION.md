@@ -275,3 +275,45 @@ decide before real users arrive.
 **Repair retry:** at most `ASK_MAX_REPAIR_ATTEMPTS` (1). Timeouts are not
 retried (the same query would time out again).
 
+
+## Eval harness (step 2)
+
+**Execution accuracy.** A question is correct when the model's SQL and the gold
+SQL return the same rows on the same database. We store gold SQL, never gold
+rows, and run both at eval time. Limits we accept: two different queries can
+return the same rows by chance; an `ORDER BY ... LIMIT` with ties at the cut can
+return different valid rows (Spider's official scorer has the same weakness; the
+Olist gold SQL uses explicit tie-breaks); column names are ignored on purpose.
+Comparison is an unordered multiset, ordered only when the gold SQL orders.
+
+**Two targets.** Olist (about 40 hand-written questions, 4 unanswerable) goes
+through the real guard and reader role, so it measures the product. Spider (dev
+set, 1,034 questions) runs on read-only SQLite for a number comparable with the
+literature; the Postgres guard does not apply there, so the wall is the file
+opened `mode=ro` plus `query_only`, a read-only authorizer, a time limit and a row
+cap. Spider confidence has no guard signal (the guard is not run), so the
+confidence-versus-accuracy table is only meaningful on Olist.
+
+**Held-out split by database.** Spider dev is split once by database into `tune`
+and `held-out` (committed). Prompt changes are judged on `tune`; the headline score
+is `held-out`, so the number is not tuned to itself. The initial split was written
+from the known dev database names and is checked by `check_spider` against the
+unpacked data; rebuild it with `spider.build_split` if they differ.
+
+**`answer()` split.** `generate_and_run` is the user-free core (prompt, LLM, parse,
+check, execute, repair). `answer()` keeps the key, limit and `AskLog` handling. The
+harness uses the same core so it measures the code path users hit. The prompt takes
+a dialect (`postgres`, `sqlite`) and carries `PROMPT_VERSION`, stored on each run.
+
+**No new runtime dependency.** Spider uses the standard `sqlite3`; scoring and
+comparison are plain Python plus sqlglot (already present). The only additions to the
+image are the `evals` app, two small tables and management commands. Evals run in
+the dev container, one question at a time, and never in the production container.
+
+**Keys.** The Gemini baseline reuses `LLM_DEFAULT_GEMINI_API_KEY`; the OpenAI
+baseline uses `EVAL_OPENAI_API_KEY`. Both live only in `.env`. `EVAL_MODEL_PRICES`
+is an estimate for reports, not billing.
+
+**Baseline results:** to be recorded here after the runs in plan step 2.9 (model,
+split, prompt version, accuracy, error patterns, whether confidence separates right
+from wrong).

@@ -115,6 +115,35 @@ Errors: 400 `question_invalid` / `guard_rejected`, 422 `query_failed` / `not_ans
 `throttled` / `default_key_limit`, 502 `llm_*`, 504 `query_timeout`. A signed-out
 POST without a CSRF token gets 403 from Django's CSRF check before the 401.
 
+## Evals: question set to accuracy (step 2)
+
+Run on a dev machine only: `make eval ARGS="run_eval --target olist|spider --model <name>"`.
+
+```
+question set (olist_golden.jsonl | Spider dev.json + spider_split.json)
+  -> for each question, one at a time:
+       schema text (Postgres demo | SQLite file)      target.schema_text
+       -> ask.service.generate_and_run                 the same core path as /api/ask
+            prompt -> LLM -> parse -> check -> execute, with the repair loop
+            (Olist: sqlglot guard + reader connection; Spider: read-only SQLite)
+       -> run the gold SQL on the same database        target.gold_rows
+       -> compare rows                                 evals/compare.py
+       -> EvalResult row (SQL, outcome, reason, confidence, tokens, latency)
+  -> EvalRun totals -> scoring: accuracy, outcomes, latency, cost, confidence buckets
+```
+
+Comparison: values are normalised (numbers rounded to `EVAL_ROW_COMPARE_PRECISION`,
+dates as ISO text, booleans kept apart from numbers); column names are ignored and
+columns may be reordered when their values line up; rows are an unordered multiset
+unless the gold SQL has a top-level `ORDER BY`. Outcomes: `correct`, `wrong`,
+`error`, `timeout`, `guard_rejected`, `not_answerable` (declined an answerable
+question), `llm_failed`. Declining an unanswerable question is `correct`.
+
+Spider is split once by database into `tune` and `held-out`
+(`evals/targets/spider_split.json`); report the `held-out` number. `check_spider`
+verifies the unpacked data against the split. `review_golden` shows each Olist gold
+query with its rows; only reviewed questions run unless `--include-unreviewed`.
+
 ## Rate limits
 
 ```
