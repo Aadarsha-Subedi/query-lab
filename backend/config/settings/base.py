@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "core",
     "accounts",
     "ask",
+    "evals",
 ]
 
 MIDDLEWARE = [
