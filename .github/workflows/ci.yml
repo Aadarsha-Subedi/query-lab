@@ -93,6 +93,11 @@ jobs:
         run: uv run python manage.py migrate --noinput
       - name: Bootstrap the data database (querylab)
         run: uv run python manage.py bootstrap_data_db
+      - name: OpenAPI file is up to date
+        # The frontend generates its types from backend/openapi.json.
+        run: |
+          uv run python manage.py export_openapi --output openapi.json
+          git diff --exit-code -- openapi.json || { echo "::error::openapi.json is out of date: run 'make openapi' and commit it"; exit 1; }
       - name: Pytest
         run: uv run pytest
 
