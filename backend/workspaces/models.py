@@ -47,3 +47,24 @@ class Workspace(TimeStampModel):
     @property
     def ref(self) -> WorkspaceRef:
         return WorkspaceRef(id=self.pk, schema_name=self.schema_name)
+
+
+class WorkspaceDDLLog(TimeStampModel):
+    """Audit trail of every structural statement run for a workspace: who, what,
+    when. `workspace_id` is a plain number, not a foreign key, so the trail
+    outlives the workspace. Statements never contain passwords or cell values:
+    the provisioning entries are fixed phrases."""
+
+    workspace_id = models.PositiveIntegerField()
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    statement = models.TextField()
+
+    class Meta:
+        ordering = ["id"]
+        indexes = [models.Index(fields=["workspace_id", "id"])]
