@@ -69,7 +69,7 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 4.6 Limits and errors the screen must handle
 
-- [ ] **4.6.1** `GET /api/agent/limits`: default-key spends used and allowed today, unfinished runs and the cap, whether the user has their own key saved, and the open-stream cap. Read-only; computed from Postgres and Redis.
+- [x] **4.6.1** `GET /api/agent/limits`: default-key spends used and allowed today, unfinished runs and the cap, whether the user has their own key saved, and the open-stream cap. Read-only; computed from Postgres and Redis.
 - [ ] **4.6.2** One list of API error codes (`docs/api-errors.md`, or a section in `FLOW.md`): code, HTTP status, meaning, what the screen should do (retry later, poll, ask for a key, show the reason). Include `agent_stream_limit`, the guard refusals, the throttle, the daily default-key limit and `not_answerable`.
 - [ ] **4.6.3** Test that walks all `AppException` subclasses and fails when one has no entry in the list, or the list names a code that no longer exists.
 - [ ] **4.6.4** The 429 body carries a `retry_after_seconds` the screen can show; test that every throttle returns it.

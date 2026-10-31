@@ -22,8 +22,8 @@ from agent.errors import (
 )
 from agent.models import AgentRun, AgentStep
 from ask import guard, keys, schema
-from ask.errors import GuardRejected
 from ask import prompt as ask_prompt
+from ask.errors import GuardRejected
 from common.exception.domain import ConflictException
 
 logger = logging.getLogger(__name__)

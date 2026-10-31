@@ -5,7 +5,6 @@ from typing import Any
 
 from django.conf import settings
 from django.db.models import Exists, OuterRef, QuerySet
-
 from ninja import Schema
 
 from agent import confidence
@@ -63,6 +62,35 @@ class RunOut(Schema):
     edited: bool
     created_at: datetime
     finished_at: datetime | None
+
+
+class DefaultKeyLimitOut(Schema):
+    used: int
+    allowed: int
+    remaining: int
+    # Midnight UTC, when the daily count starts again.
+    resets_at: datetime
+
+
+class CountLimitOut(Schema):
+    count: int
+    allowed: int
+
+
+class OpenStreamsOut(Schema):
+    # Across all users: the live-stream cap is global (small container).
+    open: int
+    allowed: int
+
+
+class LimitsOut(Schema):
+    """Used against allowed, so the screen can warn before a 429. A user with
+    their own key (`has_own_key`) does not spend the default key."""
+
+    default_key: DefaultKeyLimitOut
+    has_own_key: bool
+    unfinished_runs: CountLimitOut
+    streams: OpenStreamsOut
 
 
 class PendingOut(Schema):

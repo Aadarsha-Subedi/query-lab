@@ -108,7 +108,9 @@ def test_schema_shape(signed_in: Client, fake_schema: list[bool]) -> None:
     assert customers["row_estimate"] is None and customers["foreign_keys"] == []
 
 
-def test_one_table_has_the_same_shape(signed_in: Client, fake_schema: list[bool]) -> None:
+def test_one_table_has_the_same_shape(
+    signed_in: Client, fake_schema: list[bool]
+) -> None:
     full = signed_in.get("/api/schema").json()["data"]["tables"][0]
     one = signed_in.get("/api/schema/tables/orders").json()["data"]
     assert one == full
@@ -148,7 +150,10 @@ def test_etag_gives_a_304_until_the_schema_changes(
     assert first["Cache-Control"] == "private, no-cache"
     again = signed_in.get("/api/schema", headers={"If-None-Match": etag})
     assert again.status_code == 304 and again.content == b""
-    assert signed_in.get("/api/schema", headers={"If-None-Match": '"old"'}).status_code == 200
+    assert (
+        signed_in.get("/api/schema", headers={"If-None-Match": '"old"'}).status_code
+        == 200
+    )
     # a different table has a different tag
     assert signed_in.get("/api/schema/tables/customers")["ETag"] != etag
 

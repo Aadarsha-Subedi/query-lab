@@ -131,4 +131,7 @@ def test_a_refusal_names_only_what_the_user_wrote(
     response = post(
         client, f"{BASE}/{run_id}/edit", {"sql": "SELECT * FROM demo.secret_table"}
     )
-    assert response.json()["errors"][0]["message"] == "The table secret_table does not exist."
+    assert (
+        response.json()["errors"][0]["message"]
+        == "The table secret_table does not exist."
+    )

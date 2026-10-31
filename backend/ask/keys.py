@@ -85,3 +85,8 @@ def spend_default_key(user: User) -> None:
     cache.add(key, 0, DAY_SECONDS)
     if cache.incr(key) > settings.ASK_DEFAULT_KEY_DAILY_LIMIT:
         raise DefaultKeyLimitReached()
+
+
+def default_key_spent_today(user: User) -> int:
+    """Asks counted on QueryLab's key today (UTC), at most the daily limit. Read only."""
+    return min(cache.get(_day_key(user), 0), settings.ASK_DEFAULT_KEY_DAILY_LIMIT)

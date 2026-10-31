@@ -958,6 +958,41 @@
           ]
         },
         {
+          "name": "Limits",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/limits",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agent",
+                "limits"
+              ]
+            },
+            "description": "What is left before a limit: asks on the shared default key today (`default_key.used` of `allowed`, resets at `resets_at`), unfinished runs against the cap, whether you saved your own key, and open live streams (global). Read only."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Get a run",
           "request": {
             "method": "GET",

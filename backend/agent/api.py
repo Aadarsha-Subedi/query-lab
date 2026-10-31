@@ -8,10 +8,11 @@ from ninja.security import django_auth
 from pydantic import Field
 
 from accounts.models import User
-from agent import result, service, tasks
+from agent import limits, result, service, tasks
 from agent.models import AgentRun
 from agent.schemas import (
     EditIn,
+    LimitsOut,
     ResultOut,
     RunDetailOut,
     RunIn,
@@ -56,6 +57,16 @@ class RunOrdering(OrderingSchema):
 
 def _user(request: HttpRequest) -> User:
     return cast(User, request.user)
+
+
+@router.get("/limits", response=SuccessEnvelope[LimitsOut], auth=django_auth)
+def get_limits(request: HttpRequest) -> dict:
+    """What is left before a limit: asks on the shared default key today, unfinished
+    runs against the cap, whether you saved your own key, and open live streams.
+    Read only."""
+    return success(
+        LimitsOut(**limits.limits_for(_user(request))).model_dump(mode="json")
+    )
 
 
 @router.post(

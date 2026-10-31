@@ -37,16 +37,25 @@ def runs(user: User, other_user: User) -> dict[str, AgentRun]:
     now = timezone.now()
     made = {
         "old": make(
-            user, "Orders per STATE", "succeeded",
-            created_at=now - timedelta(days=3), latency_ms=900,
+            user,
+            "Orders per STATE",
+            "succeeded",
+            created_at=now - timedelta(days=3),
+            latency_ms=900,
         ),
         "mid": make(
-            user, "Top sellers", "failed",
-            created_at=now - timedelta(days=2), latency_ms=100,
+            user,
+            "Top sellers",
+            "failed",
+            created_at=now - timedelta(days=2),
+            latency_ms=100,
         ),
         "new": make(
-            user, "Late orders", "expired",
-            created_at=now - timedelta(days=1), latency_ms=500,
+            user,
+            "Late orders",
+            "expired",
+            created_at=now - timedelta(days=1),
+            latency_ms=500,
         ),
         "paused": make(user, "Revenue", "awaiting_approval"),
     }
@@ -60,7 +69,7 @@ def signed_in(client: Client, user: User) -> Client:
     return client
 
 
-def ids(client: Client, **params: object) -> list[int]:
+def ids(client: Client, **params: str | int | list[str]) -> list[int]:
     response = client.get(URL, params)
     assert response.status_code == 200, response.content
     return [r["id"] for r in response.json()["data"]]
@@ -116,19 +125,17 @@ def test_ordering_by_latency_and_created_at(
 
 
 @pytest.mark.parametrize("field", ["question", "user", "id", "-status", "password"])
-def test_ordering_allowlist_refuses_other_fields(
-    signed_in: Client, field: str
-) -> None:
+def test_ordering_allowlist_refuses_other_fields(signed_in: Client, field: str) -> None:
     assert signed_in.get(URL, {"ordering": field}).status_code == 422
 
 
 def test_count_in_meta_matches_the_filter_not_the_page(
     signed_in: Client, runs: dict[str, AgentRun]
 ) -> None:
-    body = signed_in.get(URL, {"q": "orders", "limit": 1}).json()
+    body = signed_in.get(f"{URL}?q=orders&limit=1").json()
     assert body["meta"] == {"count": 2, "limit": 1, "offset": 0}
     assert len(body["data"]) == 1
-    second = signed_in.get(URL, {"q": "orders", "limit": 1, "offset": 1}).json()
+    second = signed_in.get(f"{URL}?q=orders&limit=1&offset=1").json()
     assert second["data"][0]["id"] != body["data"][0]["id"]
 
 

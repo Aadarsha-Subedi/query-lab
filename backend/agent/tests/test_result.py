@@ -97,7 +97,10 @@ def test_no_sql_is_taken_from_the_request(
 
 @pytest.mark.parametrize(
     ("error", "status", "code"),
-    [(QueryFailed("boom"), 422, "query_failed"), (QueryTimeout(), 504, "query_timeout")],
+    [
+        (QueryFailed("boom"), 422, "query_failed"),
+        (QueryTimeout(), 504, "query_timeout"),
+    ],
 )
 def test_query_errors_are_the_ask_errors_and_leave_the_run_alone(
     signed_in: Client,
