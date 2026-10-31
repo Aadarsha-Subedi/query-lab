@@ -1,7 +1,6 @@
 """Spider target on a tiny fixture database (no real Spider needed)."""
 
 import json
-import sqlite3
 from pathlib import Path
 
 import pytest
@@ -10,41 +9,6 @@ from django.test import override_settings
 from ask.errors import QueryFailed, QueryTimeout
 from evals.models import EvalRun
 from evals.targets import spider
-
-DEV = [
-    {
-        "db_id": "shop",
-        "question": "How many items?",
-        "query": "SELECT count(*) FROM item",
-    },
-    {"db_id": "zoo", "question": "List animals", "query": "SELECT name FROM animal"},
-]
-
-
-@pytest.fixture
-def spider_dir(tmp_path: Path):
-    for db_id, ddl in {
-        "shop": [
-            "CREATE TABLE item (id INTEGER PRIMARY KEY, name TEXT NOT NULL, kind TEXT)",
-            "CREATE TABLE sale (id INTEGER PRIMARY KEY, item_id INTEGER, "
-            "FOREIGN KEY (item_id) REFERENCES item(id))",
-            "INSERT INTO item (name, kind) VALUES ('a', 'x'), ('b', 'x'), ('c', 'y')",
-        ],
-        "zoo": [
-            "CREATE TABLE animal (name TEXT)",
-            "INSERT INTO animal VALUES ('lion')",
-        ],
-    }.items():
-        folder = tmp_path / "database" / db_id
-        folder.mkdir(parents=True)
-        connection = sqlite3.connect(folder / f"{db_id}.sqlite")
-        for statement in ddl:
-            connection.execute(statement)
-        connection.commit()
-        connection.close()
-    (tmp_path / "dev.json").write_text(json.dumps(DEV))
-    with override_settings(EVAL_SPIDER_DIR=tmp_path):
-        yield tmp_path
 
 
 def test_schema_text_has_tables_keys_and_samples(spider_dir: Path) -> None:

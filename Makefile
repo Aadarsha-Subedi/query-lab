@@ -5,7 +5,7 @@ BACKEND := $(COMPOSE) exec backend
 FRONTEND := $(COMPOSE) exec frontend
 
 .PHONY: setup up down dev logs migrate bootstrap-db load-demo createsuperuser \
-        test test-backend test-frontend lint lint-backend lint-frontend \
+        eval test test-backend test-frontend lint lint-backend lint-frontend \
         typecheck typecheck-backend typecheck-frontend format
 
 ## setup: install local dependencies (for editors) and create .env files from the examples
@@ -41,6 +41,11 @@ load-demo:
 
 createsuperuser:
 	$(BACKEND) python manage.py createsuperuser
+
+## eval: run an evals command in the dev container, e.g.
+##   make eval ARGS="run_eval --target olist --model gemini-3.5-flash"
+eval:
+	$(BACKEND) python manage.py $(ARGS)
 
 ## test: backend tests run in the container against the compose postgres/redis.
 ## lint and typecheck run on the host (the dev image has no lint tools).
