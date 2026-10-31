@@ -370,7 +370,7 @@ POST /api/workspaces {name}                       (WorkspaceThrottle, cap MAX_WO
      GRANT CONNECT, default privileges (SELECT on future tables to _ro)     [workspaces/provisioning.py]
   ─> status ready (any failure: drop what was made, delete the row, 503 workspace_provisioning_failed)
 DELETE /api/workspaces/{id}
-  status deleting ─> cancel its imports ─> terminate its sessions ─> DROP SCHEMA CASCADE, DROP OWNED, DROP ROLE x2
+  status deleting ─> terminate its sessions ─> DROP SCHEMA CASCADE, DROP OWNED, DROP ROLE x2
   ─> delete the row, forget the schema version. AgentRun rows stay with their workspace_id (a tombstone).
 ```
 
@@ -400,20 +400,9 @@ A run remembers its workspace: `AgentRun.workspace_id` (null = demo), `excluded_
 | `GET/POST/PATCH/DELETE .../rows` | by `_row_id`, values coerced and bound, all or nothing, size guard | `row_invalid` (`rows[i].col`), `constraint_violation`, `workspace_full` |
 | `POST /workspaces/{id}/sql` | the user's own SQL as `_rw`, one transaction, watchdog deadline | `sql_failed` (SQLSTATE), `sql_invalid`, `sql_busy`, `query_timeout`, `workspace_full` |
 
-### CSV import (Huey + SSE)
+### Filling a workspace
 
-```
-POST /workspaces/{id}/imports/preview   (multipart; nothing kept)  ─> delimiter, header?, columns + guessed types, first rows
-POST /workspaces/{id}/imports           (multipart: file, options)
-  UploadSizeMiddleware: Content-Length > IMPORT_MAX_FILE_BYTES ─> 413 before the body is read
-  one active import per user ─> room check ─> spool to UPLOAD_TMP_DIR (bytes counted) ─> sniff + validate options
-  ─> ImportJob(queued) ─> enqueue run_import ─> 202 {id, events_url}
-Huey worker: claim (queued->running) ─> wait for the one slot (IMPORT_MAX_CONCURRENT) ─> pass 1 scan (rows cap, types)
-  ─> ONE transaction as ws_<id>_rw: CREATE TABLE, COPY in batches (progress -> Redis, cancel flag checked),
-     primary key, relations, size check ─> commit ─> job succeeded | failed(code, row) | cancelled; temp file always deleted
-GET /workspaces/{id}/imports/{job}/events   SSE: progress ... succeeded {table, rows, bytes} | failed {error_code, message} | cancelled
-Sweeps: worker start marks every running job import_interrupted; every 5 min: stalled jobs, queued jobs with no file, stale temp files
-```
+CSV import was planned (5.7) and dropped; see DECISION.md. A user fills tables through `POST .../rows` (up to `WORKSPACE_MAX_ROWS_PER_EDIT` rows per call) or the SQL console (`INSERT`, or `INSERT ... SELECT`).
 
 ## Database topology
 

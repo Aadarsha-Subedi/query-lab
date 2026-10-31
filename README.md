@@ -20,7 +20,7 @@ step 9 on the approved design system, just before deployment.
 | 2 | Eval harness skeleton | Item 4d: Spider with a held-out split, execution accuracy, API-model baseline |
 | 3 | Agent | Item 2: plan / act / reflect, typed tools, Redis state, approval checkpoint, step logs + replay |
 | 4 | Analyst API | The endpoints the analyst UI needs: ask, history, approve / edit / cancel, SQL + results, schema browser |
-| 5 | User workspaces | The shared read-only demo plus up to 3 private workspaces per user (a schema and two login roles each, isolation proved against real roles), CSV upload as a background job with live progress, creating tables and editing rows, columns, keys, relations and descriptions freely, a SQL console, size and count caps; the agent answers against the workspace with the same guard, approval and replay |
+| 5 | User workspaces | The shared read-only demo plus up to 3 private workspaces per user (a schema and two login roles each, isolation proved against real roles), creating tables and editing rows, columns, keys, relations and descriptions freely, a SQL console, size and count caps; the agent answers against the workspace with the same guard, approval and replay |
 | 6 | Trace-driven evals | Item 4: trace API, clustering, LLM-drafted expected SQL with hand review, eval results API, regression gate |
 | 7 | LoRA fine-tune *(time-boxed stretch)* | Item 5: instruction dataset, 4-bit load, PEFT adapters, W&B tracking, merge + benchmark |
 | 8 | Schema-RAG + semantic cache *(optional)* | Retrieve table and business definitions before writing SQL; cache question → SQL |
@@ -32,7 +32,7 @@ step 9 on the approved design system, just before deployment.
 - [x] 2. Eval harness skeleton
 - [x] 3. Agent (your live-Gemini checks remain: 3.9.2 confidence analysis, 3.10.3 Olist agent run; [plan](docs/plan/03-agent.md))
 - [x] 4. Analyst API (your real-browser CORS check, 4.7.5, remains; [plan](docs/plan/04-analyst-api.md))
-- [x] 5. User workspaces (your real-Neon checks, 5.9.7, remain; [plan](docs/plan/05-user-workspaces.md))
+- [x] 5. User workspaces (CSV import, 5.7, dropped for now: it may return with R2 object storage; your real-Neon checks, 5.9.7, remain; [plan](docs/plan/05-user-workspaces.md))
 - [ ] 6. Trace-driven evals
 - [ ] 7. LoRA fine-tune (stretch)
 - [ ] 8. Schema-RAG + semantic cache (optional)

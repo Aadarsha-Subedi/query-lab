@@ -4,7 +4,7 @@
 
 **Done when:**
 - A user can create, rename and delete workspaces, up to the cap, and always also sees the shared demo workspace.
-- A CSV upload returns a job id at once; a Huey job loads it with `COPY`; `GET /imports/{id}/events` streams progress over SSE; a bad file leaves nothing behind.
+- ~~A CSV upload returns a job id at once; a Huey job loads it with `COPY`; SSE progress; a bad file leaves nothing behind.~~ Dropped (5.7).
 - A user can create a table from a column spec, insert, edit and delete rows, add / rename / drop / retype columns, drop tables, and describe tables and columns.
 - `schema`, `ask` and `agent/runs` take a workspace; the schema panel, the agent's tools and the SQL it runs only ever see that workspace's schema.
 - One user can never read, write, list or guess another user's workspace, in the API or in SQL (proved by tests against real roles).
@@ -84,7 +84,7 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 - [x] **5.5.5** Descriptions stored as Postgres `COMMENT ON` (so `get_schema` already picks them up) and surfaced in the schema panel and the agent prompt. Cap their length. Test they reach the prompt.
 - [x] **5.5.6** Schema output hides `_row_id` from the agent's schema text but the table API shows it.
 - [x] **5.5.7** Keys and relations, stored as real Postgres constraints in the workspace schema (so `get_schema` and the agent see joins with no extra metadata): `PUT /tables/{table}/primary-key` (one or more columns; enforces uniqueness, fails with the first duplicate's row id), `POST /relations` (child table + column(s), parent table + column(s), same workspace only, parent side must be a primary key or unique; `ON DELETE` restricted to `NO ACTION` or `CASCADE`), `GET /relations`, `DELETE /relations/{name}`. Existing data is validated when the constraint is added; a violation returns a typed error naming the first orphan row and changes nothing. Caps: `WORKSPACE_MAX_RELATIONS`.
-- [x] **5.5.8** CSV import can optionally declare a primary key and relations in the preview step (5.7.3); relations are added after the table loads, in the same job, and a failure fails the job and rolls back.
+- [-] **5.5.8** CSV import can optionally declare a primary key and relations in the preview step (5.7.3); relations are added after the table loads, in the same job, and a failure fails the job and rolls back.
 - [x] **5.5.9** Row edits (5.6) respect constraints: a violating insert / update / delete returns a typed error naming the constraint; `CASCADE` deletes are counted in the response.
 - [x] **5.5.10** Tests: each operation's happy path, hostile names, caps, another user's table is a 404, DDL logged, schema cache bumped, the reader still cannot write, relations across workspaces are refused, the agent's schema text lists the keys and joins.
 
@@ -108,19 +108,21 @@ The user's own SQL is not the agent's. It runs as `ws_<id>_rw` on the primary an
 - [x] **5.6.5** Each write bumps the schema version only when the table's shape or row estimate class changes (not on every cell edit); cell edits do not invalidate the schema cache.
 - [x] **5.6.6** Tests: type coercion table (ints, floats, dates, booleans, empty, null), injection strings stored as plain data, over-cap batch, other user's row is a 404, concurrent edits to the same row, the agent sees edited data on its next run.
 
-## 5.7 CSV import (Huey job + SSE)
+## 5.7 CSV import (Huey job + SSE) — DROPPED
 
-- [x] **5.7.1** `ImportJob` model in `querylab_app`: workspace, table name, status `queued | running | succeeded | failed | cancelled`, progress counters (bytes read, rows loaded), error code and message, timestamps, temp file path.
-- [x] **5.7.2** `POST /api/workspaces/{id}/imports` (multipart): checks workspace ownership, caps (`IMPORT_MAX_FILE_BYTES` while streaming, not after), `IMPORT_MAX_CONCURRENT` per user, free space; spools to `UPLOAD_TMP_DIR`; creates the job; enqueues the Huey task; returns `202` with the job id and the events URL.
-- [x] **5.7.3** Sniffing before the job is queued: encoding (UTF-8 with or without BOM, otherwise a typed error), delimiter, header row, column count and names; refuse binary files and empty files. Returned in a `preview` (first rows, inferred names and types) from `POST .../imports/preview`, so a screen can confirm before importing.
-- [x] **5.7.4** `POST .../imports` accepts an optional column override (names, types, skip) from the preview step. Without it, inference runs in the job.
-- [x] **5.7.5** Huey task `run_import(job_id)`: in one transaction on the owner connection, create the table, `COPY` the file in batches of `IMPORT_BATCH_ROWS`, with `IMPORT_STATEMENT_TIMEOUT_MS`, updating progress in Redis every batch (not Postgres). Type inference uses a bounded sample then verifies all rows; a value that breaks the inferred type widens it to `text` or fails with its row number, per the override.
-- [x] **5.7.6** Cleanup: always delete the temp file; on any error roll back, drop the half-made table, record the error code. A job found `running` after a restart is marked `failed: interrupted` by a startup sweep.
-- [x] **5.7.7** `GET /api/workspaces/{id}/imports/{job}` (status) and `GET .../events` (SSE) reusing the step 3 stream helper: `progress`, `succeeded` (with table name, row count, bytes), `failed`. Cookie auth, owner only, open-stream cap shared with the agent streams.
-- [x] **5.7.8** `POST .../imports/{job}/cancel`: cooperative cancel checked between batches.
-- [x] **5.7.9** After success: bump schema version, check size caps (roll back and fail with `workspace_full` if over), log DDL, set `COMMENT ON` from the header if requested.
-- [x] **5.7.10** Fixtures and tests: clean file, BOM, semicolon delimiter, quoted newlines, ragged rows, duplicate and empty headers, huge cell, over-cap file, over-cap rows, a 100-column file, mixed types, a hostile header (`"; DROP TABLE x;--`), cancel mid-way, worker killed mid-way, two imports at once. Run the Huey task in immediate mode for tests plus one test with the real worker. *(the "one test with the real worker" was run by hand through the dev worker with curl and a session cookie, because the pytest database is not the one the worker uses; see DECISION.md)*
-- [x] **5.7.11** Measure memory and time for a cap-sized file on a 1 GiB container (Docker memory limit 1 GiB, 0.25 CPU); record the numbers in `DECISION.md` and tune `IMPORT_BATCH_ROWS` and the caps.
+> **Dropped by the owner on 2026-10-31.** The import was built, tested and measured (see git history before the commit that drops it), then removed: the spool-to-container-disk design ties uploads to one container's disk and an unrelated restart loses them. It may return later with uploads going to Cloudflare R2 object storage (the file lives in the bucket, the job reads it from there, no shared local disk, no upload size middleware). Until then users fill tables with the row API or the SQL console. Everything below is kept as the design record; 5.5.8 (key and relations in an import) and the import parts of 5.2.6, 5.8 and 5.9.1 went with it.
+
+- [-] **5.7.1** `ImportJob` model in `querylab_app`: workspace, table name, status `queued | running | succeeded | failed | cancelled`, progress counters (bytes read, rows loaded), error code and message, timestamps, temp file path.
+- [-] **5.7.2** `POST /api/workspaces/{id}/imports` (multipart): checks workspace ownership, caps (`IMPORT_MAX_FILE_BYTES` while streaming, not after), `IMPORT_MAX_CONCURRENT` per user, free space; spools to `UPLOAD_TMP_DIR`; creates the job; enqueues the Huey task; returns `202` with the job id and the events URL.
+- [-] **5.7.3** Sniffing before the job is queued: encoding (UTF-8 with or without BOM, otherwise a typed error), delimiter, header row, column count and names; refuse binary files and empty files. Returned in a `preview` (first rows, inferred names and types) from `POST .../imports/preview`, so a screen can confirm before importing.
+- [-] **5.7.4** `POST .../imports` accepts an optional column override (names, types, skip) from the preview step. Without it, inference runs in the job.
+- [-] **5.7.5** Huey task `run_import(job_id)`: in one transaction on the owner connection, create the table, `COPY` the file in batches of `IMPORT_BATCH_ROWS`, with `IMPORT_STATEMENT_TIMEOUT_MS`, updating progress in Redis every batch (not Postgres). Type inference uses a bounded sample then verifies all rows; a value that breaks the inferred type widens it to `text` or fails with its row number, per the override.
+- [-] **5.7.6** Cleanup: always delete the temp file; on any error roll back, drop the half-made table, record the error code. A job found `running` after a restart is marked `failed: interrupted` by a startup sweep.
+- [-] **5.7.7** `GET /api/workspaces/{id}/imports/{job}` (status) and `GET .../events` (SSE) reusing the step 3 stream helper: `progress`, `succeeded` (with table name, row count, bytes), `failed`. Cookie auth, owner only, open-stream cap shared with the agent streams.
+- [-] **5.7.8** `POST .../imports/{job}/cancel`: cooperative cancel checked between batches.
+- [-] **5.7.9** After success: bump schema version, check size caps (roll back and fail with `workspace_full` if over), log DDL, set `COMMENT ON` from the header if requested.
+- [-] **5.7.10** Fixtures and tests: clean file, BOM, semicolon delimiter, quoted newlines, ragged rows, duplicate and empty headers, huge cell, over-cap file, over-cap rows, a 100-column file, mixed types, a hostile header (`"; DROP TABLE x;--`), cancel mid-way, worker killed mid-way, two imports at once. Run the Huey task in immediate mode for tests plus one test with the real worker. *(the "one test with the real worker" was run by hand through the dev worker with curl and a session cookie, because the pytest database is not the one the worker uses; see DECISION.md)*
+- [-] **5.7.11** Measure memory and time for a cap-sized file on a 1 GiB container (Docker memory limit 1 GiB, 0.25 CPU); record the numbers in `DECISION.md` and tune `IMPORT_BATCH_ROWS` and the caps.
 
 ## 5.8 Quotas and limits
 
