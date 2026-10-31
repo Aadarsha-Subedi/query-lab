@@ -21,6 +21,10 @@ DEBUG = env.bool("DJANGO_DEBUG")
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS")
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS")
+# The session cookie and the CSRF header must cross origins (the frontend and the
+# API can be on different origins). corsheaders only answers this for the origins
+# listed above, so credentials are never offered to any other origin.
+CORS_ALLOW_CREDENTIALS = True
 FRONTEND_URL = env.str("FRONTEND_URL")
 
 INSTALLED_APPS = [
