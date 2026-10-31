@@ -136,7 +136,7 @@ def test_users_only_see_their_own_keys(
 def test_own_key_wins_over_the_default(user: User, calls: Calls) -> None:
     default = keys.resolve_provider(user)
     assert default.key_source == keys.KEY_DEFAULT
-    assert calls.built[-1] == ("gemini", "test-gemini-key", "gemini-2.5-flash-lite")
+    assert calls.built[-1] == ("gemini", "test-gemini-key", "gemini-3.5-flash")
     UserLLMKey.objects.create(
         user=user,
         provider="openai",

@@ -533,6 +533,89 @@
           ]
         },
         {
+          "name": "Save a Gemini key",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/llm-keys/gemini",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "llm-keys",
+                "gemini"
+              ]
+            },
+            "description": "Checks the key with Google, then stores it encrypted. Replace the value with your own key before sending; a wrong key answers 400 `llm_invalid_key`. A model outside LLM_GEMINI_MODELS answers 400 `model_invalid`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"api_key\": \"<your Gemini key>\",\n  \"model\": \"gemini-3.5-flash\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Remove my Gemini key",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/llm-keys/gemini",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "llm-keys",
+                "gemini"
+              ]
+            },
+            "description": "Removes the saved Gemini key; asks go back to your other saved key, or to QueryLab's default key."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Ask a question",
           "request": {
             "method": "POST",
