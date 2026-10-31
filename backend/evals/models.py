@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from common.models import TimeStampModel
@@ -87,3 +88,63 @@ class EvalResult(TimeStampModel):
 
     def __str__(self) -> str:
         return f"{self.run_id}:{self.question_id}:{self.outcome}"
+
+
+class TraceCase(TimeStampModel):
+    """A stored agent run picked as an eval case (step 6). Nothing here is gold
+    until a person approves it: the model's `draft_sql` is only a starting point and
+    `gold_sql` is set on approval alone. Holds SQL and the question text, never
+    result rows. `source_run_id` is a plain number so the run may disappear later."""
+
+    STATUS_CANDIDATE = "candidate"  # picked by a rule, not drafted yet
+    STATUS_DRAFTED = "drafted"  # a draft (or its error) is waiting for a person
+    STATUS_APPROVED = "approved"  # a person approved the gold SQL
+    STATUS_REJECTED = "rejected"
+    STATUSES = (STATUS_CANDIDATE, STATUS_DRAFTED, STATUS_APPROVED, STATUS_REJECTED)
+
+    # Why the run was picked (comma separated, see evals/candidates.py).
+    REASON_EDITED = "edited"
+    REASON_THUMBS_DOWN = "thumbs_down"
+    REASON_FAILED = "failed"
+    REASON_REVISED = "revised"
+    REASON_NOT_ANSWERABLE = "not_answerable"
+    REASON_NEEDS_LOOK = "needs_look"
+
+    # What the run ended as, for clustering.
+    OUTCOME_ANSWERED = "answered"
+    OUTCOME_DECLINED = "declined"
+    OUTCOME_ERROR = "error"
+    OUTCOME_UNFINISHED = "unfinished"
+
+    source_run_id = models.PositiveIntegerField(null=True, blank=True, unique=True)
+    source_created_at = models.DateTimeField()
+    question = models.TextField()
+    reasons = models.CharField(max_length=200)
+    signals = models.PositiveSmallIntegerField(default=0)
+    outcome = models.CharField(max_length=12)
+    # The SQL the run ended with, or proposed first when it ended without any.
+    source_sql = models.TextField(blank=True)
+    status = models.CharField(max_length=10, default=STATUS_CANDIDATE)
+    cluster_key = models.CharField(max_length=60, blank=True)
+    draft_sql = models.TextField(blank=True)
+    draft_model = models.CharField(max_length=100, blank=True)
+    draft_error = models.CharField(max_length=300, blank=True)
+    drafted_at = models.DateTimeField(null=True, blank=True)
+    gold_sql = models.TextField(blank=True)
+    answerable = models.BooleanField(default=True)
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    note = models.CharField(max_length=300, blank=True)
+
+    class Meta:
+        ordering = ["-source_created_at", "-id"]
+        indexes = [models.Index(fields=["status", "cluster_key"])]
+
+    def __str__(self) -> str:
+        return f"case {self.pk} ({self.status})"
