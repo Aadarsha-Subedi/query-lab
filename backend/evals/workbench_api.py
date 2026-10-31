@@ -47,6 +47,10 @@ class TraceFilter(FilterSchema):
     key_source: Annotated[str | None, FilterLookup("key_source")] = None
     revisions_min: Annotated[int | None, FilterLookup("revisions__gte")] = None
     edited: Annotated[bool | None, FilterLookup("edited_flag")] = None
+    # The owner's vote: `up` or `down`.
+    feedback: Annotated[Literal["up", "down"] | None, FilterLookup("feedback_vote")] = (
+        None
+    )
     q: Annotated[str | None, FilterLookup("question__icontains")] = None
     created_after: Annotated[datetime | None, FilterLookup("created_at__gte")] = None
     created_before: Annotated[datetime | None, FilterLookup("created_at__lte")] = None
@@ -79,12 +83,14 @@ def list_trace_runs(
 ) -> dict:
     """Staff only. Runs on the shared demo that are allowed in evals (runs on a
     user workspace never appear). Filter by `status`, `error_code`, `check`
-    (`checked` / `needs_look`), `key_source`, `revisions_min`, `edited`, `q` (text
+    (`checked` / `needs_look`), `key_source`, `revisions_min`, `edited`, `feedback` (`up`/`down`), `q` (text
     in the question) and `created_after` / `created_before`. Order by
     `created_at`, `latency_ms`, `revisions`, `llm_calls` or `row_count`, newest
     first by default. `meta.count` is the number of matches."""
     limit = page.size()
-    runs = agent_schemas.with_edited(traces.workbench_runs())
+    runs = agent_schemas.with_feedback(
+        agent_schemas.with_edited(traces.workbench_runs())
+    )
     runs = ordering.apply(filters.filter(runs))
     runs = runs.order_by(*(runs.query.order_by or ("-created_at",)), "-id")
     items = [agent_schemas.run_dict(r) for r in runs[page.offset : page.offset + limit]]

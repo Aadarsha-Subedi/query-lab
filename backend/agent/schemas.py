@@ -1,14 +1,14 @@
 """API shapes for runs and steps, and the dicts built from the models."""
 
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Literal
 
 from django.conf import settings
-from django.db.models import Exists, OuterRef, QuerySet
+from django.db.models import Exists, OuterRef, QuerySet, Subquery
 from ninja import Schema
 
 from agent import confidence
-from agent.models import AgentRun, AgentStep
+from agent.models import AgentRun, AgentStep, RunFeedback
 
 
 class RunIn(Schema):
@@ -19,6 +19,19 @@ class RunIn(Schema):
 
 class EditIn(Schema):
     sql: str
+
+
+class FeedbackIn(Schema):
+    vote: Literal["up", "down"]
+    # Why, in your words (optional, capped by FEEDBACK_NOTE_MAX_CHARS).
+    note: str = ""
+
+
+class FeedbackOut(Schema):
+    run_id: int
+    # Your vote, or null once you took it back.
+    vote: Literal["up", "down"] | None
+    note: str
 
 
 class StepOut(Schema):
@@ -65,6 +78,8 @@ class RunOut(Schema):
     has_result: bool
     # True when the person changed the SQL before it ran.
     edited: bool
+    # The owner's vote on the run, or null.
+    feedback: Literal["up", "down"] | None
     created_at: datetime
     finished_at: datetime | None
 
@@ -159,6 +174,25 @@ def with_edited(runs: QuerySet[AgentRun]) -> QuerySet[AgentRun]:
     )
 
 
+def with_feedback(runs: QuerySet[AgentRun]) -> QuerySet[AgentRun]:
+    """Annotate runs with `feedback_vote` (the owner's vote), so a list needs no
+    query per row."""
+    return runs.annotate(
+        feedback_vote=Subquery(
+            RunFeedback.objects.filter(run=OuterRef("pk"), user=OuterRef("user"))
+            .order_by("-id")
+            .values("vote")[:1]
+        )
+    )
+
+
+def _vote(run: AgentRun) -> str | None:
+    if hasattr(run, "feedback_vote"):
+        return run.feedback_vote or None
+    row = run.feedback.filter(user_id=run.user_id).values_list("vote", flat=True)
+    return row.first()
+
+
 def _edited(run: AgentRun) -> bool:
     flag = getattr(run, "edited_flag", None)
     if flag is not None:
@@ -192,6 +226,7 @@ def run_dict(run: AgentRun) -> dict[str, Any]:
         "workspace_id": run.workspace_id,
         "has_result": run.status == AgentRun.STATUS_SUCCEEDED,
         "edited": _edited(run),
+        "feedback": _vote(run),
         "created_at": run.created_at,
         "finished_at": run.finished_at,
     }

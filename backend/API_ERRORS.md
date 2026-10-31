@@ -53,6 +53,7 @@ Every error answers in the envelope `{success: false, status_code, message, code
 | `run_not_found` | 404 | No such run (also another user's run). | Go back to history. |
 | `run_not_awaiting_approval` | 409 | Approve, edit or cancel on a run that is not paused (a double click, or a run that moved on). | Reload the run and show its real state. |
 | `run_not_succeeded` | 409 | `GET /result` on a run that has no result. | Show the run's status instead of a table. |
+| `run_not_finished` | 409 | A thumbs up or down on a run that is still going. | Show the buttons only on finished runs. |
 | `run_expired` | 409 | Nobody approved the SQL in time. | Show "expired"; offer to ask again. |
 | `run_busy` | 409 | The run is being worked on right now. | Retry in a moment. |
 | `table_not_found` | 404 | No such table in the schema. | Refresh the schema panel. |

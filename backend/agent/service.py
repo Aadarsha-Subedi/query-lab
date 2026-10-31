@@ -18,13 +18,14 @@ from agent.errors import (
     RunExpired,
     RunLimitReached,
     RunNotAwaitingApproval,
+    RunNotFinished,
     RunNotFound,
 )
-from agent.models import AgentRun, AgentStep
+from agent.models import AgentRun, AgentStep, RunFeedback
 from ask import guard, keys, schema
 from ask import prompt as ask_prompt
 from ask.errors import GuardRejected
-from common.exception.domain import ConflictException
+from common.exception.domain import ConflictException, ValidationException
 from workspaces.context import DEMO, WorkspaceRef
 from workspaces.resolve import resolve
 
@@ -199,3 +200,32 @@ def decide(
         state.save(current)
         events.publish_status(run.pk)
     return run
+
+
+def set_feedback(user: User, run_id: int, vote: str, note: str) -> RunFeedback:
+    """Record the owner's vote on a finished run; a second vote replaces the first."""
+    run = get_run(user, run_id)
+    if not run.is_terminal:
+        raise RunNotFinished()
+    note = note.strip()
+    if len(note) > settings.FEEDBACK_NOTE_MAX_CHARS:
+        raise ValidationException(
+            errors=[
+                {
+                    "field": "note",
+                    "message": f"Use at most {settings.FEEDBACK_NOTE_MAX_CHARS} characters.",
+                }
+            ]
+        )
+    feedback, _ = RunFeedback.objects.update_or_create(
+        run=run, user=user, defaults={"vote": vote, "note": note}
+    )
+    return feedback
+
+
+def clear_feedback(user: User, run_id: int) -> None:
+    """Take the vote back (nothing to do when there is none)."""
+    run = get_run(user, run_id)
+    if not run.is_terminal:
+        raise RunNotFinished()
+    RunFeedback.objects.filter(run=run, user=user).delete()

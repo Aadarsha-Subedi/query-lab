@@ -1336,6 +1336,93 @@
               }
             }
           ]
+        },
+        {
+          "name": "Rate a run (up or down)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/runs/{{agentRunId}}/feedback",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agent",
+                "runs",
+                "{{agentRunId}}",
+                "feedback"
+              ]
+            },
+            "description": "Your own finished run only. One vote per run; sending again changes it. `note` is optional (FEEDBACK_NOTE_MAX_CHARS). 409 `run_not_finished` while the run is going. The run's `feedback` field shows your vote.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vote\": \"down\",\n  \"note\": \"Counted the wrong table.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 422]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 422]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Take back a rating",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/runs/{{agentRunId}}/feedback",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agent",
+                "runs",
+                "{{agentRunId}}",
+                "feedback"
+              ]
+            },
+            "description": "Removes your vote on a finished run (a no-op when there is none)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -2713,7 +2800,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/workbench/runs?limit=20&status=failed&error_code=query_failed&check=needs_look&edited=true&revisions_min=1&q=orders&created_after=2026-01-01T00:00:00Z&ordering=-created_at",
+              "raw": "{{baseUrl}}/api/workbench/runs?limit=20&status=failed&error_code=query_failed&check=needs_look&edited=true&revisions_min=1&feedback=down&q=orders&created_after=2026-01-01T00:00:00Z&ordering=-created_at",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -2749,6 +2836,11 @@
                   "disabled": false
                 },
                 {
+                  "key": "feedback",
+                  "value": "down",
+                  "disabled": false
+                },
+                {
                   "key": "revisions_min",
                   "value": "1",
                   "disabled": false
@@ -2770,7 +2862,7 @@
                 }
               ]
             },
-            "description": "Staff only (403 `staff_only` for others). Demo runs that are allowed in evals; a user-workspace run never appears. Filters: `status` (repeat), `error_code`, `check` (`checked`/`needs_look`), `key_source`, `revisions_min`, `edited`, `q`, `created_after`/`created_before`; `ordering` is `created_at`, `latency_ms`, `revisions`, `llm_calls` or `row_count`. `meta.count` is the match count."
+            "description": "Staff only (403 `staff_only` for others). Demo runs that are allowed in evals; a user-workspace run never appears. Filters: `status` (repeat), `error_code`, `check` (`checked`/`needs_look`), `key_source`, `revisions_min`, `edited`, `feedback` (`up`/`down`), `q`, `created_after`/`created_before`; `ordering` is `created_at`, `latency_ms`, `revisions`, `llm_calls` or `row_count`. `meta.count` is the match count."
           },
           "event": [
             {

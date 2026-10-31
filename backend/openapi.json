@@ -400,6 +400,62 @@
         "title": "ErrorEnvelope",
         "type": "object"
       },
+      "FeedbackIn": {
+        "properties": {
+          "note": {
+            "default": "",
+            "title": "Note",
+            "type": "string"
+          },
+          "vote": {
+            "enum": [
+              "up",
+              "down"
+            ],
+            "title": "Vote",
+            "type": "string"
+          }
+        },
+        "required": [
+          "vote"
+        ],
+        "title": "FeedbackIn",
+        "type": "object"
+      },
+      "FeedbackOut": {
+        "properties": {
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "integer"
+          },
+          "vote": {
+            "anyOf": [
+              {
+                "enum": [
+                  "up",
+                  "down"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vote"
+          }
+        },
+        "required": [
+          "run_id",
+          "vote",
+          "note"
+        ],
+        "title": "FeedbackOut",
+        "type": "object"
+      },
       "ForeignKeyOut": {
         "properties": {
           "columns": {
@@ -1014,6 +1070,21 @@
             "title": "Error Code",
             "type": "string"
           },
+          "feedback": {
+            "anyOf": [
+              {
+                "enum": [
+                  "up",
+                  "down"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          },
           "final_sql": {
             "title": "Final Sql",
             "type": "string"
@@ -1146,6 +1217,7 @@
           "workspace_id",
           "has_result",
           "edited",
+          "feedback",
           "created_at",
           "finished_at",
           "pending",
@@ -1290,6 +1362,21 @@
             "title": "Error Code",
             "type": "string"
           },
+          "feedback": {
+            "anyOf": [
+              {
+                "enum": [
+                  "up",
+                  "down"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          },
           "final_sql": {
             "title": "Final Sql",
             "type": "string"
@@ -1405,6 +1492,7 @@
           "workspace_id",
           "has_result",
           "edited",
+          "feedback",
           "created_at",
           "finished_at"
         ],
@@ -1645,6 +1733,40 @@
           "data"
         ],
         "title": "SuccessEnvelope[AskOut]",
+        "type": "object"
+      },
+      "SuccessEnvelope_FeedbackOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/FeedbackOut"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Meta",
+            "type": "object"
+          },
+          "status_code": {
+            "title": "Status Code",
+            "type": "integer"
+          },
+          "success": {
+            "const": true,
+            "default": true,
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status_code",
+          "message",
+          "data"
+        ],
+        "title": "SuccessEnvelope[FeedbackOut]",
         "type": "object"
       },
       "SuccessEnvelope_LLMKeyOut_": {
@@ -2596,6 +2718,21 @@
             "title": "Error Code",
             "type": "string"
           },
+          "feedback": {
+            "anyOf": [
+              {
+                "enum": [
+                  "up",
+                  "down"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          },
           "final_sql": {
             "title": "Final Sql",
             "type": "string"
@@ -2732,6 +2869,7 @@
           "workspace_id",
           "has_result",
           "edited",
+          "feedback",
           "created_at",
           "finished_at",
           "pending",
@@ -2806,6 +2944,21 @@
               }
             ],
             "title": "Error Code"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "enum": [
+                  "up",
+                  "down"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
           },
           "key_source": {
             "anyOf": [
@@ -3901,6 +4054,190 @@
         ]
       }
     },
+    "/api/agent/runs/{run_id}/feedback": {
+      "delete": {
+        "description": "Take your vote back.",
+        "operationId": "delete_feedback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_FeedbackOut_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          }
+        ],
+        "summary": "Delete Feedback",
+        "tags": [
+          "agent"
+        ]
+      },
+      "put": {
+        "description": "Rate your own finished run: `up` or `down`, with an optional short note.\nOne vote per run; sending it again changes it. 409 `run_not_finished` while\nthe run is still going. It only helps choose runs worth reviewing.",
+        "operationId": "put_feedback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_FeedbackOut_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          }
+        ],
+        "summary": "Put Feedback",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
     "/api/agent/runs/{run_id}/replay": {
       "get": {
         "description": "The stored trace in order. No model call and no query on the demo database:\nit is read from the steps alone.",
@@ -4672,7 +5009,7 @@
     },
     "/api/workbench/runs": {
       "get": {
-        "description": "Staff only. Runs on the shared demo that are allowed in evals (runs on a\nuser workspace never appear). Filter by `status`, `error_code`, `check`\n(`checked` / `needs_look`), `key_source`, `revisions_min`, `edited`, `q` (text\nin the question) and `created_after` / `created_before`. Order by\n`created_at`, `latency_ms`, `revisions`, `llm_calls` or `row_count`, newest\nfirst by default. `meta.count` is the number of matches.",
+        "description": "Staff only. Runs on the shared demo that are allowed in evals (runs on a\nuser workspace never appear). Filter by `status`, `error_code`, `check`\n(`checked` / `needs_look`), `key_source`, `revisions_min`, `edited`, `feedback` (`up`/`down`), `q` (text\nin the question) and `created_after` / `created_before`. Order by\n`created_at`, `latency_ms`, `revisions`, `llm_calls` or `row_count`, newest\nfirst by default. `meta.count` is the number of matches.",
         "operationId": "list_trace_runs",
         "parameters": [
           {
@@ -4812,6 +5149,26 @@
                 }
               ],
               "title": "Edited"
+            }
+          },
+          {
+            "in": "query",
+            "name": "feedback",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "up",
+                    "down"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Feedback"
             }
           },
           {

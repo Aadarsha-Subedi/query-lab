@@ -29,6 +29,11 @@ class RunNotSucceeded(ConflictException):
     error_code = "run_not_succeeded"
 
 
+class RunNotFinished(ConflictException):
+    message = "You can rate a run once it has finished."
+    error_code = "run_not_finished"
+
+
 class RunExpired(ConflictException):
     message = "This run waited too long for approval and expired."
     error_code = "run_expired"

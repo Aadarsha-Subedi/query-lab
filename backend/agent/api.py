@@ -12,6 +12,8 @@ from agent import limits, result, service, tasks
 from agent.models import AgentRun
 from agent.schemas import (
     EditIn,
+    FeedbackIn,
+    FeedbackOut,
     LimitsOut,
     ResultOut,
     RunDetailOut,
@@ -20,6 +22,7 @@ from agent.schemas import (
     run_detail_dict,
     run_dict,
     with_edited,
+    with_feedback,
 )
 from agent.stream import EventStream
 from common.exception.domain import ValidationException
@@ -126,7 +129,7 @@ def list_runs(
                 ]
             )
         mine = mine.filter(workspace_id=int(workspace))
-    runs = with_edited(ordering.apply(filters.filter(mine)))
+    runs = with_feedback(with_edited(ordering.apply(filters.filter(mine))))
     if ordering.ordering:  # the id breaks ties, so pages do not shuffle
         runs = runs.order_by(*runs.query.order_by, "-id")
     items = [run_dict(r) for r in runs[page.offset : page.offset + limit]]
@@ -212,6 +215,41 @@ def run_result(request: HttpRequest, run_id: int) -> dict:
     connection. It never takes SQL from the request, so the numbers can differ
     from the first run if the data changed. 409 `run_not_succeeded` otherwise."""
     return success(result.fetch(service.get_run(_user(request), run_id)))
+
+
+@router.put(
+    "/runs/{run_id}/feedback",
+    response={
+        200: SuccessEnvelope[FeedbackOut],
+        **errors(400, 401, 404, 409, 422, 429),
+    },
+    auth=django_auth,
+)
+def put_feedback(request: HttpRequest, run_id: int, payload: FeedbackIn) -> dict:
+    """Rate your own finished run: `up` or `down`, with an optional short note.
+    One vote per run; sending it again changes it. 409 `run_not_finished` while
+    the run is still going. It only helps choose runs worth reviewing."""
+    feedback = service.set_feedback(_user(request), run_id, payload.vote, payload.note)
+    return success(
+        FeedbackOut(
+            run_id=run_id,
+            vote=payload.vote,
+            note=feedback.note,
+        ).model_dump(mode="json")
+    )
+
+
+@router.delete(
+    "/runs/{run_id}/feedback",
+    response={200: SuccessEnvelope[FeedbackOut], **errors(401, 404, 409, 429)},
+    auth=django_auth,
+)
+def delete_feedback(request: HttpRequest, run_id: int) -> dict:
+    """Take your vote back."""
+    service.clear_feedback(_user(request), run_id)
+    return success(
+        FeedbackOut(run_id=run_id, vote=None, note="").model_dump(mode="json")
+    )
 
 
 @router.get(

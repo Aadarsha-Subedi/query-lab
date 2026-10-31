@@ -55,9 +55,9 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 6.3 Feedback signal
 
-- [ ] **6.3.1** Model `RunFeedback` (run, user, vote `up | down`, optional short note, timestamps), unique `(run, user)`, in `agent`; migration.
-- [ ] **6.3.2** `PUT /api/agent/runs/{id}/feedback` and `DELETE` for the run's owner only, on a terminal run, throttled like the other run writes. `feedback` (your vote or null) added to the run schema; OpenAPI regenerated with `make openapi`.
-- [ ] **6.3.3** Tests: only the owner votes; a vote changes rather than duplicates; a running run is refused; the error codes are in `API_ERRORS.md` (drift test).
+- [x] **6.3.1** Model `RunFeedback` (run, user, vote `up | down`, optional short note, timestamps), unique `(run, user)`, in `agent`; migration.
+- [x] **6.3.2** `PUT /api/agent/runs/{id}/feedback` and `DELETE` for the run's owner only, on a terminal run, throttled like the other run writes. `feedback` (your vote or null) added to the run schema; OpenAPI regenerated with `make openapi`.
+- [x] **6.3.3** Tests: only the owner votes; a vote changes rather than duplicates; a running run is refused; the error codes are in `API_ERRORS.md` (drift test).
 
 ## 6.4 Candidates and expected SQL (hand-reviewed)
 
