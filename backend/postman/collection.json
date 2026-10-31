@@ -1846,6 +1846,537 @@
       ]
     },
     {
+      "name": "8. Workspace tables (signed in)",
+      "item": [
+        {
+          "name": "Create a table",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/tables",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "tables"
+              ]
+            },
+            "description": "Creates a table from a column spec; it gets a hidden `_row_id` key. Types: text, integer, bigint, numeric, boolean, date, timestamp. Sets {{tableName}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Customer\",\n  \"description\": \"Who buys things\",\n  \"columns\": [\n    {\n      \"name\": \"Full name\",\n      \"type\": \"text\",\n      \"nullable\": false,\n      \"description\": \"As on the card\"\n    },\n    {\n      \"name\": \"Age\",\n      \"type\": \"integer\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 422, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 422, 429]));",
+                  "if (pm.response.code === 200) pm.environment.set('tableName', String(pm.response.json().data.name));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List tables",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/tables",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "tables"
+              ]
+            },
+            "description": "Tables with columns, including the hidden `_row_id`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get a table",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/tables/{{tableName}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "tables",
+                "{{tableName}}"
+              ]
+            },
+            "description": "One table."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rename or describe a table",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/tables/{{tableName}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "tables",
+                "{{tableName}}"
+              ]
+            },
+            "description": "Rename and/or set the description (stored as a Postgres comment, so the agent reads it).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Paying customers\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 422, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 422, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add a column",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/tables/{{tableName}}/columns",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "tables",
+                "{{tableName}}",
+                "columns"
+              ]
+            },
+            "description": "A NOT NULL column on a table with rows needs a default.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Score\",\n  \"type\": \"integer\",\n  \"nullable\": false,\n  \"default\": \"0\",\n  \"description\": \"Points\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 422, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 422, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change a column (rename, describe, retype)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/tables/{{tableName}}/columns/score",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "tables",
+                "{{tableName}}",
+                "columns",
+                "score"
+              ]
+            },
+            "description": "A retype that hits a value that does not convert answers 422 `cast_failed` with its row id and changes nothing.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"bigint\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 422, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 422, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Drop a column",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/tables/{{tableName}}/columns/score",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "tables",
+                "{{tableName}}",
+                "columns",
+                "score"
+              ]
+            },
+            "description": "Also removes keys and relations that use it."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 422, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 422, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Set the primary key",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/tables/{{tableName}}/primary-key",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "tables",
+                "{{tableName}}",
+                "primary-key"
+              ]
+            },
+            "description": "409 `constraint_violation` names the first repeated or empty row.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"columns\": [\n    \"full_name\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 422, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 422, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create a relation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/relations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "relations"
+              ]
+            },
+            "description": "Child columns point at the parent's primary key or unique columns, both in this workspace. Sets {{relationName}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"child_table\": \"orders\",\n  \"child_columns\": [\n    \"customer_id\"\n  ],\n  \"parent_table\": \"customer\",\n  \"parent_columns\": [\n    \"id\"\n  ],\n  \"on_delete\": \"NO ACTION\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 422, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 422, 429]));",
+                  "if (pm.response.code === 200) pm.environment.set('relationName', String(pm.response.json().data.name));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List relations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/relations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "relations"
+              ]
+            },
+            "description": "The workspace's relations."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete a relation",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/relations/{{relationName}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "relations",
+                "{{relationName}}"
+              ]
+            },
+            "description": "Removes the constraint only."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Drop a table",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/tables/{{tableName}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "tables",
+                "{{tableName}}"
+              ]
+            },
+            "description": "Drops the table and its rows, and relations that point at it."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 429]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "7. Log out",
       "item": [
         {

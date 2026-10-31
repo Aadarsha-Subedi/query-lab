@@ -6,11 +6,14 @@ from ninja.security import django_auth
 
 from accounts.models import User
 from common.response.domain import SuccessEnvelope, errors, success
-from workspaces import tables
+from workspaces import relations, tables
 from workspaces.access import writable_workspace
 from workspaces.table_schemas import (
     ColumnIn,
     ColumnPatch,
+    PrimaryKeyIn,
+    RelationIn,
+    RelationOut,
     TableIn,
     TablePatch,
     WorkspaceTableOut,
@@ -162,3 +165,68 @@ def delete_workspace_column(
     workspace = writable_workspace(_user(request), workspace_id)
     tables.drop_column(workspace, _user(request), table, column)
     return success(tables.get_table(workspace, table))
+
+
+@router.put(
+    "/{workspace_id}/tables/{table}/primary-key",
+    response={200: SuccessEnvelope[WorkspaceTableOut], **TABLE_ERRORS},
+    auth=django_auth,
+)
+def set_workspace_primary_key(
+    request: HttpRequest, workspace_id: int, table: str, payload: PrimaryKeyIn
+) -> dict:
+    """Make these columns the table's primary key (replacing any earlier one).
+    Existing rows are checked: a repeated or empty value is a 409
+    `constraint_violation` naming its row id, and nothing changes."""
+    workspace = writable_workspace(_user(request), workspace_id)
+    return success(
+        relations.set_primary_key(workspace, _user(request), table, payload.columns)
+    )
+
+
+@router.get(
+    "/{workspace_id}/relations",
+    response={200: SuccessEnvelope[list[RelationOut]], **TABLE_ERRORS},
+    auth=django_auth,
+)
+def list_workspace_relations(request: HttpRequest, workspace_id: int) -> dict:
+    workspace = writable_workspace(_user(request), workspace_id)
+    return success(relations.list_relations(workspace))
+
+
+@router.post(
+    "/{workspace_id}/relations",
+    response={200: SuccessEnvelope[RelationOut], **TABLE_ERRORS},
+    auth=django_auth,
+)
+def create_workspace_relation(
+    request: HttpRequest, workspace_id: int, payload: RelationIn
+) -> dict:
+    """Relate a child table's column(s) to a parent table's primary key or unique
+    column(s), both in this workspace. Existing rows are checked: the first row
+    with no parent is named in a 409 `constraint_violation`."""
+    workspace = writable_workspace(_user(request), workspace_id)
+    return success(
+        relations.add_relation(
+            workspace,
+            _user(request),
+            child_table=payload.child_table,
+            child_columns=payload.child_columns,
+            parent_table=payload.parent_table,
+            parent_columns=payload.parent_columns,
+            on_delete=payload.on_delete,
+        )
+    )
+
+
+@router.delete(
+    "/{workspace_id}/relations/{name}",
+    response={200: SuccessEnvelope[None], **TABLE_ERRORS},
+    auth=django_auth,
+)
+def delete_workspace_relation(
+    request: HttpRequest, workspace_id: int, name: str
+) -> dict:
+    workspace = writable_workspace(_user(request), workspace_id)
+    relations.delete_relation(workspace, _user(request), name)
+    return success(None, message="Relation removed.")

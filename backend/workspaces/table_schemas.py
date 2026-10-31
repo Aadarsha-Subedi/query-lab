@@ -45,3 +45,27 @@ class WorkspaceTableOut(Schema):
     row_estimate: int | None
     primary_key: list[str]
     columns: list[WorkspaceColumnOut]
+
+
+class PrimaryKeyIn(Schema):
+    # One or more columns. They must have no empty or repeated values.
+    columns: list[str]
+
+
+class RelationIn(Schema):
+    child_table: str
+    child_columns: list[str]
+    parent_table: str
+    # The primary key or a unique column set of the parent table.
+    parent_columns: list[str]
+    # NO ACTION (refuse deleting a parent that has children) or CASCADE.
+    on_delete: str = "NO ACTION"
+
+
+class RelationOut(Schema):
+    name: str
+    child_table: str
+    child_columns: list[str]
+    parent_table: str
+    parent_columns: list[str]
+    on_delete: str

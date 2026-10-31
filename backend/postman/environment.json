@@ -31,6 +31,18 @@
       "value": "",
       "type": "default",
       "enabled": true
+    },
+    {
+      "key": "tableName",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "relationName",
+      "value": "",
+      "type": "default",
+      "enabled": true
     }
   ],
   "_postman_variable_scope": "environment"

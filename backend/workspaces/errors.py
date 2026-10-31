@@ -117,3 +117,8 @@ class ConstraintViolated(ConflictException):
 
     message = "The data does not satisfy this constraint."
     error_code = "constraint_violation"
+
+
+class RelationInvalid(UnprocessableEntityException):
+    message = "These columns cannot be related."
+    error_code = "relation_invalid"

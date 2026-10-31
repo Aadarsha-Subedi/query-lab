@@ -61,6 +61,17 @@ Every error answers in the envelope `{success: false, status_code, message, code
 | `workspace_not_ready` | 409 | The workspace is still being created, or is being deleted. | Retry in a moment. |
 | `demo_workspace_read_only` | 409 | Rename or delete on the shared demo workspace. | Hide those actions for the demo. |
 | `workspace_gone` | 404 | A run's workspace was deleted: its trace can still be replayed, but its result can no longer be fetched. | Show the trace only. |
+| `invalid_spec` | 422 | A table or column spec is unusable (no columns, the last column, a bad `on_delete`). | Show the message. |
+| `table_name_taken` | 409 | The workspace already has a table with this name. | Ask for another name. |
+| `column_name_taken` | 409 | The table already has a column with this name. | Ask for another name. |
+| `table_limit_reached` | 409 | The workspace has the maximum number of tables. | Offer to drop one. |
+| `column_limit_reached` | 409 | The table has the maximum number of columns. | Offer to drop one. |
+| `relation_limit_reached` | 409 | The workspace has the maximum number of relations. | Offer to remove one. |
+| `column_not_found` | 404 | No such column (the hidden `_row_id` cannot be addressed either). | Refresh the table. |
+| `relation_not_found` | 404 | No such relation. | Refresh the relation list. |
+| `relation_invalid` | 422 | The parent columns are not a primary key or unique, or the types differ. | Show the message; pick other columns. |
+| `cast_failed` | 422 | A value cannot be converted to the new column type. `errors[0].message` names the first bad row id. Nothing changed. | Show the row; offer to fix the value or pick `text`. |
+| `constraint_violation` | 409 | Existing rows break the key, relation or NOT NULL being added (or a row edit would break one). `errors[0].message` names the first row. Nothing changed. | Show the row; fix the data first. |
 | `invalid_name` | 422 | A workspace, table or column name or a column type cannot be used. | Show the message next to the field. |
 | `workspace_provisioning_failed` | 503 | The schema and roles could not be created; everything was cleaned up. | Retry later. |
 
