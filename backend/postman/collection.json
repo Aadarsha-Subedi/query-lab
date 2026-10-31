@@ -764,6 +764,76 @@
               }
             }
           ]
+        },
+        {
+          "name": "Schema: all tables",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schema",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schema"
+              ]
+            },
+            "description": "Every table of the demo schema: columns with type, nullability and comment, primary and foreign keys, row estimates. The response has an `ETag`; send it back as `If-None-Match` to get a 304. Sample values appear only when `SCHEMA_API_INCLUDE_SAMPLES` is on."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 304, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 304, 401]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Schema: one table",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schema/tables/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schema",
+                "tables",
+                "orders"
+              ]
+            },
+            "description": "One table, same shape as in the full schema. An unknown name is a 404 `table_not_found`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 304, 401, 404]', () => pm.expect(pm.response.code).to.be.oneOf([200, 304, 401, 404]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },

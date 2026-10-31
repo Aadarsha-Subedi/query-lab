@@ -40,10 +40,10 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 ## 4.2 Schema browser
 
 - [x] **4.2.1** Settings: `SCHEMA_API_INCLUDE_SAMPLES` (show sample values in the browser, default off in `.env.test`), in `.env.example` and settings with no default.
-- [ ] **4.2.2** `GET /api/schema`: tables with name, comment, row estimate, primary key, foreign keys, and columns with type, nullability, comment (and samples if enabled). Built from `ask.schema.get_schema`, so it hits the cache; auth required; demo schema only.
-- [ ] **4.2.3** `GET /api/schema/tables/{name}`: one table, same shape; unknown name is a typed 404 listing nothing the caller could not already see.
-- [ ] **4.2.4** Cache headers (`ETag` from the cache key and its refresh time) so the panel can revalidate cheaply.
-- [ ] **4.2.5** Tests: auth required, shape, unknown table, samples off by default, no write or DDL possible through it.
+- [x] **4.2.2** `GET /api/schema`: tables with name, comment, row estimate, primary key, foreign keys, and columns with type, nullability, comment (and samples if enabled). Built from `ask.schema.get_schema`, so it hits the cache; auth required; demo schema only.
+- [x] **4.2.3** `GET /api/schema/tables/{name}`: one table, same shape; unknown name is a typed 404 listing nothing the caller could not already see.
+- [x] **4.2.4** Cache headers (`ETag` from the cache key and its refresh time) so the panel can revalidate cheaply.
+- [x] **4.2.5** Tests: auth required, shape, unknown table, samples off by default, no write or DDL possible through it.
 
 ## 4.3 Full result of a finished run
 
