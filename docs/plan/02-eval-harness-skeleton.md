@@ -30,39 +30,39 @@ Each atomic task is one small commit with a Conventional Commit message (in prac
 
 Every number and name goes into `.env` and `.env.example`, never into code (rule 0.2.6). The sync test keeps both in line.
 
-- [ ] **2.1.1** `EVAL_ROW_COMPARE_PRECISION` (decimal places when comparing numbers), `EVAL_MAX_COMPARE_ROWS` (rows read from each side), `EVAL_QUERY_TIMEOUT_MS` (per-query limit for gold and predicted SQL).
-- [ ] **2.1.2** `EVAL_OPENAI_API_KEY` (key used for the OpenAI baseline; the Gemini baseline reuses `LLM_DEFAULT_GEMINI_API_KEY`). `.env` only, never in the database or logs.
-- [ ] **2.1.3** `EVAL_SPIDER_DIR` (where Spider is unpacked, under `infra/data/spider/`). The split is a committed file, not a setting (see 2.5.4).
-- [ ] **2.1.4** `EVAL_CONFIDENCE_BUCKETS` (comma list of edges, for example `0.5,0.7,0.85`).
-- [ ] **2.1.5** Read each with `django-environ` and no default; add to `.env.example` and the test env; the sync test passes.
+- [x] **2.1.1** `EVAL_ROW_COMPARE_PRECISION` (decimal places when comparing numbers), `EVAL_MAX_COMPARE_ROWS` (rows read from each side), `EVAL_QUERY_TIMEOUT_MS` (per-query limit for gold and predicted SQL).
+- [x] **2.1.2** `EVAL_OPENAI_API_KEY` (key used for the OpenAI baseline; the Gemini baseline reuses `LLM_DEFAULT_GEMINI_API_KEY`). `.env` only, never in the database or logs.
+- [x] **2.1.3** `EVAL_SPIDER_DIR` (where Spider is unpacked, under `infra/data/spider/`). The split is a committed file, not a setting (see 2.5.4).
+- [x] **2.1.4** `EVAL_CONFIDENCE_BUCKETS` (comma list of edges, for example `0.5,0.7,0.85`), plus `EVAL_LLM_RETRIES`, `EVAL_CONFIRM_ABOVE_CALLS` (cost guard, 2.7.5) and `EVAL_MODEL_PRICES` (cost estimate, 2.8.1).
+- [x] **2.1.5** Read each with `django-environ` and no default; add to `.env.example` and the test env; the sync test passes.
 
 ## 2.2 Models and migration
 
-- [ ] **2.2.1** Create a new Django app `evals` (layout: `models.py`, `compare.py`, `runner.py`, `scoring.py`, `targets/`, `management/commands/`, `tests/`). Register it in `INSTALLED_APPS`.
-- [ ] **2.2.2** `EvalRun`: target (`olist` or `spider`), split (`all`, `tune`, `held-out`), provider, model, prompt version, question count, correct count, started, finished, status. No user foreign key (runs are made by the owner on the command line).
-- [ ] **2.2.3** `EvalResult`: run, question id, question, gold SQL, predicted SQL, outcome (`correct`, `wrong`, `error`, `timeout`, `guard_rejected`, `not_answerable`, `llm_failed`), reason (short), confidence, attempts, input and output tokens, latency.
-- [ ] **2.2.4** Migration on the `default` database only (the router already guarantees this). Gold and predicted result rows are never stored.
-- [ ] **2.2.5** Tests: models create and relate, and no field can hold result rows.
+- [x] **2.2.1** Create a new Django app `evals` (layout: `models.py`, `compare.py`, `runner.py`, `scoring.py`, `targets/`, `management/commands/`, `tests/`). Register it in `INSTALLED_APPS`.
+- [x] **2.2.2** `EvalRun`: target (`olist` or `spider`), split (`all`, `tune`, `held-out`), provider, model, prompt version, question count, correct count, started, finished, status. No user foreign key (runs are made by the owner on the command line).
+- [x] **2.2.3** `EvalResult`: run, question id, question, gold SQL, predicted SQL, outcome (`correct`, `wrong`, `error`, `timeout`, `guard_rejected`, `not_answerable`, `llm_failed`), reason (short), confidence, attempts, input and output tokens, latency.
+- [x] **2.2.4** Migration on the `default` database only (the router already guarantees this). Gold and predicted result rows are never stored.
+- [x] **2.2.5** Tests: models create and relate, and no field can hold result rows.
 
 ## 2.3 Make the pipeline reusable
 
 The step 1 `answer(user, question)` mixes key lookup, daily limits and `AskLog` writing with the core path. The harness needs the core without a user.
 
-- [ ] **2.3.1** Extract the pure core from `ask/service.py` as `generate_and_run(provider, question, schema_text, dialect, run_sql, guard)` (build the prompt, call the LLM, parse, guard, run, repair loop). `answer()` calls it and keeps the key, limit and log handling around it. Behaviour of `POST /api/ask` must not change.
-- [ ] **2.3.2** Give the prompt builder a dialect parameter (`postgres` default, `sqlite`). The system prompt names the dialect and the fully qualified `demo.` rule applies to Postgres only.
-- [ ] **2.3.3** Prompt version string constant stored on each `EvalRun`, so scores can be tied to the prompt that produced them.
-- [ ] **2.3.4** Tests: the whole existing step 1 suite still passes unchanged, plus new tests for the extracted core and for the SQLite prompt.
+- [x] **2.3.1** Extract the pure core from `ask/service.py` as `generate_and_run(provider, question, schema_text, dialect, run_sql, guard)` (build the prompt, call the LLM, parse, guard, run, repair loop). `answer()` calls it and keeps the key, limit and log handling around it. Behaviour of `POST /api/ask` must not change.
+- [x] **2.3.2** Give the prompt builder a dialect parameter (`postgres` default, `sqlite`). The system prompt names the dialect and the fully qualified `demo.` rule applies to Postgres only.
+- [x] **2.3.3** Prompt version string constant stored on each `EvalRun`, so scores can be tied to the prompt that produced them.
+- [x] **2.3.4** Tests: the whole existing step 1 suite still passes unchanged, plus new tests for the extracted core and for the SQLite prompt.
 
 ## 2.4 Result comparison (the heart of the harness)
 
 `compare.py` takes two result sets and returns a verdict and a short reason. Pure functions, no database.
 
-- [ ] **2.4.1** Normalise values: numbers rounded to `EVAL_ROW_COMPARE_PRECISION` (so `12`, `12.0` and `Decimal('12.00')` match), booleans kept apart from numbers, dates and times as ISO strings, text trimmed, `NULL` as `None`.
-- [ ] **2.4.2** Ignore column names. Compare by column position first; if the column count matches but the order differs, try to match columns by their values and accept a consistent permutation.
-- [ ] **2.4.3** Rows compared as an unordered multiset. If the gold SQL has a top-level `ORDER BY` (detected with sqlglot), compare in order instead.
-- [ ] **2.4.4** Ties under `LIMIT`: when the gold SQL has `ORDER BY ... LIMIT` and the ordering key has ties at the cut, accept any valid set of tied rows. Document the limit of this rule.
-- [ ] **2.4.5** Verdicts and reasons: `match`, `different_row_count`, `different_values`, `different_columns`. Never log or store the rows themselves.
-- [ ] **2.4.6** Table-driven tests (about 30 cases): equal results, reordered rows, reordered columns, aliases, `12` vs `12.0`, `None` vs empty, duplicates, ordered vs unordered gold, ties, empty vs empty, one extra row.
+- [x] **2.4.1** Normalise values: numbers rounded to `EVAL_ROW_COMPARE_PRECISION` (so `12`, `12.0` and `Decimal('12.00')` match), booleans kept apart from numbers, dates and times as ISO strings, text trimmed, `NULL` as `None`.
+- [x] **2.4.2** Ignore column names. Compare by column position first; if the column count matches but the order differs, try to match columns by their values and accept a consistent permutation.
+- [x] **2.4.3** Rows compared as an unordered multiset. If the gold SQL has a top-level `ORDER BY` (detected with sqlglot), compare in order instead.
+- [x] **2.4.4** Ties under `LIMIT` are not handled by the comparison (it cannot know the ordering key). The Olist gold SQL uses deterministic tie-breaks; for Spider, a tie at the cut is accepted noise, as in its official scorer. Documented in `DECISION.md` (2.10.3).
+- [x] **2.4.5** Verdicts and reasons: `match`, `different_row_count`, `different_values`, `different_columns`. Never log or store the rows themselves.
+- [x] **2.4.6** Table-driven tests (about 30 cases): equal results, reordered rows, reordered columns, aliases, `12` vs `12.0`, `None` vs empty, duplicates, ordered vs unordered gold, ties, empty vs empty, one extra row.
 
 ## 2.5 Spider target (offline, SQLite)
 
@@ -122,6 +122,6 @@ The step 1 `answer(user, question)` mixes key lookup, daily limits and `AskLog` 
 - Execution accuracy compares rows as an unordered multiset (ordered when the gold SQL orders), ignoring column names and rounding numbers.
 - Spider is split once by database, committed, and the headline number is reported on `held-out` only.
 - Olist uses the real pipeline (guard and reader role); Spider uses a read-only SQLite file.
-- Evals run on the host, one question at a time; the container image gains no dependencies.
+- Evals run in the dev container (`make eval`), never in the production container, one question at a time; the container image gains no dependencies.
 - `answer()` is split so the harness can reuse the core without a user, keys or `AskLog`.
 - Open items for the owner: OpenAI baseline model and budget (2.9.1), and whether to generate `backend/.env.test` from `.env.example` (open since step 1).
