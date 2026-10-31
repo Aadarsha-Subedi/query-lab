@@ -4,6 +4,7 @@ schemas' names or another user's data."""
 from common.exception.domain import (
     ConflictException,
     NotFoundException,
+    ServiceUnavailableException,
     ThrottledException,
     UnprocessableEntityException,
 )
@@ -43,3 +44,8 @@ class DemoWorkspaceReadOnly(ConflictException):
 
 class WorkspaceThrottled(ThrottledException):
     error_code = "workspace_throttled"
+
+
+class WorkspaceProvisioningFailed(ServiceUnavailableException):
+    message = "The workspace could not be created. Nothing was kept; try again."
+    error_code = "workspace_provisioning_failed"

@@ -75,6 +75,22 @@ def data_connections(
         connections[settings.DATA_READER_DB_ALIAS].close()
 
 
+# Workspace schemas live in the real `querylab` database, whose names (`ws_<id>`)
+# come from the id of a Workspace row. The test app database starts its ids at 1,
+# which would collide with a developer's own workspaces, so tests start theirs
+# here and only ever touch ids from this number up.
+TEST_WORKSPACE_ID_START = 900_000
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _high_workspace_ids(django_db_setup: None, django_db_blocker: Any) -> None:
+    with django_db_blocker.unblock(), connections["default"].cursor() as cursor:
+        cursor.execute(
+            "SELECT setval(pg_get_serial_sequence('workspaces_workspace', 'id'), %s, false)",
+            [TEST_WORKSPACE_ID_START],
+        )
+
+
 @pytest.fixture(autouse=True)
 def _clear_cache() -> Iterator[None]:
     """Rate-limit counters live in the cache; start every test from zero."""
