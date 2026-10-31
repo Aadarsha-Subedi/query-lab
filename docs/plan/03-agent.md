@@ -67,27 +67,27 @@ One file per tool in `agent/tools/`; each has a Pydantic input model, a Pydantic
 - [ ] **3.4.4** Compact start: the first prompt carries table names and comments only; the agent fetches columns with `describe_table`. Judged by the eval gate in 3.10; if it costs accuracy, fall back to the full schema text and record it in `DECISION.md`.
 - [x] **3.4.5** Parser: tolerant of code fences, rejects more than one tool call per turn, bounded retries on malformed JSON (counts as an LLM call).
 - [x] **3.4.6** Bump `PROMPT_VERSION` to `v2-agent` so eval runs are tied to it.
-- [ ] **3.4.7** Tests with a fake LLM: valid turns, bad JSON, two tool calls in one turn, unknown tool, prompt-injection text in the question (must not change the tool list or skip approval).
+- [x] **3.4.7** Tests with a fake LLM: valid turns, bad JSON, two tool calls in one turn, unknown tool, prompt-injection text in the question (must not change the tool list or skip approval).
 
 ## 3.5 Run state (Redis) and trace (Postgres)
 
-- [ ] **3.5.1** `state.py`: save and load a run's working state (plan, message history trimmed to budget, pending SQL, counters) as JSON under `agent:run:{id}` with `AGENT_STATE_TTL_SECONDS`. One writer at a time: a Redis lock per run so an approve click and the worker cannot race.
-- [ ] **3.5.2** Step writer: every step is written to `AgentStep` first, then published as an event (3.7), so the stored trace is the source of truth.
-- [ ] **3.5.3** Expiry: a paused run past `AGENT_APPROVAL_TTL_SECONDS` becomes `expired` (checked on resume and by a Huey periodic task); expired and cancelled runs keep their trace.
-- [ ] **3.5.4** Per-user concurrency cap (`AGENT_MAX_CONCURRENT_RUNS_PER_USER`) counted in Redis; a second run while at the cap is refused with a typed error.
-- [ ] **3.5.5** Tests: state round trip, TTL expiry, lock prevents a double resume, cap refuses the extra run.
+- [x] **3.5.1** `state.py`: save and load a run's working state (plan, message history trimmed to budget, pending SQL, counters) as JSON under `agent:run:{id}` with `AGENT_STATE_TTL_SECONDS`. One writer at a time: a Redis lock per run so an approve click and the worker cannot race.
+- [x] **3.5.2** Step writer: every step is written to `AgentStep` first, then published as an event (3.7), so the stored trace is the source of truth.
+- [x] **3.5.3** Expiry: a paused run past `AGENT_APPROVAL_TTL_SECONDS` becomes `expired` (checked on resume and by a Huey periodic task); expired and cancelled runs keep their trace.
+- [x] **3.5.4** Per-user concurrency cap (`AGENT_MAX_CONCURRENT_RUNS_PER_USER`) counted in Redis; a second run while at the cap is refused with a typed error.
+- [x] **3.5.5** Tests: state round trip, TTL expiry, lock prevents a double resume, cap refuses the extra run.
 
 ## 3.6 The loop
 
 `loop.py` is a function `advance(run_id)`: load state, take turns until it must stop, save state. It stops on `propose_sql` (pause), `finish`, `give_up`, a budget limit, or an error.
 
-- [ ] **3.6.1** Plan turn, then act turns. Each LLM call and each tool call is one step; budgets are checked before every call.
-- [ ] **3.6.2** On `propose_sql`: status becomes `awaiting_approval`, an `approval` step records the SQL, the plan's assumptions and the guard report, and `advance` returns. No thread waits.
-- [ ] **3.6.3** `resume(run_id, decision)`: `approve` runs the checked SQL; `edit` guards the new SQL (refusal gives the user a typed error and the run stays paused); `cancel` ends the run. The `execute` step records who acted (`user`) and whether the SQL was edited.
-- [ ] **3.6.4** After execute, a cheap rule check first: error, empty result, truncated, 1 by 1. A flag, or a result the model should read, triggers the reflect call; a clean result goes straight to `finish`.
-- [ ] **3.6.5** `revise` from reflect starts a new `propose_sql` and pauses again (always pause), up to `AGENT_MAX_REVISIONS`. A query error follows the same path, with the one-line error as the reflect input (this replaces step 1's repair loop for runs; `/api/ask` keeps its own).
-- [ ] **3.6.6** Failure mapping: LLM errors, guard refusals, timeouts and budget overruns each get a typed error code and a final `failed` status with the trace kept. Timeouts are not retried (same rule as step 1).
-- [ ] **3.6.7** Tests with a scripted fake LLM: straight path, pause then approve, edit then approve, edit refused by the guard, cancel, revise loop hitting the cap, each budget limit, query error then revise, `give_up`.
+- [x] **3.6.1** Plan turn, then act turns. Each LLM call and each tool call is one step; budgets are checked before every call.
+- [x] **3.6.2** On `propose_sql`: status becomes `awaiting_approval`, an `approval` step records the SQL, the plan's assumptions and the guard report, and `advance` returns. No thread waits.
+- [x] **3.6.3** `resume(run_id, decision)`: `approve` runs the checked SQL; `edit` guards the new SQL (refusal gives the user a typed error and the run stays paused); `cancel` ends the run. The `execute` step records who acted (`user`) and whether the SQL was edited.
+- [x] **3.6.4** After execute, a cheap rule check first: error, empty result, truncated, 1 by 1. A flag, or a result the model should read, triggers the reflect call; a clean result goes straight to `finish`.
+- [x] **3.6.5** `revise` from reflect starts a new `propose_sql` and pauses again (always pause), up to `AGENT_MAX_REVISIONS`. A query error follows the same path, with the one-line error as the reflect input (this replaces step 1's repair loop for runs; `/api/ask` keeps its own).
+- [x] **3.6.6** Failure mapping: LLM errors, guard refusals, timeouts and budget overruns each get a typed error code and a final `failed` status with the trace kept. Timeouts are not retried (same rule as step 1).
+- [x] **3.6.7** Tests with a scripted fake LLM: straight path, pause then approve, edit then approve, edit refused by the guard, cancel, revise loop hitting the cap, each budget limit, query error then revise, `give_up`.
 
 ## 3.7 Jobs and SSE
 

@@ -3,7 +3,6 @@ carry SQL, a prompt, a key or result rows. `ToolError` is different: it is not a
 API error but a message for the model, so it can say what went wrong in a tool call."""
 
 from common.exception.domain import (
-    AppException,
     ConflictException,
     NotFoundException,
     ThrottledException,
@@ -40,14 +39,23 @@ class StreamLimitReached(ThrottledException):
     error_code = "agent_stream_limit"
 
 
-class AgentFailed(AppException):
-    """A run ended on its own limits or a model failure. `error_code` says which."""
+class RunStop(Exception):
+    """Raised inside the loop to end a run as failed. `code` is the typed error
+    code stored on the run; `message` is a short, generic line for the trace."""
 
-    status_code = 422
-    message = "The agent could not finish this run."
-    error_code = "agent_failed"
+    def __init__(self, code: str, message: str):
+        super().__init__(message)
+        self.code = code
+        self.message = message
 
 
-class BudgetExceeded(AgentFailed):
-    message = "The run used up its budget."
-    error_code = "agent_budget_exceeded"
+# Error codes stored on a failed run (besides the ask-path ones: query_failed,
+# query_timeout, guard_rejected, and the llm_* codes from common.llm).
+CODE_STEPS = "agent_steps_exceeded"
+CODE_LLM_CALLS = "agent_llm_calls_exceeded"
+CODE_TOKENS = "agent_tokens_exceeded"
+CODE_REVISIONS = "agent_revisions_exceeded"
+CODE_TIMEOUT = "agent_timeout"
+CODE_WORKER_LOST = "agent_worker_lost"
+CODE_KEY_CHANGED = "llm_key_changed"
+CODE_NOT_ANSWERABLE = "not_answerable"
