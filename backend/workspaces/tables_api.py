@@ -6,7 +6,8 @@ from ninja.security import django_auth
 
 from accounts.models import User
 from common.response.domain import SuccessEnvelope, errors, success
-from workspaces import relations, tables
+from common.throttling.scoped import WorkspaceSqlThrottle
+from workspaces import relations, sql, tables
 from workspaces.access import writable_workspace
 from workspaces.table_schemas import (
     ColumnIn,
@@ -14,6 +15,8 @@ from workspaces.table_schemas import (
     PrimaryKeyIn,
     RelationIn,
     RelationOut,
+    SqlIn,
+    SqlOut,
     TableIn,
     TablePatch,
     WorkspaceTableOut,
@@ -230,3 +233,25 @@ def delete_workspace_relation(
     workspace = writable_workspace(_user(request), workspace_id)
     relations.delete_relation(workspace, _user(request), name)
     return success(None, message="Relation removed.")
+
+
+@router.post(
+    "/{workspace_id}/sql",
+    response={
+        200: SuccessEnvelope[SqlOut],
+        **errors(400, 401, 404, 409, 422, 429, 504),
+    },
+    auth=django_auth,
+    throttle=[WorkspaceSqlThrottle()],
+)
+def run_workspace_sql(request: HttpRequest, workspace_id: int, payload: SqlIn) -> dict:
+    """Run your own SQL on your own workspace: full control inside the schema
+    (CREATE, ALTER, DROP, INSERT, UPDATE, DELETE, SELECT, views, indexes, several
+    statements). The whole request is one transaction: any failing statement
+    rolls everything back and answers 422 `sql_failed` with the Postgres code and
+    message. Transaction control and COPY are refused (`sql_invalid`); a request
+    that makes the workspace bigger than its cap is rolled back with
+    `workspace_full`. Structural statements are logged; the agent sees them on its
+    next read."""
+    workspace = writable_workspace(_user(request), workspace_id)
+    return success(sql.run_script(workspace, _user(request), payload.sql))

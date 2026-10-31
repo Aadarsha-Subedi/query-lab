@@ -2373,6 +2373,55 @@
               }
             }
           ]
+        },
+        {
+          "name": "Run SQL in my workspace",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/sql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "sql"
+              ]
+            },
+            "description": "Your own SQL with full control inside your schema (CREATE, INSERT, SELECT, several statements). One transaction: a failing statement rolls everything back (422 `sql_failed`). BEGIN/COMMIT and COPY are refused.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sql\": \"CREATE TABLE orders (id integer, customer_id integer);\\nINSERT INTO orders VALUES (1, 1), (2, 1);\\nSELECT count(*) FROM orders;\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401, 404, 409, 422, 429, 504]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 404, 409, 422, 429, 504]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },

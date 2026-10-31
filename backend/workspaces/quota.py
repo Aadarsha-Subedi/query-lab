@@ -71,11 +71,20 @@ def ensure_room(workspace: Workspace) -> None:
         raise UserStorageFull()
 
 
-def ensure_within(connection: psycopg.Connection, workspace: Workspace) -> int:
+def ensure_within(
+    connection: psycopg.Connection,
+    workspace: Workspace,
+    *,
+    grew_from: int | None = None,
+) -> int:
     """After a write, in the writer's transaction: measure fresh and raise (so the
     transaction rolls back) when the workspace or the user is over a cap. Returns
-    the measured size."""
+    the measured size. With `grew_from` (the size when the request began), a
+    request that did not make the workspace bigger always passes, so a full
+    workspace can still delete its way out."""
     size = measure(connection, workspace.schema_name)
+    if grew_from is not None and size <= grew_from:
+        return size
     if size > settings.WORKSPACE_MAX_BYTES:
         raise WorkspaceFull()
     if (

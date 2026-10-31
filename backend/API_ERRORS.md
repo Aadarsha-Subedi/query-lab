@@ -72,6 +72,11 @@ Every error answers in the envelope `{success: false, status_code, message, code
 | `relation_invalid` | 422 | The parent columns are not a primary key or unique, or the types differ. | Show the message; pick other columns. |
 | `cast_failed` | 422 | A value cannot be converted to the new column type. `errors[0].message` names the first bad row id. Nothing changed. | Show the row; offer to fix the value or pick `text`. |
 | `constraint_violation` | 409 | Existing rows break the key, relation or NOT NULL being added (or a row edit would break one). `errors[0].message` names the first row. Nothing changed. | Show the row; fix the data first. |
+| `sql_invalid` | 400 | The SQL console refused the request before running it (empty, too long, too many statements, BEGIN/COMMIT/ROLLBACK, COPY). | Show the message. |
+| `sql_failed` | 422 | A statement failed; the whole request was rolled back. `errors[0].message` is `Statement N: <SQLSTATE>: <message>`. | Show it under the editor. |
+| `sql_busy` | 429 | Another SQL request of the user is still running. `retry_after_seconds` is null. | Wait for it, then run again. |
+| `workspace_full` | 409 | The write would take the workspace over its size cap (and it was rolled back). | Offer to delete data or tables. |
+| `user_storage_full` | 409 | The write would take the user's workspaces over their total size cap. | Offer to delete data or a workspace. |
 | `invalid_name` | 422 | A workspace, table or column name or a column type cannot be used. | Show the message next to the field. |
 | `workspace_provisioning_failed` | 503 | The schema and roles could not be created; everything was cleaned up. | Retry later. |
 

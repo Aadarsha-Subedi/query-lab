@@ -53,6 +53,12 @@ def hit_result(client: Client) -> object:
     return client.get("/api/agent/runs/1/result")
 
 
+def hit_workspace_sql(client: Client) -> object:
+    return client.post(
+        "/api/workspaces/1/sql", '{"sql": "select 1"}', content_type="application/json"
+    )
+
+
 def hit_workspace(client: Client) -> object:
     return client.delete("/api/workspaces/1")  # counts, and changes nothing
 
@@ -65,6 +71,11 @@ CASES: dict[type, tuple[str, Callable[[Client], object], bool]] = {
     scoped.AgentThrottle: ("THROTTLE_AGENT_RATE", hit_agent, True),
     scoped.ResultThrottle: ("THROTTLE_RESULT_RATE", hit_result, True),
     scoped.WorkspaceThrottle: ("THROTTLE_WORKSPACE_RATE", hit_workspace, True),
+    scoped.WorkspaceSqlThrottle: (
+        "THROTTLE_WORKSPACE_SQL_RATE",
+        hit_workspace_sql,
+        True,
+    ),
 }
 
 
@@ -114,3 +125,6 @@ def test_limits_that_time_does_not_fix_say_null(client: Client, user: User) -> N
 
     assert RunLimitReached().retry_after is None
     assert StreamLimitReached().retry_after is None
+    from workspaces.errors import SqlBusy
+
+    assert SqlBusy().retry_after is None

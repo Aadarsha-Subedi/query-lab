@@ -2,9 +2,11 @@
 schemas' names or another user's data."""
 
 from common.exception.domain import (
+    BadRequestException,
     ConflictException,
     NotFoundException,
     ServiceUnavailableException,
+    ThrottledException,
     UnprocessableEntityException,
 )
 
@@ -137,3 +139,25 @@ class UserStorageFull(ConflictException):
         "Your workspaces together are full. Delete data or a workspace to make room."
     )
     error_code = "user_storage_full"
+
+
+# ── the SQL console (5.6a) ────────────────────────────────────────────────
+
+
+class SqlInvalid(BadRequestException):
+    message = "This SQL cannot be run here."
+    error_code = "sql_invalid"
+
+
+class SqlFailed(UnprocessableEntityException):
+    """A statement failed; the whole request was rolled back. `errors[0].message`
+    is the Postgres SQLSTATE code and message, with other workspaces' names
+    removed."""
+
+    message = "The SQL failed. Nothing was changed."
+    error_code = "sql_failed"
+
+
+class SqlBusy(ThrottledException):
+    message = "A SQL request of yours is still running. Wait for it to finish."
+    error_code = "sql_busy"

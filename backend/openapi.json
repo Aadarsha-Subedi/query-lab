@@ -1214,6 +1214,117 @@
         "title": "SchemaOut",
         "type": "object"
       },
+      "SqlCountsOut": {
+        "properties": {
+          "data": {
+            "title": "Data",
+            "type": "integer"
+          },
+          "ddl": {
+            "title": "Ddl",
+            "type": "integer"
+          },
+          "query": {
+            "title": "Query",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ddl",
+          "data",
+          "query"
+        ],
+        "title": "SqlCountsOut",
+        "type": "object"
+      },
+      "SqlIn": {
+        "properties": {
+          "sql": {
+            "title": "Sql",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sql"
+        ],
+        "title": "SqlIn",
+        "type": "object"
+      },
+      "SqlOut": {
+        "properties": {
+          "counts": {
+            "$ref": "#/components/schemas/SqlCountsOut"
+          },
+          "elapsed_ms": {
+            "title": "Elapsed Ms",
+            "type": "integer"
+          },
+          "statements": {
+            "items": {
+              "$ref": "#/components/schemas/SqlStatementOut"
+            },
+            "title": "Statements",
+            "type": "array"
+          }
+        },
+        "required": [
+          "statements",
+          "counts",
+          "elapsed_ms"
+        ],
+        "title": "SqlOut",
+        "type": "object"
+      },
+      "SqlStatementOut": {
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "command": {
+            "title": "Command",
+            "type": "string"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "row_count": {
+            "title": "Row Count",
+            "type": "integer"
+          },
+          "rows": {
+            "items": {
+              "items": {},
+              "type": "array"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "index",
+          "command",
+          "kind",
+          "row_count",
+          "columns",
+          "rows",
+          "truncated"
+        ],
+        "title": "SqlStatementOut",
+        "type": "object"
+      },
       "StepOut": {
         "properties": {
           "actor": {
@@ -1589,6 +1700,40 @@
           "data"
         ],
         "title": "SuccessEnvelope[SchemaOut]",
+        "type": "object"
+      },
+      "SuccessEnvelope_SqlOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SqlOut"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Meta",
+            "type": "object"
+          },
+          "status_code": {
+            "title": "Status Code",
+            "type": "integer"
+          },
+          "success": {
+            "const": true,
+            "default": true,
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status_code",
+          "message",
+          "data"
+        ],
+        "title": "SuccessEnvelope[SqlOut]",
         "type": "object"
       },
       "SuccessEnvelope_TableOut_": {
@@ -4597,6 +4742,124 @@
           }
         ],
         "summary": "Delete Workspace Relation",
+        "tags": [
+          "workspace tables"
+        ]
+      }
+    },
+    "/api/workspaces/{workspace_id}/sql": {
+      "post": {
+        "description": "Run your own SQL on your own workspace: full control inside the schema\n(CREATE, ALTER, DROP, INSERT, UPDATE, DELETE, SELECT, views, indexes, several\nstatements). The whole request is one transaction: any failing statement\nrolls everything back and answers 422 `sql_failed` with the Postgres code and\nmessage. Transaction control and COPY are refused (`sql_invalid`); a request\nthat makes the workspace bigger than its cap is rolled back with\n`workspace_full`. Structural statements are logged; the agent sees them on its\nnext read.",
+        "operationId": "run_workspace_sql",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SqlIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_SqlOut_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Gateway Timeout"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          }
+        ],
+        "summary": "Run Workspace Sql",
         "tags": [
           "workspace tables"
         ]

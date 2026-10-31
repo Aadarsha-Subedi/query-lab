@@ -69,3 +69,30 @@ class RelationOut(Schema):
     parent_table: str
     parent_columns: list[str]
     on_delete: str
+
+
+class SqlIn(Schema):
+    sql: str
+
+
+class SqlStatementOut(Schema):
+    index: int
+    # The Postgres command tag, for example "INSERT 0 3" or "CREATE TABLE".
+    command: str
+    kind: str  # query, data or ddl
+    row_count: int
+    columns: list[str]
+    rows: list[list]
+    truncated: bool
+
+
+class SqlCountsOut(Schema):
+    ddl: int
+    data: int
+    query: int
+
+
+class SqlOut(Schema):
+    statements: list[SqlStatementOut]
+    counts: SqlCountsOut
+    elapsed_ms: int
