@@ -23,7 +23,7 @@ OLIST_TABLES = {
 
 
 @pytest.fixture(autouse=True)
-def _analyzed(owner) -> None:  # type: ignore[no-untyped-def]
+def _analyzed(owner) -> None:
     owner.execute("ANALYZE")
 
 
@@ -68,10 +68,13 @@ def test_get_schema_uses_the_cache() -> None:
     cache.clear()
     ask_schema.get_schema()
     connection = connections[settings.DATA_READER_DB_ALIAS]
-    queries = []
-    with connection.execute_wrapper(
-        lambda ex, sql, p, m, c: queries.append(sql) or ex(sql, p, m, c)
-    ):
+    queries: list[str] = []
+
+    def record(execute, sql, params, many, context):  # type: ignore[no-untyped-def]
+        queries.append(sql)
+        return execute(sql, params, many, context)
+
+    with connection.execute_wrapper(record):
         ask_schema.get_schema()
     assert queries == []
     ask_schema.clear_schema_cache()
