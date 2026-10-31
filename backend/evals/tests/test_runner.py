@@ -314,3 +314,8 @@ def test_an_unrounded_number_matches_the_rounded_gold_number() -> None:
     )
     outcome = runner.ask_once(target, question, provider, sleep=lambda s: None)
     assert outcome.outcome == EvalResult.OUTCOME_CORRECT, by_id["olist-12"]["question"]
+
+
+def test_spider_compares_as_a_set_and_olist_does_not() -> None:
+    assert spider.SpiderTarget.compare_as_set is True
+    assert olist.OlistTarget.compare_as_set is False

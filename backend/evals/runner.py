@@ -151,6 +151,7 @@ def _judge(
         gold,
         done.result.rows,
         ordered=compare.gold_is_ordered(question.gold_sql, target.dialect),
+        as_set=getattr(target, "compare_as_set", False),
     )
     base.reason = verdict.reason
     if verdict.match:

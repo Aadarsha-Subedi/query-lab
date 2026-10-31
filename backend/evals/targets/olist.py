@@ -38,6 +38,7 @@ def mark_reviewed(path: Path = GOLDEN_FILE) -> int:
 class OlistTarget:
     name = NAME
     dialect = prompt.DIALECT_POSTGRES
+    compare_as_set = False
 
     def __init__(self, include_unreviewed: bool = False) -> None:
         self.include_unreviewed = include_unreviewed

@@ -181,6 +181,8 @@ def read_schema(db_id: str) -> schema.Schema:
 class SpiderTarget:
     name = NAME
     dialect = prompt.DIALECT_SQLITE
+    # Spider's official scorer compares unordered results as sets.
+    compare_as_set = True
 
     def __init__(self) -> None:
         self.skipped: list[str] = []

@@ -22,6 +22,7 @@ class EvalQuestion:
 class Target(Protocol):
     name: str
     dialect: str  # a prompt.DIALECT_* value, also the sqlglot dialect
+    compare_as_set: bool  # ignore duplicate rows when comparing (Spider)
 
     def questions(self, split: str) -> list[EvalQuestion]: ...
 

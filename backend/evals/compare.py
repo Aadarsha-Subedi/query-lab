@@ -95,9 +95,15 @@ def compare(
     predicted_rows: list[list[Any]] | list[Row],
     *,
     ordered: bool = False,
+    as_set: bool = False,
 ) -> Verdict:
+    """`as_set` ignores duplicate rows, like Spider's official scorer does (so
+    `EXCEPT` and `JOIN ... NOT IN` answers can agree). Olist keeps duplicates."""
     gold = normalise_rows(gold_rows)
     predicted = normalise_rows(predicted_rows)
+    if as_set and not ordered:
+        gold = list(dict.fromkeys(gold))
+        predicted = list(dict.fromkeys(predicted))
     if len(gold) != len(predicted):
         return Verdict(False, DIFFERENT_ROW_COUNT)
     if not gold:

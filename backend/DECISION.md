@@ -284,7 +284,7 @@ rows, and run both at eval time. Limits we accept: two different queries can
 return the same rows by chance; an `ORDER BY ... LIMIT` with ties at the cut can
 return different valid rows (Spider's official scorer has the same weakness; the
 Olist gold SQL uses explicit tie-breaks); column names are ignored on purpose.
-Comparison is an unordered multiset, ordered only when the gold SQL orders.
+Comparison is an unordered multiset, ordered only when the gold SQL orders. Spider is the exception: its official scorer compares results as sets (duplicates ignored), so the Spider target does too, otherwise an `EXCEPT` answer fails against a duplicate-producing gold query (seen in baseline run #8).
 
 **Two targets.** Olist (about 40 hand-written questions, 4 unanswerable) goes
 through the real guard and reader role, so it measures the product. Spider (dev

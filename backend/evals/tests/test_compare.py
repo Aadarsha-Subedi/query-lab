@@ -131,3 +131,15 @@ def test_normalise_keeps_bool_and_number_apart() -> None:
 )
 def test_gold_is_ordered(sql: str, dialect: str, ordered: bool) -> None:
     assert gold_is_ordered(sql, dialect) is ordered
+
+
+def test_duplicates_matter_by_default_but_not_as_a_set() -> None:
+    gold = [["ann", 20], ["ann", 20], ["bob", 21]]
+    predicted = [["ann", 20], ["bob", 21]]
+    assert not compare(gold, predicted).match
+    assert compare(gold, predicted, as_set=True).match
+    assert not compare(gold, [["ann", 20]], as_set=True).match
+
+
+def test_as_set_still_respects_order_when_the_gold_orders() -> None:
+    assert not compare([[1], [2]], [[2], [1]], ordered=True, as_set=True).match
