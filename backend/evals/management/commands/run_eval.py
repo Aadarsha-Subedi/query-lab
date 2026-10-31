@@ -17,6 +17,13 @@ class Command(BaseCommand):
         parser.add_argument("--target", choices=["olist", "spider"], required=True)
         parser.add_argument("--model", required=True)
         parser.add_argument(
+            "--runner",
+            choices=[EvalRun.RUNNER_ASK, EvalRun.RUNNER_AGENT],
+            default=EvalRun.RUNNER_ASK,
+            help="ask: the one-shot /api/ask path. agent: the step 3 agent, with every "
+            "pause approved by the harness (Olist only).",
+        )
+        parser.add_argument(
             "--split",
             choices=[EvalRun.SPLIT_ALL, EvalRun.SPLIT_TUNE, EvalRun.SPLIT_HELD_OUT],
             help="Spider: tune or held-out (default held-out). Olist: all.",
@@ -48,6 +55,12 @@ class Command(BaseCommand):
                 include_unreviewed=bool(options["include_unreviewed"])
             )
         )
+        runner_name = str(options["runner"])
+        if runner_name == EvalRun.RUNNER_AGENT and target_name != "olist":
+            raise CommandError(
+                "The agent runner works on Olist only: it uses the Postgres guard and "
+                "reader. Spider stays on --runner ask."
+            )
         try:
             provider_name, provider = runner.build_provider(str(options["model"]))
             questions = runner.pick_questions(
@@ -68,22 +81,29 @@ class Command(BaseCommand):
                 run = EvalRun.objects.get(pk=int(options["resume"]))  # type: ignore[call-overload]
             except EvalRun.DoesNotExist:
                 raise CommandError("No such run to resume.") from None
-            if (run.target, run.split, run.model) != (
+            if (run.target, run.split, run.model, run.runner) != (
                 target_name,
                 split,
                 provider.model,
+                runner_name,
             ):
-                raise CommandError("That run used a different target, split or model.")
+                raise CommandError(
+                    "That run used a different target, split, model or runner."
+                )
             if options["retry_failed"]:
                 removed, _ = run.results.filter(outcome="llm_failed").delete()
                 self.stdout.write(f"Dropped {removed} llm_failed results to ask again.")
         elif options["retry_failed"]:
             raise CommandError("--retry-failed needs --resume.")
 
-        calls = len(questions)
+        # The agent makes several LLM calls per question; count the budget's worst case.
+        calls = len(questions) * (
+            settings.AGENT_MAX_LLM_CALLS if runner_name == EvalRun.RUNNER_AGENT else 1
+        )
         self.stdout.write(
-            f"{calls} questions to ask {provider_name}/{provider.model} "
-            f"on {target_name}/{split}."
+            f"{len(questions)} questions to ask {provider_name}/{provider.model} "
+            f"on {target_name}/{split} with the {runner_name} runner "
+            f"(up to {calls} LLM calls)."
         )
         if calls > settings.EVAL_CONFIRM_ABOVE_CALLS and not options["yes"]:
             raise CommandError(
@@ -104,6 +124,7 @@ class Command(BaseCommand):
                 provider=provider,
                 questions=questions,
                 run=run,
+                runner_name=runner_name,
                 progress=progress,
             )
         except spider.SpiderNotFound as error:

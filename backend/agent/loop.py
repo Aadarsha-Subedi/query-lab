@@ -48,16 +48,17 @@ TRIGGER_SINGLE_VALUE = "single_value"
 TRIGGER_ALWAYS = "always"
 
 
-def advance(run_id: int) -> None:
+def advance(run_id: int, provider: LLMProvider | None = None) -> None:
     """Carry a run forward until it pauses or ends. Safe to call twice: a run that
-    another worker holds, or that is not `running`, is left alone."""
+    another worker holds, or that is not `running`, is left alone. `provider` is
+    for the eval harness, which brings its own key; users' runs resolve theirs."""
     with state.run_lock(run_id) as acquired:
         if not acquired:
             return
         run = AgentRun.objects.select_related("user").get(pk=run_id)
         if run.status != AgentRun.STATUS_RUNNING:
             return
-        Loop(run).go()
+        Loop(run, provider).go()
 
 
 def result_summary(result: runner.QueryResult) -> dict[str, Any]:
@@ -97,8 +98,9 @@ def has_text_filter(sql: str) -> bool:
 
 
 class Loop:
-    def __init__(self, run: AgentRun):
+    def __init__(self, run: AgentRun, provider: LLMProvider | None = None):
         self.run = run
+        self.override = provider
         self.started = time.monotonic()
         self.base_ms = run.latency_ms
         # Tokens and time of LLM calls since the last recorded step.
@@ -138,13 +140,18 @@ class Loop:
             self._finish()
 
     def _connect(self) -> None:
-        resolved = keys.resolve_provider(self.run.user)
-        if (resolved.provider_name, resolved.key_source) != (
-            self.run.provider,
-            self.run.key_source,
-        ):
-            raise RunStop(CODE_KEY_CHANGED, "The LLM key changed while the run waited.")
-        self.provider = resolved.provider
+        if self.override is not None:
+            self.provider = self.override
+        else:
+            resolved = keys.resolve_provider(self.run.user)
+            if (resolved.provider_name, resolved.key_source) != (
+                self.run.provider,
+                self.run.key_source,
+            ):
+                raise RunStop(
+                    CODE_KEY_CHANGED, "The LLM key changed while the run waited."
+                )
+            self.provider = resolved.provider
         self.known = schema.get_schema(include_samples=True)
 
     def _settle(self) -> None:

@@ -120,8 +120,8 @@ Step 2 showed the old score at about 1.0 for every Olist answer (rank correlatio
 
 ## 3.10 Evaluate the agent against the baseline
 
-- [ ] **3.10.1** New eval target mode `--runner agent` for `run_eval`: starts a run, auto-approves (an eval has no human; recorded as `actor=eval`), and scores the final SQL with the existing comparison.
-- [ ] **3.10.2** Report extra columns: steps, LLM calls, tokens and latency per question, and revisions.
+- [x] **3.10.1** New eval target mode `--runner agent` for `run_eval`: starts a run, auto-approves (an eval has no human; recorded as `actor=eval`), and scores the final SQL with the existing comparison.
+- [x] **3.10.2** Report extra columns: steps, LLM calls, tokens and latency per question, and revisions.
 - [ ] **3.10.3** (You) Run the Olist golden set with `gemini-3.5-flash-lite`. Gate: at least the 95.1% baseline. If it falls below, look at the failing traces before touching prompts, and try 3.4.4's fallback first.
 - [ ] **3.10.4** Run Spider held-out only if a spare day of free-tier quota exists (the agent makes several calls per question); otherwise a fixed 100-question sample, recorded as such.
 - [ ] **3.10.5** Record the results in `backend/DECISION.md`.

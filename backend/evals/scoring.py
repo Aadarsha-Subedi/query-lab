@@ -22,6 +22,11 @@ class Summary:
     input_tokens: int
     output_tokens: int
     cost_usd: float | None  # None when the model has no price in EVAL_MODEL_PRICES
+    # Per question; only the agent runner fills the step counts.
+    mean_tokens: int = 0
+    mean_steps: float = 0.0
+    mean_llm_calls: float = 0.0
+    mean_revisions: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -83,6 +88,14 @@ def summarise(run: EvalRun) -> Summary:
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         cost_usd=cost,
+        mean_tokens=round((input_tokens + output_tokens) / total) if total else 0,
+        mean_steps=round(sum(r.steps for r in results) / total, 2) if total else 0.0,
+        mean_llm_calls=(
+            round(sum(r.llm_calls for r in results) / total, 2) if total else 0.0
+        ),
+        mean_revisions=(
+            round(sum(r.revisions for r in results) / total, 2) if total else 0.0
+        ),
     )
 
 
@@ -141,7 +154,7 @@ def format_report(run: EvalRun) -> str:
     summary = summarise(run)
     lines = [
         f"Run #{run.pk}: {run.target}/{run.split}  {run.provider}/{run.model}  "
-        f"prompt {run.prompt_version}  [{run.status}]",
+        f"{run.runner} runner  prompt {run.prompt_version}  [{run.status}]",
         f"Execution accuracy: {summary.accuracy:.1%} "
         f"({summary.correct}/{summary.total})",
         "Outcomes: "
@@ -154,6 +167,12 @@ def format_report(run: EvalRun) -> str:
             else "  (no price set for this model)"
         ),
     ]
+    if run.runner == EvalRun.RUNNER_AGENT:
+        lines.append(
+            f"Agent cost per question: {summary.mean_steps} steps, "
+            f"{summary.mean_llm_calls} LLM calls, {summary.mean_revisions} revisions, "
+            f"{summary.mean_tokens} tokens"
+        )
     if summary.by_tag:
         lines.append("By tag:")
         lines.extend(

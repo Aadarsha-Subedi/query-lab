@@ -59,6 +59,11 @@ class Outcome:
     attempts: int = 0
     input_tokens: int = 0
     output_tokens: int = 0
+    # Agent runner only.
+    steps: int = 0
+    llm_calls: int = 0
+    revisions: int = 0
+    agent_run_id: int | None = None
 
 
 def _error_outcome(error: AppException) -> tuple[str, str]:
@@ -176,17 +181,28 @@ def run_eval(
     provider: LLMProvider,
     questions: list[EvalQuestion],
     run: EvalRun | None = None,
+    runner_name: str = EvalRun.RUNNER_ASK,
     progress: Callable[[int, int, EvalQuestion, Outcome], None] | None = None,
     sleep: Callable[[float], None] = time.sleep,
 ) -> EvalRun:
-    """Score `questions`; continue `run` if given (questions already stored are skipped)."""
+    """Score `questions`; continue `run` if given (questions already stored are skipped).
+    `runner_name` picks the one-shot ask path or the agent loop (auto-approved)."""
+    ask_one = ask_once
+    prompt_version = prompt.PROMPT_VERSION
+    if runner_name == EvalRun.RUNNER_AGENT:
+        from agent import prompts as agent_prompts
+        from evals import agent_runner
+
+        ask_one = agent_runner.agent_once
+        prompt_version = agent_prompts.PROMPT_VERSION
     if run is None:
         run = EvalRun.objects.create(
             target=target.name,
             split=split,
             provider=provider_name,
             model=provider.model,
-            prompt_version=prompt.PROMPT_VERSION,
+            prompt_version=prompt_version,
+            runner=runner_name,
         )
     done_ids = set(run.results.values_list("question_id", flat=True))
     todo = [q for q in questions if q.id not in done_ids]
@@ -195,7 +211,7 @@ def run_eval(
             if index > 1:
                 sleep(settings.EVAL_CALL_DELAY_SECONDS)  # stay under the rate limit
             started = time.perf_counter()
-            outcome = ask_once(target, question, provider, sleep=sleep)
+            outcome = ask_one(target, question, provider, sleep=sleep)
             EvalResult.objects.create(
                 run=run,
                 question_id=question.id,
@@ -210,6 +226,10 @@ def run_eval(
                 input_tokens=outcome.input_tokens,
                 output_tokens=outcome.output_tokens,
                 latency_ms=int((time.perf_counter() - started) * 1000),
+                agent_run_id=outcome.agent_run_id,
+                steps=outcome.steps,
+                llm_calls=outcome.llm_calls,
+                revisions=outcome.revisions,
             )
             if progress:
                 progress(index, len(todo), question, outcome)

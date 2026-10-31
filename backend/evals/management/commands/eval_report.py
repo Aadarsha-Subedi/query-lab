@@ -33,10 +33,14 @@ class Command(BaseCommand):
                     f"{first.target}/{first.split}",
                     f"{second.target}/{second.split}",
                 ),
+                ("runner", first.runner, second.runner),
                 ("prompt", first.prompt_version, second.prompt_version),
                 ("accuracy", f"{a.accuracy:.1%}", f"{b.accuracy:.1%}"),
                 ("correct", f"{a.correct}/{a.total}", f"{b.correct}/{b.total}"),
                 ("mean latency ms", a.mean_latency_ms, b.mean_latency_ms),
+                ("mean tokens", a.mean_tokens, b.mean_tokens),
+                ("mean steps", a.mean_steps, b.mean_steps),
+                ("mean LLM calls", a.mean_llm_calls, b.mean_llm_calls),
                 ("cost USD", a.cost_usd, b.cost_usd),
             ]
             for label, left, right in rows:

@@ -10,6 +10,9 @@ class EvalRun(TimeStampModel):
     TARGET_OLIST = "olist"
     TARGET_SPIDER = "spider"
 
+    RUNNER_ASK = "ask"  # the one-shot /api/ask path (step 1)
+    RUNNER_AGENT = "agent"  # the agent loop (step 3), auto-approved
+
     SPLIT_ALL = "all"
     SPLIT_TUNE = "tune"
     SPLIT_HELD_OUT = "held-out"
@@ -23,6 +26,7 @@ class EvalRun(TimeStampModel):
     provider = models.CharField(max_length=20)
     model = models.CharField(max_length=100)
     prompt_version = models.CharField(max_length=20)
+    runner = models.CharField(max_length=10, default=RUNNER_ASK)
     question_count = models.PositiveIntegerField(default=0)
     correct_count = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=10, default=STATUS_RUNNING)
@@ -61,6 +65,17 @@ class EvalResult(TimeStampModel):
     input_tokens = models.PositiveIntegerField(default=0)
     output_tokens = models.PositiveIntegerField(default=0)
     latency_ms = models.PositiveIntegerField(default=0)
+    # Agent runner only: the run behind this result and what it cost.
+    agent_run = models.ForeignKey(
+        "agent.AgentRun",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    steps = models.PositiveSmallIntegerField(default=0)
+    llm_calls = models.PositiveSmallIntegerField(default=0)
+    revisions = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         ordering = ["id"]
