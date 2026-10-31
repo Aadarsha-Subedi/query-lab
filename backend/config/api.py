@@ -2,6 +2,7 @@
 signed-out callers by IP, signed-in callers by user."""
 
 from ninja import NinjaAPI
+from ninja.operation import Operation
 
 from accounts.api import router as accounts_router
 from agent.api import router as agent_router
@@ -11,7 +12,15 @@ from common.exception.handler import install_exception_handlers
 from common.throttling.scoped import AnonThrottle, UserThrottle
 from core.api import router as core_router
 
-api = NinjaAPI(
+
+class QuerylabAPI(NinjaAPI):
+    def get_openapi_operation_id(self, operation: Operation) -> str:
+        """The view function's name (`list_runs`, `get_schema`), so generated client
+        methods read well. Function names are unique across the routers."""
+        return operation.view_func.__name__
+
+
+api = QuerylabAPI(
     title="Querylab API",
     version="0.1.0",
     throttle=[AnonThrottle(), UserThrottle()],

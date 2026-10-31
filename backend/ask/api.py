@@ -9,7 +9,7 @@ from accounts.models import User
 from agent import confidence
 from ask import keys, service
 from ask.models import UserLLMKey
-from common.response.domain import SuccessEnvelope, success
+from common.response.domain import SuccessEnvelope, errors, success
 from common.throttling.scoped import AskThrottle
 
 router = Router(tags=["ask"])
@@ -34,7 +34,11 @@ def _out(row: UserLLMKey) -> dict:
     ).dict()
 
 
-@router.get("/llm-keys", response=SuccessEnvelope[list[LLMKeyOut]], auth=django_auth)
+@router.get(
+    "/llm-keys",
+    response={200: SuccessEnvelope[list[LLMKeyOut]], **errors(401, 429)},
+    auth=django_auth,
+)
 def list_llm_keys(request: HttpRequest) -> dict:
     """The signed-in user's saved keys: provider, last four characters, model.
     The key itself is never returned."""
@@ -44,7 +48,9 @@ def list_llm_keys(request: HttpRequest) -> dict:
 
 
 @router.put(
-    "/llm-keys/{provider}", response=SuccessEnvelope[LLMKeyOut], auth=django_auth
+    "/llm-keys/{provider}",
+    response={200: SuccessEnvelope[LLMKeyOut], **errors(400, 401, 422, 429, 502)},
+    auth=django_auth,
 )
 def save_llm_key(request: HttpRequest, provider: Provider, payload: LLMKeyIn) -> dict:
     """Check the key with the provider and save it encrypted."""
@@ -54,7 +60,11 @@ def save_llm_key(request: HttpRequest, provider: Provider, payload: LLMKeyIn) ->
     return success(_out(row), message="Key saved.")
 
 
-@router.delete("/llm-keys/{provider}", response=SuccessEnvelope[None], auth=django_auth)
+@router.delete(
+    "/llm-keys/{provider}",
+    response={200: SuccessEnvelope[None], **errors(401, 429)},
+    auth=django_auth,
+)
 def delete_llm_key(request: HttpRequest, provider: Provider) -> dict:
     UserLLMKey.objects.filter(user=cast(User, request.user), provider=provider).delete()
     return success(None, message="Key removed.")
@@ -84,7 +94,7 @@ class AskOut(Schema):
 
 @router.post(
     "/ask",
-    response=SuccessEnvelope[AskOut],
+    response={200: SuccessEnvelope[AskOut], **errors(400, 401, 422, 429, 502, 504)},
     auth=django_auth,
     throttle=[AskThrottle()],
 )

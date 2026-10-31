@@ -5,7 +5,7 @@ BACKEND := $(COMPOSE) exec backend
 FRONTEND := $(COMPOSE) exec frontend
 
 .PHONY: setup up down dev logs migrate bootstrap-db load-demo createsuperuser \
-        eval test test-backend test-frontend lint lint-backend lint-frontend \
+        eval openapi test test-backend test-frontend lint lint-backend lint-frontend \
         typecheck typecheck-backend typecheck-frontend format
 
 ## setup: install local dependencies (for editors) and create .env files from the examples
@@ -46,6 +46,11 @@ createsuperuser:
 ##   make eval ARGS="run_eval --target olist --model gemini-3.5-flash"
 eval:
 	$(BACKEND) python manage.py $(ARGS)
+
+## openapi: write backend/openapi.json from the one NinjaAPI (sorted, so diffs are small).
+## CI regenerates it and fails when it differs from the committed file.
+openapi:
+	$(BACKEND) python manage.py export_openapi
 
 ## test: backend tests run in the container against the compose postgres/redis.
 ## lint and typecheck run on the host (the dev image has no lint tools).

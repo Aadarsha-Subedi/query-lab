@@ -14,7 +14,7 @@ from ninja.security import django_auth
 
 from ask import schema as ask_schema
 from common.exception.domain import NotFoundException
-from common.response.domain import SuccessEnvelope, success
+from common.response.domain import SuccessEnvelope, errors, success
 
 router = Router(tags=["schema"])
 
@@ -113,7 +113,7 @@ def _respond(request: HttpRequest, data: Any) -> HttpResponse:
 
 @router.get(
     "",
-    response={200: SuccessEnvelope[SchemaOut], 304: None},
+    response={200: SuccessEnvelope[SchemaOut], 304: None, **errors(401, 429)},
     auth=django_auth,
 )
 def get_schema(request: HttpRequest) -> HttpResponse:
@@ -130,7 +130,7 @@ def get_schema(request: HttpRequest) -> HttpResponse:
 
 @router.get(
     "/tables/{name}",
-    response={200: SuccessEnvelope[TableOut], 304: None},
+    response={200: SuccessEnvelope[TableOut], 304: None, **errors(401, 404, 429)},
     auth=django_auth,
 )
 def get_table(request: HttpRequest, name: str) -> HttpResponse:

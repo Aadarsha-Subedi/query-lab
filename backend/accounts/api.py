@@ -8,7 +8,7 @@ from ninja.decorators import decorate_view
 from ninja.security import django_auth
 
 from accounts.models import User
-from common.response.domain import SuccessEnvelope, success
+from common.response.domain import SuccessEnvelope, errors, success
 
 router = Router(tags=["accounts"])
 
@@ -22,7 +22,11 @@ class UserOut(Schema):
     providers: list[str]
 
 
-@router.get("/me", response=SuccessEnvelope[UserOut], auth=django_auth)
+@router.get(
+    "/me",
+    response={200: SuccessEnvelope[UserOut], **errors(401, 429)},
+    auth=django_auth,
+)
 @decorate_view(ensure_csrf_cookie)
 def me(request: HttpRequest) -> dict:
     """The signed-in user, or 401. The frontend's route guards use this.

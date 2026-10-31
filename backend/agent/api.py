@@ -23,7 +23,7 @@ from agent.schemas import (
 )
 from agent.stream import EventStream
 from common.order.domain import OrderingSchema
-from common.response.domain import SuccessEnvelope, success
+from common.response.domain import SuccessEnvelope, errors, success
 from common.throttling.scoped import AgentThrottle, ResultThrottle
 
 router = Router(tags=["agent"])
@@ -59,7 +59,11 @@ def _user(request: HttpRequest) -> User:
     return cast(User, request.user)
 
 
-@router.get("/limits", response=SuccessEnvelope[LimitsOut], auth=django_auth)
+@router.get(
+    "/limits",
+    response={200: SuccessEnvelope[LimitsOut], **errors(401, 429)},
+    auth=django_auth,
+)
 def get_limits(request: HttpRequest) -> dict:
     """What is left before a limit: asks on the shared default key today, unfinished
     runs against the cap, whether you saved your own key, and open live streams.
@@ -71,7 +75,7 @@ def get_limits(request: HttpRequest) -> dict:
 
 @router.post(
     "/runs",
-    response=SuccessEnvelope[RunOut],
+    response={200: SuccessEnvelope[RunOut], **errors(400, 401, 422, 429)},
     auth=django_auth,
     throttle=[AgentThrottle()],
 )
@@ -84,7 +88,11 @@ def create_run(request: HttpRequest, payload: RunIn) -> dict:
     return success(run_dict(run), message="Run started.")
 
 
-@router.get("/runs", response=SuccessEnvelope[list[RunOut]], auth=django_auth)
+@router.get(
+    "/runs",
+    response={200: SuccessEnvelope[list[RunOut]], **errors(401, 422, 429)},
+    auth=django_auth,
+)
 def list_runs(
     request: HttpRequest,
     page: Query[PageIn],
@@ -109,7 +117,11 @@ def list_runs(
     )
 
 
-@router.get("/runs/{run_id}", response=SuccessEnvelope[RunDetailOut], auth=django_auth)
+@router.get(
+    "/runs/{run_id}",
+    response={200: SuccessEnvelope[RunDetailOut], **errors(401, 404, 429)},
+    auth=django_auth,
+)
 def get_run(request: HttpRequest, run_id: int) -> dict:
     """A run and its steps. Poll this when the live stream is not available."""
     return success(run_detail_dict(service.get_run(_user(request), run_id)))
@@ -126,14 +138,20 @@ def _decide(
 
 
 @router.post(
-    "/runs/{run_id}/approve", response=SuccessEnvelope[RunOut], auth=django_auth
+    "/runs/{run_id}/approve",
+    response={200: SuccessEnvelope[RunOut], **errors(401, 404, 409, 429)},
+    auth=django_auth,
 )
 def approve_run(request: HttpRequest, run_id: int) -> dict:
     """Run the SQL the agent proposed. Only while the run waits for approval."""
     return _decide(request, run_id, service.DECISION_APPROVE)
 
 
-@router.post("/runs/{run_id}/edit", response=SuccessEnvelope[RunOut], auth=django_auth)
+@router.post(
+    "/runs/{run_id}/edit",
+    response={200: SuccessEnvelope[RunOut], **errors(400, 401, 404, 409, 422, 429)},
+    auth=django_auth,
+)
 def edit_run(request: HttpRequest, run_id: int, payload: EditIn) -> dict:
     """Run your own SQL instead. It goes through the same guard; a refusal is a 400
     and the run stays paused."""
@@ -141,7 +159,9 @@ def edit_run(request: HttpRequest, run_id: int, payload: EditIn) -> dict:
 
 
 @router.post(
-    "/runs/{run_id}/cancel", response=SuccessEnvelope[RunOut], auth=django_auth
+    "/runs/{run_id}/cancel",
+    response={200: SuccessEnvelope[RunOut], **errors(401, 404, 409, 429)},
+    auth=django_auth,
 )
 def cancel_run(request: HttpRequest, run_id: int) -> dict:
     """End a paused run without running anything."""
@@ -149,7 +169,9 @@ def cancel_run(request: HttpRequest, run_id: int) -> dict:
 
 
 @router.get(
-    "/runs/{run_id}/replay", response=SuccessEnvelope[RunDetailOut], auth=django_auth
+    "/runs/{run_id}/replay",
+    response={200: SuccessEnvelope[RunDetailOut], **errors(401, 404, 429)},
+    auth=django_auth,
 )
 def replay_run(request: HttpRequest, run_id: int) -> dict:
     """The stored trace in order. No model call and no query on the demo database:
@@ -159,7 +181,10 @@ def replay_run(request: HttpRequest, run_id: int) -> dict:
 
 @router.get(
     "/runs/{run_id}/result",
-    response=SuccessEnvelope[ResultOut],
+    response={
+        200: SuccessEnvelope[ResultOut],
+        **errors(400, 401, 404, 409, 422, 429, 504),
+    },
     auth=django_auth,
     throttle=[ResultThrottle()],
 )
@@ -171,7 +196,11 @@ def run_result(request: HttpRequest, run_id: int) -> dict:
     return success(result.fetch(service.get_run(_user(request), run_id)))
 
 
-@router.get("/runs/{run_id}/events", auth=django_auth)
+@router.get(
+    "/runs/{run_id}/events",
+    auth=django_auth,
+    response={200: None, **errors(401, 404, 429)},
+)
 def run_events(request: HttpRequest, run_id: int) -> StreamingHttpResponse:
     """Server-sent events: `step` for each step, then one `status` event when the
     run pauses for approval or ends. Event ids are step indexes; reconnect with

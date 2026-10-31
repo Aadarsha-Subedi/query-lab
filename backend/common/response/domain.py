@@ -33,6 +33,13 @@ class SuccessEnvelope[DataT](Schema):
     meta: dict[str, Any] = {}
 
 
+def errors(*status_codes: int) -> dict[int, type[ErrorEnvelope]]:
+    """Declare the error statuses a route can answer with, all in the error
+    envelope, so the OpenAPI file (and the client generated from it) has them:
+    `response={200: SuccessEnvelope[X], **errors(401, 404)}`."""
+    return dict.fromkeys(status_codes, ErrorEnvelope)
+
+
 def success(
     data: Any,
     message: str = "",

@@ -76,9 +76,9 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 4.7 OpenAPI contract and browser path
 
-- [ ] **4.7.1** `make openapi` writes `backend/openapi.json` from the one `NinjaAPI`, sorted so diffs are small.
+- [x] **4.7.1** `make openapi` writes `backend/openapi.json` from the one `NinjaAPI`, sorted so diffs are small.
 - [ ] **4.7.2** CI step: regenerate and fail if the file differs from the committed one (this is what keeps the frontend's generated types honest).
-- [ ] **4.7.3** Check that every response model is named and every error response is declared (so the generated client has types for them); fix gaps.
+- [x] **4.7.3** Check that every response model is named and every error response is declared (so the generated client has types for them); fix gaps.
 - [ ] **4.7.4** Update `backend/postman/collection.json` for every new or changed endpoint.
 - [ ] **4.7.5** Cross-origin check with the real dev servers: from a page on the frontend origin, `fetch` with credentials to `/api/me`, a POST with the CSRF header, and an `EventSource` with credentials to `/runs/{id}/events`. Record the result and any `.env` change it needed (CORS, CSRF trusted origins, cookie `SameSite`). **(You)** run it once in a browser, since it needs the OAuth login.
 - [ ] **4.7.6** Test that CORS refuses an origin not in `CORS_ALLOWED_ORIGINS` and that credentials are allowed only for the listed ones.
