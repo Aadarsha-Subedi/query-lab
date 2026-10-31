@@ -204,3 +204,22 @@ in a named BuildKit cache mount with `sharing=locked`, so a failed build resumes
 from the wheels it already has and two builds never contend for the cache.
 `network: host` on the build was considered but not added (it changes nothing on
 Docker Desktop's VM and only matters on native Docker Engine).
+
+## Dev-only OAuth test page for Postman
+
+**What:** `GET /dev/` (a plain HTML page) starts the normal allauth Google/GitHub
+sign-in and then shows the `sessionid` in a textarea; `GET /dev/session` returns
+it as JSON. Both exist only in `config/urls_local.py`, selected by
+`settings/local.py`.
+
+**Why:** OAuth finishes only in a browser and the session cookie is HttpOnly, so
+Postman could not get a signed-in session without opening devtools. The page
+uses the real browser flow, so what Postman tests is the real session auth. It
+is gated by the URL conf (not by `DEBUG` or an env flag), so prod and test
+cannot serve it, and it adds no setting.
+
+**Cost:** the session key is shown in the page; fine on localhost, which is why
+it must never be routed in prod (a test checks `config.urls` has no `/dev/`).
+Using it needs `http://localhost:8000/accounts/<provider>/login/callback/` in the
+Google and GitHub OAuth apps.
+

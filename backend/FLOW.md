@@ -52,6 +52,21 @@ the frontend's route guards use it. It also sets the `csrftoken` cookie
 (`ensure_csrf_cookie`), signed in or not: the frontend calls it at every boot,
 so its first POST already has a token.
 
+## Dev sign-in page (local only)
+
+```
+open http://localhost:8000/dev/            (config/urls_local.py, set by settings/local.py)
+  -> Continue with Google/GitHub           form POST /_allauth/browser/v1/auth/provider/redirect
+                                           callback_url=/dev/, process=login
+  -> provider -> /accounts/<provider>/login/callback/ -> back to /dev/
+  -> page GETs /dev/session                {authenticated, session_key, email}
+  -> textarea shows the session key        Postman sends it as Cookie: sessionid=<key>
+```
+
+`prod` and `test` use `config.urls`, which has no `/dev/` routes. The OAuth
+callback returns to the host you opened, so the provider apps need
+`http://localhost:8000/accounts/<provider>/login/callback/` as a redirect URI.
+
 ## Rate limits
 
 ```

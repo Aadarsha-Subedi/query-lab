@@ -26,10 +26,12 @@ need the compose Postgres and Redis, so they run in the container.
 ## Layout
 
 ```
-config/            settings/{base,local,test,prod}.py, api.py (the one NinjaAPI), urls.py, gunicorn.py
+config/            settings/{base,local,test,prod}.py, api.py (the one NinjaAPI), urls.py,
+                   urls_local.py (urls.py + /dev/, local only), gunicorn.py
 core/              health checks, DB router, data-DB SQL (datadb.py), Olist loader (demo.py),
                    commands bootstrap_data_db and load_demo
-accounts/          User model (one per Google/GitHub account; email not unique), /api/me
+accounts/          User model (one per Google/GitHub account; email not unique), /api/me,
+                   dev.py + templates/dev (dev-only OAuth test page, see FLOW.md)
 common/            shared building blocks (from resolve-ai / Pro-Goal, rewritten for ninja):
   exception/       typed AppExceptions + ninja handlers (error envelope)
   response/        success/error envelope schemas

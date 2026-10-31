@@ -15,9 +15,11 @@ Sign-in is Google or GitHub only: there are no email/password accounts.
 
 ## Signed-in requests
 
-OAuth can only finish in a browser. Sign in at `http://localhost:3000` with
-Google or GitHub, then copy the `sessionid` cookie for `localhost` into
-Postman's cookie jar (Cookies → localhost → add `sessionid`). *Session*,
+OAuth can only finish in a browser. Open `http://localhost:8000/dev/` (local
+only), sign in with Google or GitHub, copy the session id from the textarea and
+add it to Postman's cookie jar (Cookies → localhost → add `sessionid`). The
+provider apps need `http://localhost:8000/accounts/<provider>/login/callback/`
+as a redirect URI. *Session*,
 *Connected providers* and */api/me* then answer as that user.
 
 ## Notes
