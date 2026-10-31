@@ -82,13 +82,24 @@ def data_connections(
 TEST_WORKSPACE_ID_START = 900_000
 
 
-@pytest.fixture(scope="session", autouse=True)
-def _high_workspace_ids(django_db_setup: None, django_db_blocker: Any) -> None:
-    with django_db_blocker.unblock(), connections["default"].cursor() as cursor:
+_workspace_ids_moved = False
+
+
+@pytest.fixture(autouse=True)
+def _high_workspace_ids(request: pytest.FixtureRequest) -> None:
+    """Once per run, the first time a test uses the app database."""
+    global _workspace_ids_moved
+    if _workspace_ids_moved or not {"db", "transactional_db"} & set(
+        request.fixturenames
+    ):
+        return
+    request.getfixturevalue("db")
+    with connections["default"].cursor() as cursor:
         cursor.execute(
             "SELECT setval(pg_get_serial_sequence('workspaces_workspace', 'id'), %s, false)",
             [TEST_WORKSPACE_ID_START],
         )
+    _workspace_ids_moved = True
 
 
 @pytest.fixture(autouse=True)
