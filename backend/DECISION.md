@@ -385,5 +385,5 @@ Backend only: the surface the analyst screen (step 9) needs, so the screen is on
 
 **Pending items (owner).** 4.7.5 (the real-browser CORS, CSRF and SSE check) is not run: it needs the OAuth login. The steps are in FLOW.md, "Browser path check".
 
-**Image size, after step 4.** See the measurement recorded below at wrap-up (4.8.5).
+**Image size, after step 4 (4.8.5).** Measured 2026-10-31 with CI's method: **295 MB against the 300 MB budget**, the same as before step 4 (the new modules and `openapi.json` are under 1 MB together; no dependency was added, `pyproject.toml` and `uv.lock` are unchanged). Headroom stays at about 5 MB.
 

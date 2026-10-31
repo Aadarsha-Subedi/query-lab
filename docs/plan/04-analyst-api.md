@@ -80,7 +80,7 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 - [x] **4.7.2** CI step: regenerate and fail if the file differs from the committed one (this is what keeps the frontend's generated types honest).
 - [x] **4.7.3** Check that every response model is named and every error response is declared (so the generated client has types for them); fix gaps.
 - [x] **4.7.4** Update `backend/postman/collection.json` for every new or changed endpoint.
-- [ ] **4.7.5** Cross-origin check with the real dev servers: from a page on the frontend origin, `fetch` with credentials to `/api/me`, a POST with the CSRF header, and an `EventSource` with credentials to `/runs/{id}/events`. Record the result and any `.env` change it needed (CORS, CSRF trusted origins, cookie `SameSite`). **(You)** run it once in a browser, since it needs the OAuth login.
+- [ ] **4.7.5** *(pending: owner task, see FLOW.md "Browser path check")* Cross-origin check with the real dev servers: from a page on the frontend origin, `fetch` with credentials to `/api/me`, a POST with the CSRF header, and an `EventSource` with credentials to `/runs/{id}/events`. Record the result and any `.env` change it needed (CORS, CSRF trusted origins, cookie `SameSite`). **(You)** run it once in a browser, since it needs the OAuth login.
 - [x] **4.7.6** Test that CORS refuses an origin not in `CORS_ALLOWED_ORIGINS` and that credentials are allowed only for the listed ones.
 
 ## 4.8 Tests, docs and wrap-up
@@ -89,5 +89,5 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 - [x] **4.8.2** `backend/CLAUDE.md`: new endpoints and files in the layout; the rule that `/result` re-runs stored SQL only and never takes SQL from the request.
 - [x] **4.8.3** `backend/FLOW.md`: the screen's contract table (4.1.3), the approval payload and the result fetch.
 - [x] **4.8.4** `backend/DECISION.md`: why rows are re-run and not stored; why the screen uses runs and not `/ask`; the open questions' answers; the error list; the image-size number.
-- [ ] **4.8.5** Full test suite, `ruff`, `mypy`, the `.env` sync test and the image-size check pass.
+- [x] **4.8.5** Full test suite, `ruff`, `mypy`, the `.env` sync test and the image-size check pass.
 - [x] **4.8.6** Tick step 4 in the root `README.md`, add a link to this plan, and update the step 9 row so it points at the contract in `FLOW.md`.
