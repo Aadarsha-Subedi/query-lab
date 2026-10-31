@@ -371,6 +371,7 @@ TRACES_DRAFT_MAX_PER_BATCH = env.int("TRACES_DRAFT_MAX_PER_BATCH")
 TRACES_PAGE_SIZE_MAX = env.int("TRACES_PAGE_SIZE_MAX")
 EVAL_GATE_MAX_DROP_POINTS = env.float("EVAL_GATE_MAX_DROP_POINTS")
 EVAL_GATE_MIN_CASES = env.int("EVAL_GATE_MIN_CASES")
+FEEDBACK_NOTE_MAX_CHARS = env.int("FEEDBACK_NOTE_MAX_CHARS")
 
 # ── Logging ───────────────────────────────────────────────────────────────
 

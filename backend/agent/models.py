@@ -151,3 +151,30 @@ class AgentStep(TimeStampModel):
 
     def __str__(self) -> str:
         return f"{self.run_id}#{self.index} {self.kind}"
+
+
+class RunFeedback(TimeStampModel):
+    """A person's thumbs up or down on one of their own finished runs. One vote
+    per run and user; changing it updates the row. It is a signal for choosing
+    eval candidates (step 6), never a label that is trusted by itself."""
+
+    VOTE_UP = "up"
+    VOTE_DOWN = "down"
+    VOTES = (VOTE_UP, VOTE_DOWN)
+
+    run = models.ForeignKey(AgentRun, on_delete=models.CASCADE, related_name="feedback")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+"
+    )
+    vote = models.CharField(max_length=4)
+    note = models.TextField(blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["run", "user"], name="unique_feedback_per_run_and_user"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.run_id}:{self.vote}"
