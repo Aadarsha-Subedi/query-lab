@@ -80,6 +80,8 @@ def _integer(value: Any, api_type: str) -> int:
 def _numeric(value: Any) -> Decimal:
     if isinstance(value, bool) or not isinstance(value, int | float | str | Decimal):
         raise BadValue("Expected a number.")
+    if isinstance(value, str) and "_" in value:  # Decimal() would accept 1_000
+        raise BadValue("Expected a number.")
     try:
         number = Decimal(str(value).strip())
     except InvalidOperation:
