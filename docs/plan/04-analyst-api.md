@@ -48,9 +48,9 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 ## 4.3 Full result of a finished run
 
 - [x] **4.3.1** Settings: a throttle rate for the result endpoint (`THROTTLE_RESULT_RATE`), next to the other scoped rates.
-- [ ] **4.3.2** `GET /api/agent/runs/{id}/result`: owner only; only for `succeeded` runs (otherwise a typed 409); runs `final_sql` through `guard.check` again, then `runner.run`; returns columns, rows, row count and the truncated flag. Never accepts SQL from the request.
-- [ ] **4.3.3** Failure mapping: a query error or timeout gives the same typed errors as `/api/ask`; the stored run is not changed.
-- [ ] **4.3.4** Tests: another user's run is a 404; a `failed` / `cancelled` / `awaiting_approval` run is a 409; a SQL that the guard would now refuse is refused; rows are capped by `ASK_MAX_ROWS`; throttle works; the endpoint never stores rows.
+- [x] **4.3.2** `GET /api/agent/runs/{id}/result`: owner only; only for `succeeded` runs (otherwise a typed 409); runs `final_sql` through `guard.check` again, then `runner.run`; returns columns, rows, row count and the truncated flag. Never accepts SQL from the request.
+- [x] **4.3.3** Failure mapping: a query error or timeout gives the same typed errors as `/api/ask`; the stored run is not changed.
+- [x] **4.3.4** Tests: another user's run is a 404; a `failed` / `cancelled` / `awaiting_approval` run is a 409; a SQL that the guard would now refuse is refused; rows are capped by `ASK_MAX_ROWS`; throttle works; the endpoint never stores rows.
 
 ## 4.4 Approval payload
 

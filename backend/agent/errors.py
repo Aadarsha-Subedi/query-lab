@@ -24,6 +24,11 @@ class RunNotAwaitingApproval(ConflictException):
     error_code = "run_not_awaiting_approval"
 
 
+class RunNotSucceeded(ConflictException):
+    message = "Only a run that succeeded has a result."
+    error_code = "run_not_succeeded"
+
+
 class RunExpired(ConflictException):
     message = "This run waited too long for approval and expired."
     error_code = "run_expired"

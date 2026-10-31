@@ -7,10 +7,11 @@ from ninja.security import django_auth
 from pydantic import Field
 
 from accounts.models import User
-from agent import service, tasks
+from agent import result, service, tasks
 from agent.models import AgentRun
 from agent.schemas import (
     EditIn,
+    ResultOut,
     RunDetailOut,
     RunIn,
     RunOut,
@@ -19,7 +20,7 @@ from agent.schemas import (
 )
 from agent.stream import EventStream
 from common.response.domain import SuccessEnvelope, success
-from common.throttling.scoped import AgentThrottle
+from common.throttling.scoped import AgentThrottle, ResultThrottle
 
 router = Router(tags=["agent"])
 
@@ -107,6 +108,20 @@ def replay_run(request: HttpRequest, run_id: int) -> dict:
     """The stored trace in order. No model call and no query on the demo database:
     it is read from the steps alone."""
     return success(run_detail_dict(service.get_run(_user(request), run_id)))
+
+
+@router.get(
+    "/runs/{run_id}/result",
+    response=SuccessEnvelope[ResultOut],
+    auth=django_auth,
+    throttle=[ResultThrottle()],
+)
+def run_result(request: HttpRequest, run_id: int) -> dict:
+    """The rows of a succeeded run, up to the row cap. Rows are not stored: this
+    runs the run's stored SQL again, through the guard, on the read-only
+    connection. It never takes SQL from the request, so the numbers can differ
+    from the first run if the data changed. 409 `run_not_succeeded` otherwise."""
+    return success(result.fetch(service.get_run(_user(request), run_id)))
 
 
 @router.get("/runs/{run_id}/events", auth=django_auth)

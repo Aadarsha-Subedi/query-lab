@@ -62,6 +62,17 @@ class RunDetailOut(RunOut):
     steps: list[StepOut]
 
 
+class ResultOut(Schema):
+    run_id: int
+    # The SQL that ran this time (the stored SQL after the guard's rewrite).
+    sql: str
+    columns: list[str]
+    rows: list[list[Any]]
+    row_count: int
+    # True when the result was cut at the row or size cap.
+    truncated: bool
+
+
 def step_dict(step: AgentStep) -> dict[str, Any]:
     return StepOut(
         index=step.index,

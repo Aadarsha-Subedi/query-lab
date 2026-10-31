@@ -962,6 +962,43 @@
           ]
         },
         {
+          "name": "Result rows",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/runs/{{agentRunId}}/result",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agent",
+                "runs",
+                "{{agentRunId}}",
+                "result"
+              ]
+            },
+            "description": "The rows of a succeeded run, capped by `ASK_MAX_ROWS`. Rows are not stored: this re-runs the run's stored SQL through the guard on the read-only connection and never takes SQL from the request. 409 `run_not_succeeded` unless the run succeeded."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401, 404, 409, 422, 429, 504]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 404, 409, 422, 429, 504]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Watch events (SSE)",
           "request": {
             "method": "GET",

@@ -71,3 +71,10 @@ class AskThrottle(SettingsRateThrottle):
 class AgentThrottle(AskThrottle):
     scope = "agent"
     rate_setting = "THROTTLE_AGENT_RATE"
+
+
+class ResultThrottle(AskThrottle):
+    """Fetching a finished run's rows re-runs its SQL on the demo database."""
+
+    scope = "result"
+    rate_setting = "THROTTLE_RESULT_RATE"
