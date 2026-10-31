@@ -24,10 +24,12 @@ def test_a_connection_is_the_workspace_role_and_ends_its_transaction(provision) 
 
 def test_an_error_rolls_the_request_back(provision) -> None:
     provision(A)
-    with pytest.raises(RuntimeError):
-        with connections.workspace_connection(A, "rw", 1) as connection:
-            connection.execute("CREATE TABLE t (id int)")
-            raise RuntimeError("boom")
+    with (
+        pytest.raises(RuntimeError),
+        connections.workspace_connection(A, "rw", 1) as connection,
+    ):
+        connection.execute("CREATE TABLE t (id int)")
+        raise RuntimeError("boom")
     with connect(A, "rw") as check:
         assert check.execute("SELECT to_regclass('t')").fetchone() == (None,)
 
