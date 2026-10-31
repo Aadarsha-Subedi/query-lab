@@ -6,6 +6,8 @@ class AppException(Exception):
     status_code = 500
     message = "An unexpected error occurred."
     error_code = "internal_error"
+    # 429 only: seconds until a retry can work, when waiting helps at all.
+    retry_after: int | None = None
 
     def __init__(
         self,

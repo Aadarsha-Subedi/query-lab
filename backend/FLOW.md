@@ -19,7 +19,7 @@ noted. Rows marked *new* are step 4; the rest exist. Demo schema only until step
 | Full result table of a finished run | `GET /agent/runs/{id}/result` | new (4.3) |
 | History, filtered and ordered | `GET /agent/runs?status=&q=&created_after=&created_before=&ordering=` | extended (4.5) |
 | Replay a run | `GET /agent/runs/{id}/replay` | exists |
-| What every error code means | the error list in this file | new (4.6) |
+| What every error code means, and what to do | `backend/API_ERRORS.md` | new (4.6) |
 | Generated client types | `backend/openapi.json` (`make openapi`) | new (4.7) |
 
 Not in this step: an auto-run toggle, deleting runs, CSV export, workspaces.

@@ -3,6 +3,7 @@
 returns its normal 500 and the traceback reaches the logs."""
 
 import logging
+import math
 from typing import Any
 
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
@@ -47,10 +48,13 @@ def _respond(
     message: str,
     code: str | None = None,
     errors: list[dict[str, Any]] | None = None,
+    retry_after: int | None = None,
 ) -> HttpResponse:
     return api.create_response(
         request,
-        error_body(message, code or _CODES.get(status, "error"), status, errors),
+        error_body(
+            message, code or _CODES.get(status, "error"), status, errors, retry_after
+        ),
         status=status,
     )
 
@@ -59,7 +63,13 @@ def install_exception_handlers(api: NinjaAPI) -> None:
     @api.exception_handler(AppException)
     def app_exception(request: HttpRequest, exc: AppException) -> HttpResponse:
         response = _respond(
-            api, request, exc.status_code, exc.message, exc.error_code, exc.errors
+            api,
+            request,
+            exc.status_code,
+            exc.message,
+            exc.error_code,
+            exc.errors,
+            exc.retry_after,
         )
         for name, value in exc.headers.items():
             response[name] = value
@@ -87,8 +97,17 @@ def install_exception_handlers(api: NinjaAPI) -> None:
 
     @api.exception_handler(Throttled)
     def throttled(request: HttpRequest, exc: Throttled) -> HttpResponse:
-        # ninja adds the Retry-After header to this response itself.
-        return _respond(api, request, 429, "Too many requests. Please try again later.")
+        wait = math.ceil(exc.wait) if exc.wait is not None else None
+        response = _respond(
+            api,
+            request,
+            429,
+            "Too many requests. Please try again later.",
+            retry_after=wait,
+        )
+        if wait is not None:
+            response["Retry-After"] = str(wait)
+        return response
 
     @api.exception_handler(HttpError)
     def http_error(request: HttpRequest, exc: HttpError) -> HttpResponse:

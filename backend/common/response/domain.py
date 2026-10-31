@@ -20,6 +20,9 @@ class ErrorEnvelope(Schema):
     message: str
     code: str
     errors: list[ErrorDetail] = []
+    # 429 only: seconds until a retry can work (also the Retry-After header).
+    # Null when waiting does not help, for example too many unfinished runs.
+    retry_after_seconds: int | None = None
 
 
 class SuccessEnvelope[DataT](Schema):
@@ -52,11 +55,15 @@ def error_body(
     code: str,
     status_code: int,
     errors: list[dict[str, Any]] | None = None,
+    retry_after_seconds: int | None = None,
 ) -> dict[str, Any]:
-    return {
+    body: dict[str, Any] = {
         "success": False,
         "status_code": status_code,
         "message": message,
         "code": code,
         "errors": errors or [],
     }
+    if status_code == 429:
+        body["retry_after_seconds"] = retry_after_seconds
+    return body

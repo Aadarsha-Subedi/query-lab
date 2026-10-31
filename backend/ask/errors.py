@@ -3,6 +3,9 @@ contain the model's SQL, a prompt or a key. `GuardRejected` and `QueryFailed`
 carry a short `detail` that goes back to the model on a repair retry, never to
 the client."""
 
+import math
+from datetime import UTC, datetime, timedelta
+
 from common.exception.domain import (
     AppException,
     BadRequestException,
@@ -49,6 +52,16 @@ class LLMFailed(AppException):
 class DefaultKeyLimitReached(ThrottledException):
     message = "The daily limit on QueryLab's shared key is reached. Add your own key to keep asking."
     error_code = "default_key_limit"
+
+    def __init__(self) -> None:
+        super().__init__()
+        # The daily count restarts at midnight UTC (ask/keys.py).
+        now = datetime.now(UTC)
+        midnight = (now + timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        self.retry_after = max(1, math.ceil((midnight - now).total_seconds()))
+        self.headers = {"Retry-After": str(self.retry_after)}
 
 
 class NotAnswerable(UnprocessableEntityException):
