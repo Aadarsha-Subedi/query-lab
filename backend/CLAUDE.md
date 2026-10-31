@@ -30,6 +30,9 @@ config/            settings/{base,local,test,prod}.py, api.py (the one NinjaAPI)
                    urls_local.py (urls.py + /dev/, local only), gunicorn.py
 core/              health checks, DB router, data-DB SQL (datadb.py), Olist loader (demo.py),
                    commands bootstrap_data_db and load_demo
+ask/               text-to-SQL (step 1): schema.py, prompt.py, guard.py (sqlglot), runner.py,
+                   confidence.py, keys.py (own/default LLM key), service.py, api.py (/ask, /llm-keys),
+                   models UserLLMKey and AskLog
 accounts/          User model (one per Google/GitHub account; email not unique), /api/me,
                    dev.py + templates/dev (dev-only OAuth test page, see FLOW.md)
 common/            shared building blocks (from resolve-ai / Pro-Goal, rewritten for ninja):
@@ -65,3 +68,6 @@ postman/           Postman collection + local environment for every endpoint
 5. **Never commit secrets.** `.env` files are git-ignored; only `.env.example` and the throwaway `.env.test` are committed. `infra/data/` (the Olist CSVs) is never committed.
 6. **No local disk writes** in app code: logs go to stdout, uploads stream to Postgres (or R2 later).
 7. Don't skip or disable failing tests; fix the cause.
+8. **SQL from an LLM is untrusted.** It runs only after `ask.guard.check` and only through `ask.runner.run`, which uses the reader connection. Never execute model SQL any other way, never loosen the guard to make a test pass, and never put result rows into a prompt or an `AskLog`.
+9. **Keys:** a user's LLM key is stored only encrypted (`common.crypto`) and never returned, logged or echoed (only its last four characters). QueryLab's default key lives only in `.env` (`LLM_DEFAULT_GEMINI_API_KEY`).
+10. **`ask` settings** (`ASK_*`, `CONFIDENCE_*`, `LLM_DEFAULT_*`) follow rule 2: add new ones to `.env.example`, `.env.test` and settings together.

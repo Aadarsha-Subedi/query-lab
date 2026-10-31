@@ -223,3 +223,55 @@ it must never be routed in prod (a test checks `config.urls` has no `/dev/`).
 Using it needs `http://localhost:8000/accounts/<provider>/login/callback/` in the
 Google and GitHub OAuth apps.
 
+## Text-to-SQL core (step 1)
+
+**Guard with sqlglot, backed by the reader role.** Model SQL is untrusted (wrong,
+or steered by a prompt injection in the question). `ask/guard.py` parses it as
+PostgreSQL with sqlglot and checks the syntax tree, never the text: one
+statement, SELECT/WITH only, no write/DDL/COPY/SET/locking nodes anywhere
+(including in CTEs), only known `demo` tables and columns (via sqlglot's
+`qualify`), a function denylist from `.env` plus any `pg_*`/`lo_*` function, and
+a forced `LIMIT`. The query that runs is regenerated from the checked tree, so
+it is exactly what was checked. Alternatives: regex/keyword filters (easy to
+bypass with comments, casing, quoting) and a hand-written parser (more code,
+more bugs). The guard may be wrong in rare cases because the reader role
+(read-only, SELECT on `demo`, statement timeout) is the actual wall, and the
+guard's second job is giving the model a precise error to repair from. Cost:
+sqlglot, pure Python, about 5 MB, no native code, so it fits the 1 GiB container.
+
+**Three layers:** guard, reader role, resource caps (statement timeout, row and
+byte caps, `AskThrottle`). Any one of them alone stops a write.
+
+**What the model sees:** rules, the schema text (names, types, keys, `COMMENT ON`
+text), a few example values for low-cardinality text columns, and the question.
+On a repair, also the failed SQL and one trimmed error line. Never result rows.
+Example values come from `pg_stats` (most common values Postgres already keeps,
+refreshed by `ANALYZE` at the end of `load_demo`), not from scanning tables. They
+are sent for the shared demo schema only; step 5 must turn them off, or make them
+opt-in, for user uploads.
+
+**Keys:** QueryLab provides a default Gemini key from `.env` (never in the
+database), capped per user per day (`ASK_DEFAULT_KEY_DAILY_LIMIT`, counted in
+Redis) so a shared key cannot be drained. A user may save their own OpenAI or
+Gemini key; it is checked with the provider, stored encrypted with
+`common.crypto`, never returned (only the last four characters), and takes
+priority over the default and over its cap. The default key is Gemini only.
+
+**Confidence score:** a weighted blend (weights in `.env`) of the model's own
+rating, a guard that changed nothing, no repair retry and a non-empty result,
+minus a penalty when truncated. A missing LIMIT does not count as a change. It
+is a heuristic, not a calibrated probability: step 2's eval will compare it with
+real execution accuracy.
+
+**Synchronous ask.** The request waits for the LLM (a few seconds); gunicorn's
+threads absorb it. No Huey job until step 3's agent loop needs one.
+
+**AskLog:** one row per ask (question, final SQL, status, error code, attempts,
+provider, model, key source, tokens, latency, confidence, row count), success or
+failure, never the result rows. They are raw material for traces in steps 3 and
+6. A failed log write is logged and never fails the ask. No retention policy yet;
+decide before real users arrive.
+
+**Repair retry:** at most `ASK_MAX_REPAIR_ATTEMPTS` (1). Timeouts are not
+retried (the same query would time out again).
+

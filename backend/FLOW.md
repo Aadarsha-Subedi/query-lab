@@ -14,7 +14,7 @@ browser ──> Vite dev proxy (/api, /_allauth, /accounts)  [prod: same domain,
         ──> urls.py
               /api/        NinjaAPI (config/api.py)
                              default throttles: AnonThrottle (IP) + UserThrottle (user)
-                             routers: core (/health), accounts (/me)
+                             routers: core (/health), accounts (/me), ask (/ask, /llm-keys)
                              errors -> common/exception/handler.py -> error envelope
               /_allauth/   allauth headless JSON API (browser client)
               /accounts/   OAuth provider callbacks only (HEADLESS_ONLY)
@@ -66,6 +66,51 @@ open http://localhost:8000/dev/            (config/urls_local.py, set by setting
 `prod` and `test` use `config.urls`, which has no `/dev/` routes. The OAuth
 callback returns to the host you opened, so the provider apps need
 `http://localhost:8000/accounts/<provider>/login/callback/` as a redirect URI.
+
+## Ask: question to SQL to result (step 1)
+
+`POST /api/ask {question}` (signed in; `AskThrottle`; synchronous):
+
+```
+question
+  -> validate (length, control chars, our own tags removed)           ask/prompt.py
+  -> resolve LLM key: user's own (OpenAI/Gemini) else the default     ask/keys.py
+       Gemini key; default key counts against a per-user daily cap
+  -> schema text (tables, columns, keys, COMMENT ON text, sample      ask/schema.py
+       values for low-cardinality columns), cached in Redis
+  -> prompt (rules + schema + <question>) -> LLM -> JSON reply        common/llm
+       {sql, rationale, self_confidence}
+  -> GUARD (sqlglot, Postgres dialect)                                ask/guard.py
+       one statement, SELECT/WITH only, known demo tables/columns,
+       no denied functions, LIMIT forced; returns the SQL to run
+  -> RUN on data_reader: read-only transaction, statement timeout,    ask/runner.py
+       row and byte caps, JSON-safe values
+  -> confidence score, AskLog row, response                           ask/confidence.py
+```
+
+Repair loop: if the guard rejects the SQL or Postgres errors, the failed SQL and
+the first line of the error go back to the model once (`ASK_MAX_REPAIR_ATTEMPTS`).
+A timeout is not retried.
+
+Trust boundary: everything the model returns is untrusted. Three layers, any one
+of which stops a write: the guard (parsed tree, not text), the reader role
+(SELECT on `demo` only, read-only, `statement_timeout`), and the resource caps.
+
+```
+ user ──question──> Django ──schema+question──> LLM provider (Gemini / OpenAI)
+                      ^                              │
+                      │                        SQL (untrusted)
+                      │                              v
+                  rows + sql <── data_reader <── sqlglot guard
+                  (rows never go back to the LLM)
+```
+
+What the model sees: rules, schema text, the question (and on a repair, the bad
+SQL plus one error line). Never result rows or other users' data.
+
+Errors: 400 `question_invalid` / `guard_rejected`, 422 `query_failed`, 429
+`throttled` / `default_key_limit`, 502 `llm_*`, 504 `query_timeout`. A signed-out
+POST without a CSRF token gets 403 from Django's CSRF check before the 401.
 
 ## Rate limits
 

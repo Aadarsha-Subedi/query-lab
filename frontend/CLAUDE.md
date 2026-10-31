@@ -68,3 +68,5 @@ Route groups are pathless layouts: `_public` (the plan's "(public)") and `_app`
 - Package manager: **pnpm** only (`packageManager` in package.json; `pnpm-lock.yaml` is the lockfile). Never run npm or yarn here: mixing them breaks node_modules.
 - UI components are plain shadcn/ui (Radix + Tailwind), adapted to our tokens. After `shadcn add`, replace its Lucide icons with `<Icon>` (Hugeicons), import `cn` from `@/lib/utils`, and keep the variant names used on `/design`. Animations come from `tw-animate-css` with our `duration-*` tokens.
 - Don't skip or disable failing tests; fix the cause.
+- Backend endpoints for ask and LLM keys exist from backend step 1 (see FLOW.md); screens are built in step 9.
+

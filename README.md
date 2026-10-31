@@ -2,7 +2,7 @@
 
 > Ask your database in plain English, then measure how well the AI answered.
 
-**Status:** In progress (step 0 done; step 1 next)
+**Status:** In progress (steps 0 and 1 done; step 2 next)
 
 Querylab is a text-to-SQL analyst agent with its own evaluation and fine-tuning loop. Visitors ask questions about a database in plain English and get a result table, the exact SQL that ran, and a replayable trace of how the agent got there. Behind it, a workbench turns those traces into an eval set, scores every model version, and benchmarks a LoRA fine-tuned model against its base.
 
@@ -28,7 +28,7 @@ step 9 on the approved design system, just before deployment.
 | 10 | Deploy + portfolio polish | Hosting (Cloudflare Container + static frontend), public read-only eval dashboard, demo script, final results |
 
 - [x] 0. Foundation (your GitHub and OAuth setup tasks remain)
-- [ ] 1. Text-to-SQL core
+- [x] 1. Text-to-SQL core (your real-LLM check, 1.12.3, remains)
 - [ ] 2. Eval harness skeleton
 - [ ] 3. Agent
 - [ ] 4. Analyst API

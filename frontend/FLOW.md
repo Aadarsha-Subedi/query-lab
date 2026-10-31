@@ -72,3 +72,9 @@ The same email through Google and through GitHub is two different users;
 `/api/me` says which provider (`providers`).
 
 Every request goes through `src/lib/api` (see "Data in a component").
+
+## Endpoints the step 9 screens will use (from backend step 1)
+
+- `POST /api/ask {question}` returns `{sql, columns, rows, row_count, truncated, confidence, rationale, model, latency_ms}`; errors carry a stable `code` (`question_invalid`, `guard_rejected`, `query_failed`, `query_timeout`, `default_key_limit`, `llm_*`) and 429 has `Retry-After`.
+- `GET /api/llm-keys`, `PUT` / `DELETE /api/llm-keys/{provider}` manage the user's own OpenAI or Gemini key (the key is never returned; only `key_last4`).
+
