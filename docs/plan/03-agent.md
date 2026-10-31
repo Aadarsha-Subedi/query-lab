@@ -61,12 +61,12 @@ One file per tool in `agent/tools/`; each has a Pydantic input model, a Pydantic
 
 ## 3.4 Prompts and parsing
 
-- [ ] **3.4.1** Agent system prompt: role, rules (read-only, demo schema, qualified names), the tool list with schemas, the output format (one JSON object per turn: `{"tool": ..., "input": {...}}`), and the budget in plain words.
-- [ ] **3.4.2** Plan prompt: ask for a short numbered plan and a list of assumptions it is making about the question. Assumptions are shown to the user at the approval step.
-- [ ] **3.4.3** Reflect prompt: given the SQL, the result summary and the question, return `{verdict: "ok"|"revise", reason, revised_sql?}`. The model is told to look for the three known failure shapes from the step 2 baseline (wrong sort key, filter the question did not ask for, extra columns).
+- [x] **3.4.1** Agent system prompt: role, rules (read-only, demo schema, qualified names), the tool list with schemas, the output format (one JSON object per turn: `{"tool": ..., "input": {...}}`), and the budget in plain words.
+- [x] **3.4.2** Plan prompt: ask for a short numbered plan and a list of assumptions it is making about the question. Assumptions are shown to the user at the approval step.
+- [x] **3.4.3** Reflect prompt: given the SQL, the result summary and the question, return `{verdict: "ok"|"revise", reason, revised_sql?}`. The model is told to look for the three known failure shapes from the step 2 baseline (wrong sort key, filter the question did not ask for, extra columns).
 - [ ] **3.4.4** Compact start: the first prompt carries table names and comments only; the agent fetches columns with `describe_table`. Judged by the eval gate in 3.10; if it costs accuracy, fall back to the full schema text and record it in `DECISION.md`.
-- [ ] **3.4.5** Parser: tolerant of code fences, rejects more than one tool call per turn, bounded retries on malformed JSON (counts as an LLM call).
-- [ ] **3.4.6** Bump `PROMPT_VERSION` to `v2-agent` so eval runs are tied to it.
+- [x] **3.4.5** Parser: tolerant of code fences, rejects more than one tool call per turn, bounded retries on malformed JSON (counts as an LLM call).
+- [x] **3.4.6** Bump `PROMPT_VERSION` to `v2-agent` so eval runs are tied to it.
 - [ ] **3.4.7** Tests with a fake LLM: valid turns, bad JSON, two tool calls in one turn, unknown tool, prompt-injection text in the question (must not change the tool list or skip approval).
 
 ## 3.5 Run state (Redis) and trace (Postgres)
