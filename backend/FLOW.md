@@ -14,7 +14,8 @@ browser ──> Vite dev proxy (/api, /_allauth, /accounts)  [prod: same domain,
         ──> urls.py
               /api/        NinjaAPI (config/api.py)
                              default throttles: AnonThrottle (IP) + UserThrottle (user)
-                             routers: core (/health), accounts (/me), ask (/ask, /llm-keys)
+                             routers: core (/health), accounts (/me), ask (/ask, /llm-keys),
+                             agent (/agent/runs...)
                              errors -> common/exception/handler.py -> error envelope
               /_allauth/   allauth headless JSON API (browser client)
               /accounts/   OAuth provider callbacks only (HEADLESS_ONLY)
@@ -79,13 +80,14 @@ question
   -> schema text (tables, columns, keys, COMMENT ON text, sample      ask/schema.py
        values for low-cardinality columns), cached in Redis
   -> prompt (rules + schema + <question>) -> LLM -> JSON reply        common/llm
-       {sql, rationale, self_confidence}
+       {sql, rationale, self_confidence (read, no longer scored)}
   -> GUARD (sqlglot, Postgres dialect)                                ask/guard.py
        one statement, SELECT/WITH only, known demo tables/columns,
        no denied functions, LIMIT forced; returns the SQL to run
   -> RUN on data_reader: read-only transaction, statement timeout,    ask/runner.py
        row and byte caps, JSON-safe values
-  -> confidence score, AskLog row, response                           ask/confidence.py
+  -> confidence score + check label, AskLog row, response             agent/confidence.py
+       (score is null until CONFIDENCE_SHOW_SCORE; the label is always there)
 ```
 
 If the model says the question cannot be answered (`answerable: false`, e.g. a request to delete data or something outside the schema), nothing runs and the API
@@ -143,6 +145,85 @@ Spider is split once by database into `tune` and `held-out`
 (`evals/targets/spider_split.json`); report the `held-out` number. `check_spider`
 verifies the unpacked data against the split. `review_golden` shows each Olist gold
 query with its rows; only reviewed questions run unless `--include-unreviewed`.
+
+## Agent: a run with an approval checkpoint (step 3)
+
+`POST /api/agent/runs {question}` (signed in; `AgentThrottle`). The API validates the
+question, checks the per-user cap, resolves the key (one default-key spend per run),
+stores an `AgentRun` and enqueues `start_run`. Huey runs `loop.advance(run_id)`:
+
+```
+advance(run)                       takes the run's Redis lock (non-blocking), loads state
+  PLAN     LLM -> {plan, assumptions}                      step: plan
+  ACT      LLM -> one tool call {"tool", "input"}          step: tool (ok or error)
+             list_tables / describe_table / sample_values   read the cached schema (no DB hit)
+             propose_sql  -> guard.check -> stores checked SQL
+             finish / give_up                               end of the run on the agent's side
+           unknown tool, bad input, guard refusal = ToolError, shown to the model, counted
+  PAUSE    after propose_sql: step approval (sql, assumptions, guard report);
+           status awaiting_approval; state saved to Redis; advance() RETURNS
+           (no thread, no worker waits)                                  <- the checkpoint
+--- user: POST /runs/{id}/approve | /edit {sql} | /cancel -------------------------
+  DECIDE   service.decide (lock): edit -> guard.check again (refusal = 400, run stays
+           paused); step approval (actor user); status running; enqueue resume_run
+  EXECUTE  loop only: runner.run(sql) on the reader connection        step: execute
+           (summary stored: columns, row count, preview rows; never the full table)
+  CHECK    rules: error / empty / truncated / 1x1 (or AGENT_REFLECT_ALWAYS) -> REFLECT
+           otherwise straight to finish
+  REFLECT  LLM -> {verdict ok|revise, reason, revised_sql}         step: reflect
+           revise -> propose_sql again -> PAUSE again (up to AGENT_MAX_REVISIONS)
+  FINISH   confidence score + check label, status succeeded        step: final
+```
+
+Budgets (steps, LLM calls, tokens, revisions, active time) are checked before every
+call; any overrun, an LLM error or a query timeout ends the run as `failed` with a
+typed `error_code` and a closed trace. Expiry: a paused run past
+`AGENT_APPROVAL_TTL_SECONDS` becomes `expired` (on a late click and by the periodic
+`expire_stale_runs` task); a running run whose worker died is failed as
+`agent_worker_lost`. If Redis lost a paused run's state, `decide` rebuilds it from the
+stored steps.
+
+```
+POST /runs        -> run (running / awaiting_approval)       GET /runs, GET /runs/{id}
+POST /runs/{id}/approve | edit | cancel   409 unless awaiting_approval (typed codes)
+GET  /runs/{id}/replay   stored steps in order; no LLM, no query on demo
+GET  /runs/{id}/events   SSE
+```
+
+SSE flow:
+
+```
+client ──GET /events (Last-Event-ID: n)──> view checks owner, takes a stream slot
+                                           (AGENT_MAX_OPEN_STREAMS, else 429 agent_stream_limit)
+  loop:  read run status, then steps with index > n from Postgres -> `event: step`, `id: index`
+         status not `running` (paused or terminal) -> `event: status`, close
+         else block on Redis stream agent:events:{id} (AGENT_SSE_READ_BLOCK_MS),
+         heartbeat comment every AGENT_SSE_HEARTBEAT_SECONDS,
+         close with `event: timeout` after AGENT_SSE_MAX_SECONDS
+worker: every step is written to Postgres FIRST, then XADDed (the stream is only a nudge)
+client reconnects after approve/edit with the last id it saw
+```
+
+Errors added: 400 `guard_rejected` (edit), 404 `run_not_found` (also for another
+user's run), 409 `run_not_awaiting_approval` / `run_expired` / `run_busy`, 429
+`agent_run_limit` / `agent_stream_limit` / `throttled` / `default_key_limit`. Failed
+runs carry `error_code`: `agent_steps_exceeded`, `agent_llm_calls_exceeded`,
+`agent_tokens_exceeded`, `agent_revisions_exceeded`, `agent_timeout`,
+`agent_worker_lost`, `llm_key_changed`, `not_answerable`, `query_failed`,
+`query_timeout`, `llm_*`, `agent_internal_error`.
+
+What the agent's model sees: the question, the tool list, the plan, a trimmed history of
+tool results (schema text, sample values, error lines) and a result *summary* at reflect
+time. Never other users' data, and never more than `AGENT_RESULT_PREVIEW_ROWS` rows.
+
+## Agent evals (step 3)
+
+`make eval ARGS="run_eval --target olist --runner agent --model <name> --yes"`: for each
+Olist question the harness creates an `AgentRun` (owner: an `evals@querylab.invalid` user),
+advances it, approves each pause as `actor=eval`, then scores the final SQL like step 2
+(it re-executes the approved SQL to get rows to compare). `EvalResult` links the run and
+records steps, LLM calls and revisions. `confidence_report --run <id>` lists which
+confidence features separate right from wrong and applies the acceptance rule.
 
 ## Rate limits
 

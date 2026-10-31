@@ -17,6 +17,8 @@ Run from the repo root (everything goes through Docker Compose):
 | Load the Olist CSVs into `demo` | `make load-demo` |
 | Tests (re-bootstraps the test reader role first) | `make test-backend` |
 | Eval commands in the dev container (step 2) | `make eval ARGS="run_eval --target olist --model gemini-3.5-flash"` |
+| Agent eval (step 3, Olist only, up to AGENT_MAX_LLM_CALLS calls per question) | `make eval ARGS="run_eval --target olist --runner agent --model gemini-3.5-flash-lite --yes"` |
+| Does the confidence score separate right from wrong? | `make eval ARGS="confidence_report --run <id>"` |
 | Lint / format | `make lint-backend` / `make format` |
 | Types (on the host) | `make typecheck-backend` |
 
@@ -32,11 +34,17 @@ config/            settings/{base,local,test,prod}.py, api.py (the one NinjaAPI)
 core/              health checks, DB router, data-DB SQL (datadb.py), Olist loader (demo.py),
                    commands bootstrap_data_db and load_demo
 ask/               text-to-SQL (step 1): schema.py, prompt.py, guard.py (sqlglot), runner.py,
-                   confidence.py, keys.py (own/default LLM key), service.py, api.py (/ask, /llm-keys),
+                   keys.py (own/default LLM key), service.py, api.py (/ask, /llm-keys),
                    models UserLLMKey and AskLog
-evals/             eval harness (step 2): compare.py (execution accuracy), runner.py, scoring.py,
+agent/             the agent (step 3): loop.py (plan, act, pause, execute, reflect), tools/ (one file
+                   per typed tool + the registry), prompts.py (v2-agent), state.py (Redis state, lock,
+                   rebuild), trace.py (AgentStep writer), events.py + stream.py (SSE), service.py
+                   (create, approve/edit/cancel, expiry), tasks.py (Huey), confidence.py, api.py
+                   (/agent/runs...), models AgentRun and AgentStep
+evals/             eval harness (step 2, agent runner step 3): compare.py (execution accuracy), runner.py,
+                   agent_runner.py, confidence_analysis.py, scoring.py,
                    targets/{olist,spider}.py + olist_golden.jsonl + spider_split.json,
-                   commands run_eval, eval_report, review_golden, check_spider,
+                   commands run_eval, eval_report, review_golden, check_spider, confidence_report,
                    models EvalRun and EvalResult
 accounts/          User model (one per Google/GitHub account; email not unique), /api/me,
                    dev.py + templates/dev (dev-only OAuth test page, see FLOW.md)
@@ -77,3 +85,5 @@ postman/           Postman collection + local environment for every endpoint
 9. **Keys:** a user's LLM key is stored only encrypted (`common.crypto`) and never returned, logged or echoed (only its last four characters). QueryLab's default key lives only in `.env` (`LLM_DEFAULT_GEMINI_API_KEY`).
 10. **`ask` settings** (`ASK_*`, `CONFIDENCE_*`, `LLM_DEFAULT_*`) follow rule 2: add new ones to `.env.example`, `.env.test` and settings together.
 11. **Evals run in the dev container, never in the production one** (`make eval ARGS=...`). Gold SQL and gold rows never reach a prompt, and `EvalResult` stores SQL, never result rows. Spider is read from `EVAL_SPIDER_DIR` and never committed or put in the image. The Olist target goes through the real guard and reader connection; Spider runs on a read-only SQLite file (`mode=ro`, `query_only`, a read-only authorizer). New `EVAL_*` settings follow rule 2 (`.env.example`, `.env.test`, settings together).
+12. **Agent execution happens only in the loop, after approval** (step 3). The model's tools (`agent/tools/`) never import `ask.runner` or a database connection; `propose_sql` only guards and stores SQL, and `agent/loop.py` alone calls `runner.run`, for SQL a person approved, edited (and the guard accepted) or the eval harness auto-approved (`actor=eval`). Never add a tool that executes SQL, never skip the pause, and never store or send result rows beyond the preview capped by `AGENT_RESULT_PREVIEW_ROWS` and `AGENT_STEP_OUTPUT_MAX_CHARS`. Run state in Redis is a cache: the stored `AgentStep` rows are the source of truth, and a paused run must stay rebuildable from them.
+13. **`agent` settings** (`AGENT_*`, `CONFIDENCE_*`, `THROTTLE_AGENT_RATE`) follow rule 2. The confidence number is hidden (`confidence: null`) until `CONFIDENCE_SHOW_SCORE` is set after the offline analysis passes (DECISION.md); responses always carry the `check` label.

@@ -64,7 +64,7 @@ One file per tool in `agent/tools/`; each has a Pydantic input model, a Pydantic
 - [x] **3.4.1** Agent system prompt: role, rules (read-only, demo schema, qualified names), the tool list with schemas, the output format (one JSON object per turn: `{"tool": ..., "input": {...}}`), and the budget in plain words.
 - [x] **3.4.2** Plan prompt: ask for a short numbered plan and a list of assumptions it is making about the question. Assumptions are shown to the user at the approval step.
 - [x] **3.4.3** Reflect prompt: given the SQL, the result summary and the question, return `{verdict: "ok"|"revise", reason, revised_sql?}`. The model is told to look for the three known failure shapes from the step 2 baseline (wrong sort key, filter the question did not ask for, extra columns).
-- [ ] **3.4.4** Compact start: the first prompt carries table names and comments only; the agent fetches columns with `describe_table`. Judged by the eval gate in 3.10; if it costs accuracy, fall back to the full schema text and record it in `DECISION.md`.
+- [ ] **3.4.4** Compact start: the first prompt carries table names and comments only; the agent fetches columns with `describe_table`. Judged by the eval gate in 3.10; if it costs accuracy, fall back to the full schema text and record it in `DECISION.md`. **Built** (`AGENT_FULL_SCHEMA_START` is the fallback switch); whether it costs accuracy is judged by the owner's run in 3.10.3, so this stays open.
 - [x] **3.4.5** Parser: tolerant of code fences, rejects more than one tool call per turn, bounded retries on malformed JSON (counts as an LLM call).
 - [x] **3.4.6** Bump `PROMPT_VERSION` to `v2-agent` so eval runs are tied to it.
 - [x] **3.4.7** Tests with a fake LLM: valid turns, bad JSON, two tool calls in one turn, unknown tool, prompt-injection text in the question (must not change the tool list or skip approval).
@@ -94,7 +94,7 @@ One file per tool in `agent/tools/`; each has a Pydantic input model, a Pydantic
 - [x] **3.7.1** Huey tasks `start_run(run_id)` and `resume_run(run_id, decision)`; both call `loop`. Tests run Huey in immediate mode as before.
 - [x] **3.7.2** `events.py`: publish each step to a Redis stream `agent:events:{run_id}` (trimmed, TTL). Event ids are the step index, so a client can resume with `Last-Event-ID`.
 - [x] **3.7.3** `GET /api/agent/runs/{id}/events`: `StreamingHttpResponse` of `text/event-stream`. On connect it first sends any stored steps after `Last-Event-ID` from Postgres, then reads the stream with a blocking read (`AGENT_SSE_READ_BLOCK_MS`), sends a heartbeat comment every `AGENT_SSE_HEARTBEAT_SECONDS`, and closes on a terminal status. Owner only. Refused over `AGENT_MAX_OPEN_STREAMS` with a typed error the client can answer by polling `GET /runs/{id}`.
-- [ ] **3.7.4** Headers that keep proxies from buffering (`Cache-Control: no-cache`, `X-Accel-Buffering: no`); check that gunicorn's `gthread` worker and Cloudflare pass chunks through (manual check on the local container; recorded in `DECISION.md`).
+- [x] **3.7.4** Headers that keep proxies from buffering (`Cache-Control: no-cache`, `X-Accel-Buffering: no`); check that gunicorn's `gthread` worker and Cloudflare pass chunks through (manual check on the local container; recorded in `DECISION.md`).
 - [x] **3.7.5** Tests: stream replays stored steps, resumes from `Last-Event-ID`, ends on terminal status, enforces the open-stream cap, and refuses another user's run.
 
 ## 3.8 API
@@ -113,18 +113,18 @@ All under `/api/agent`, session auth (`django_auth`), the usual envelope, and a 
 Step 2 showed the old score at about 1.0 for every Olist answer (rank correlation 0.09 on Spider). The model's own rating carried almost all of the weight and never moved.
 
 - [x] **3.9.1** Remove the self-rating from the score. Candidate features that do vary: repair/revise count, whether the user edited the SQL, guard changes, whether the agent checked `sample_values` for the filters it used, result shape (empty, one row, truncated), and whether the reflect verdict was `ok` on the first pass.
-- [ ] **3.9.2** Offline analysis first: run the Olist golden set and the Spider held-out set through the agent, then compute each candidate feature against correct/wrong with a small script in `evals` (no new dependency; Spearman in plain Python). **(You)** read the result table.
-- [ ] **3.9.3** Keep only features that separate right from wrong. Write the new `agent/confidence.py` with weights from `.env`.
-- [ ] **3.9.4** Acceptance rule, decided now so the result cannot be argued afterwards: if accuracy in the top bucket is not higher than the bottom by `CONFIDENCE_MIN_SEPARATION` (an `.env` value) on the Olist run, the API returns `confidence: null` and the UI shows a plain "checked" or "needs a look" label from reflect and guard instead of a number.
-- [ ] **3.9.5** Tests for the score function; update the `/api/ask` path to use the same function, or leave it and say so in `DECISION.md`.
+- [ ] **3.9.2** Offline analysis first: run the Olist golden set and the Spider held-out set through the agent, then compute each candidate feature against correct/wrong with a small script in `evals` (no new dependency; Spearman in plain Python). **(You)** read the result table. **(You) not done:** the offline tooling is built (`make eval ARGS="confidence_report --run <id>"` after an agent eval run); it needs the live Gemini key. Spider through the agent is not supported (see DECISION.md), so only the Olist half exists.
+- [ ] **3.9.3** Keep only features that separate right from wrong. Write the new `agent/confidence.py` with weights from `.env`. Open until 3.9.2 is read: the score is built from all candidate features; the owner keeps the ones that separate.
+- [x] **3.9.4** Acceptance rule, decided now so the result cannot be argued afterwards: if accuracy in the top bucket is not higher than the bottom by `CONFIDENCE_MIN_SEPARATION` (an `.env` value) on the Olist run, the API returns `confidence: null` and the UI shows a plain "checked" or "needs a look" label from reflect and guard instead of a number.
+- [x] **3.9.5** Tests for the score function; update the `/api/ask` path to use the same function, or leave it and say so in `DECISION.md`.
 
 ## 3.10 Evaluate the agent against the baseline
 
 - [x] **3.10.1** New eval target mode `--runner agent` for `run_eval`: starts a run, auto-approves (an eval has no human; recorded as `actor=eval`), and scores the final SQL with the existing comparison.
 - [x] **3.10.2** Report extra columns: steps, LLM calls, tokens and latency per question, and revisions.
-- [ ] **3.10.3** (You) Run the Olist golden set with `gemini-3.5-flash-lite`. Gate: at least the 95.1% baseline. If it falls below, look at the failing traces before touching prompts, and try 3.4.4's fallback first.
-- [ ] **3.10.4** Run Spider held-out only if a spare day of free-tier quota exists (the agent makes several calls per question); otherwise a fixed 100-question sample, recorded as such.
-- [ ] **3.10.5** Record the results in `backend/DECISION.md`.
+- [ ] **3.10.3** (You) Run the Olist golden set with `gemini-3.5-flash-lite`. Gate: at least the 95.1% baseline. If it falls below, look at the failing traces before touching prompts, and try 3.4.4's fallback first. **Not run:** needs the live Gemini key. Command: `make eval ARGS="run_eval --target olist --runner agent --model gemini-3.5-flash-lite --yes"`; if below 95.1%, try `AGENT_FULL_SCHEMA_START=true` and `AGENT_REFLECT_ALWAYS=true` first.
+- [ ] **3.10.4** Run Spider held-out only if a spare day of free-tier quota exists (the agent makes several calls per question); otherwise a fixed 100-question sample, recorded as such. **Not done:** the agent runner is Olist only (DECISION.md).
+- [ ] **3.10.5** Record the results in `backend/DECISION.md`. **Pending** the runs above; DECISION.md has a placeholder.
 
 ## 3.11 Safety and abuse checks
 
@@ -134,8 +134,8 @@ Step 2 showed the old score at about 1.0 for every Olist answer (rank correlatio
 
 ## 3.12 Docs and wrap-up
 
-- [ ] **3.12.1** `backend/CLAUDE.md`: the `agent` app layout, the rule that execution only happens in the loop after approval, how to run the agent eval.
-- [ ] **3.12.2** `backend/FLOW.md`: the run flow (start, plan, tools, propose, pause, approve or edit, execute, reflect, finish) and the SSE flow.
-- [ ] **3.12.3** `backend/DECISION.md`: SSE over polling and its cost; always-pause and what the approval is for; one spend per run; compact schema start; confidence replacement and the measured result; no agent framework.
-- [ ] **3.12.4** Tick step 3 in the root `README.md` and add a link to this plan.
-- [ ] **3.12.5** Full test suite, `ruff`, `mypy` and the `.env` sync test pass; the image-size check still passes.
+- [x] **3.12.1** `backend/CLAUDE.md`: the `agent` app layout, the rule that execution only happens in the loop after approval, how to run the agent eval.
+- [x] **3.12.2** `backend/FLOW.md`: the run flow (start, plan, tools, propose, pause, approve or edit, execute, reflect, finish) and the SSE flow.
+- [x] **3.12.3** `backend/DECISION.md`: SSE over polling and its cost; always-pause and what the approval is for; one spend per run; compact schema start; confidence replacement and the measured result; no agent framework.
+- [x] **3.12.4** Tick step 3 in the root `README.md` and add a link to this plan.
+- [x] **3.12.5** Full test suite, `ruff`, `mypy` and the `.env` sync test pass; the image-size check still passes.
