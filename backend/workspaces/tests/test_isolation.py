@@ -217,12 +217,15 @@ def test_the_rw_role_cannot_connect_to_the_platform_database(
     from psycopg.conninfo import make_conninfo
 
     db = settings.DATABASES["default"]
+    # The real platform database: during a run with the db fixture, NAME is the
+    # throwaway test copy, which Django creates open to PUBLIC.
+    platform = "querylab_app"
     with pytest.raises(psycopg.OperationalError, match="permission denied"):
         psycopg.connect(
             make_conninfo(
                 host=db["HOST"],
                 port=db["PORT"],
-                dbname=db["NAME"],
+                dbname=platform,
                 user=credentials.role_name(A, "rw"),
                 password=credentials.role_password(A, "rw", 1),
             )
