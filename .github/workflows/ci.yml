@@ -96,8 +96,8 @@ jobs:
       - name: OpenAPI file is up to date
         # The frontend generates its types from backend/openapi.json.
         run: |
-          uv run python manage.py export_openapi --output openapi.json
-          git diff --exit-code -- openapi.json || { echo "::error::openapi.json is out of date: run 'make openapi' and commit it"; exit 1; }
+          uv run python manage.py export_openapi --output /tmp/openapi.json
+          diff -u openapi.json /tmp/openapi.json || { echo "::error::openapi.json is out of date: run 'make openapi' and commit it"; exit 1; }
       - name: Pytest
         run: uv run pytest
 
