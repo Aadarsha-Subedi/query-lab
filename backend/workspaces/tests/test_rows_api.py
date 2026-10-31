@@ -146,7 +146,7 @@ def test_ordering_paging_and_filters(client: Client, ws: int) -> None:
         == "row_invalid"
     )
     assert (
-        call(client, "get", "/api/workspaces/%d/tables/nope/rows" % ws).json()["code"]
+        call(client, "get", f"/api/workspaces/{ws}/tables/nope/rows").json()["code"]
         == "table_not_found"
     )
 
