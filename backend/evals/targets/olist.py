@@ -3,6 +3,7 @@
 Predicted SQL goes through the sqlglot guard and the reader connection exactly as
 a user's question does. Gold SQL is ours, but it still runs on the reader role."""
 
+import functools
 import json
 from collections.abc import Callable
 from pathlib import Path
@@ -71,7 +72,8 @@ class OlistTarget:
         return lambda sql: guard.check(sql, known)
 
     def execute(self, question: EvalQuestion) -> Callable[[str], runner.QueryResult]:
-        return runner.run
+        # Native values, so numbers compare as numbers rather than as strings.
+        return functools.partial(runner.run, json_safe=False)
 
     def gold_rows(self, question: EvalQuestion) -> list[list[Any]]:
-        return runner.run(question.gold_sql).rows
+        return runner.run(question.gold_sql, json_safe=False).rows

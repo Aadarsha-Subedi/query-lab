@@ -302,3 +302,15 @@ def test_pauses_between_questions_but_not_before_the_first() -> None:
         sleep=slept.append,
     )
     assert slept == [2.5, 2.5, 2.5]
+
+
+def test_an_unrounded_number_matches_the_rounded_gold_number() -> None:
+    """Postgres numerics must compare as numbers: 120.6537... equals 120.65."""
+    by_id = {i["id"]: i for i in olist.read_golden()}
+    target = olist_target()
+    question = next(q for q in target.questions("all") if q.id == "olist-12")
+    provider = ScriptedProvider(
+        lambda q: reply("SELECT avg(price) AS average_item_price FROM demo.order_items")
+    )
+    outcome = runner.ask_once(target, question, provider, sleep=lambda s: None)
+    assert outcome.outcome == EvalResult.OUTCOME_CORRECT, by_id["olist-12"]["question"]

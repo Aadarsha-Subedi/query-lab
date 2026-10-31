@@ -171,6 +171,10 @@ def format_report(run: EvalRun) -> str:
     rho = cal.rank_correlation
     lines.append(
         "  rank correlation: "
-        + (f"{rho}" if rho is not None else "n/a (too little data)")
+        + (
+            f"{rho}"
+            if rho is not None
+            else "n/a (too few answers, or every confidence is the same)"
+        )
     )
     return "\n".join(lines)

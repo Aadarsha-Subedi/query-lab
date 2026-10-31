@@ -49,7 +49,9 @@ def to_json_safe(value: Any) -> Any:
     return str(value)
 
 
-def run(sql: str) -> QueryResult:
+def run(sql: str, *, json_safe: bool = True) -> QueryResult:
+    """Run guarded SQL on the reader. `json_safe=False` keeps native Python values
+    (the eval harness compares numbers, so it needs Decimals, not strings)."""
     alias = settings.DATA_READER_DB_ALIAS
     connection = connections[alias]
     max_rows = settings.ASK_MAX_ROWS
@@ -75,7 +77,7 @@ def run(sql: str) -> QueryResult:
                 if not batch:
                     break
                 for raw in batch:
-                    row = [to_json_safe(value) for value in raw]
+                    row = [to_json_safe(value) if json_safe else value for value in raw]
                     size += len(json.dumps(row, default=str))
                     if len(rows) >= max_rows or size > max_bytes:
                         truncated = True

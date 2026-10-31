@@ -23,6 +23,12 @@ def test_runs_a_query_and_returns_columns_and_rows() -> None:
     assert not result.truncated
 
 
+def test_native_values_are_kept_when_asked() -> None:
+    sql = "SELECT round(avg(price), 2) AS p FROM demo.order_items"
+    assert isinstance(runner.run(sql).rows[0][0], str)
+    assert isinstance(runner.run(sql, json_safe=False).rows[0][0], Decimal)
+
+
 @override_settings(ASK_MAX_ROWS=5)
 def test_row_cap_truncates() -> None:
     result = runner.run("SELECT order_id FROM demo.orders LIMIT 50")
