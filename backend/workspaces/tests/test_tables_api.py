@@ -158,7 +158,7 @@ def test_bad_specs_are_refused(client: Client, ws: int) -> None:
     assert make(client, ws).json()["code"] == "table_name_taken"
 
 
-@override_settings(WORKSPACE_MAX_TABLES=2, IMPORT_MAX_COLUMNS=3)
+@override_settings(WORKSPACE_MAX_TABLES=2, WORKSPACE_MAX_COLUMNS=3)
 def test_the_table_and_column_caps(client: Client, ws: int) -> None:
     wide = make(
         client,

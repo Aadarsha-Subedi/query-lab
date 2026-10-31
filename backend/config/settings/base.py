@@ -57,7 +57,6 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "workspaces.middleware.UploadSizeMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "common.logger.request_id.UserContextMiddleware",
@@ -351,19 +350,8 @@ WORKSPACE_SQL_MAX_STATEMENTS = env.int("WORKSPACE_SQL_MAX_STATEMENTS")
 WORKSPACE_SQL_MAX_ROWS = env.int("WORKSPACE_SQL_MAX_ROWS")
 WORKSPACE_SQL_MAX_CONCURRENT = env.int("WORKSPACE_SQL_MAX_CONCURRENT")
 
-IMPORT_MAX_FILE_BYTES = env.int("IMPORT_MAX_FILE_BYTES")
-IMPORT_MAX_ROWS = env.int("IMPORT_MAX_ROWS")
-IMPORT_MAX_COLUMNS = env.int("IMPORT_MAX_COLUMNS")
-IMPORT_MAX_CONCURRENT = env.int("IMPORT_MAX_CONCURRENT")
-IMPORT_BATCH_ROWS = env.int("IMPORT_BATCH_ROWS")
-IMPORT_STATEMENT_TIMEOUT_MS = env.int("IMPORT_STATEMENT_TIMEOUT_MS")
-UPLOAD_TMP_DIR = env.path("UPLOAD_TMP_DIR")
-IMPORT_SNIFF_BYTES = env.int("IMPORT_SNIFF_BYTES")
-IMPORT_SNIFF_ROWS = env.int("IMPORT_SNIFF_ROWS")
-IMPORT_MAX_CELL_CHARS = env.int("IMPORT_MAX_CELL_CHARS")
-IMPORT_PREVIEW_ROWS = env.int("IMPORT_PREVIEW_ROWS")
-IMPORT_QUEUE_WAIT_SECONDS = env.int("IMPORT_QUEUE_WAIT_SECONDS")
-IMPORT_FILE_TTL_SECONDS = env.int("IMPORT_FILE_TTL_SECONDS")
+WORKSPACE_MAX_COLUMNS = env.int("WORKSPACE_MAX_COLUMNS")
+WORKSPACE_DDL_TIMEOUT_MS = env.int("WORKSPACE_DDL_TIMEOUT_MS")
 
 MASTER_WORKSPACE_SECRET = env.str("MASTER_WORKSPACE_SECRET")
 WORKSPACE_PRIMARY_CONNINFO = env.str("WORKSPACE_PRIMARY_CONNINFO")

@@ -1,5 +1,5 @@
 """The whole workspace story through the HTTP API with the fake LLM: create a
-workspace, import a CSV and follow its events, edit a row, describe a column, ask
+workspace, fill a table through the row API, edit a row, describe a column, ask
 a question in the workspace (pending, approve, result), see that the run is kept
 out of evals, ask in the demo and not see the table, delete the workspace and
 replay the old run."""
@@ -8,7 +8,6 @@ import json
 from typing import Any
 
 import pytest
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
 
 from accounts.models import User
@@ -18,8 +17,6 @@ from ask import keys
 from common.llm.fake import FakeProvider
 
 pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("data_connections")]
-
-CSV = "city,visits\nOslo,10\nBergen,25\nTromso,5\n"
 
 
 @pytest.fixture
@@ -31,11 +28,6 @@ def llm(monkeypatch: pytest.MonkeyPatch) -> FakeProvider:
         lambda user: keys.ResolvedProvider(fake, "gemini", keys.KEY_OWN),
     )
     return fake
-
-
-@pytest.fixture(autouse=True)
-def _private_upload_dir(tmp_path: Any, settings: Any) -> None:
-    settings.UPLOAD_TMP_DIR = tmp_path / "uploads"
 
 
 def call(client: Client, method: str, path: str, body: Any = None) -> Any:
@@ -57,16 +49,26 @@ def test_the_whole_workspace_flow(
     kinds = [w["kind"] for w in client.get("/api/workspaces").json()["data"]]
     assert kinds == ["demo", "user"]
 
-    # 2. import a CSV and follow the events to the end
-    response = client.post(
-        f"/api/workspaces/{ws}/imports",
-        {"file": SimpleUploadedFile("trips.csv", CSV.encode(), "text/csv")},
+    # 2. create a table and fill it through the row API
+    base = f"/api/workspaces/{ws}/tables"
+    spec = {
+        "name": "trips",
+        "columns": [
+            {"name": "city", "type": "text"},
+            {"name": "visits", "type": "integer"},
+        ],
+    }
+    assert call(client, "post", base, spec).status_code == 200
+    data = {
+        "rows": [
+            {"city": "Oslo", "visits": 10},
+            {"city": "Bergen", "visits": 25},
+            {"city": "Tromso", "visits": 5},
+        ]
+    }
+    assert (
+        call(client, "post", f"{base}/trips/rows", data).json()["data"]["inserted"] == 3
     )
-    assert response.status_code == 202
-    job = response.json()["data"]
-    stream = client.get(job["events_url"])
-    events = b"".join(stream.streaming_content).decode()  # type: ignore[attr-defined]
-    assert "event: succeeded" in events and '"rows": 3' in events
 
     # 3. edit a row, describe a column
     base = f"/api/workspaces/{ws}/tables/trips"

@@ -11,7 +11,7 @@ from common.throttling.scoped import WorkspaceThrottle
 from core.datadb import DEMO_SCHEMA
 from workspaces import quota, service, usage
 from workspaces.errors import DemoWorkspaceReadOnly
-from workspaces.models import ImportJob, Workspace
+from workspaces.models import Workspace
 from workspaces.schemas import (
     BytesLimit,
     CountLimit,
@@ -94,7 +94,7 @@ def delete_demo_workspace(request: HttpRequest) -> dict:
 )
 def get_workspace_limits(request: HttpRequest) -> dict:
     """What the caller may still do with workspaces: how many workspaces, how many
-    bytes (per workspace and together), the running imports against their cap, and
+    bytes (per workspace and together), and
     the per-table and per-request caps. Read only."""
     user = _user(request)
     return success(
@@ -108,18 +108,10 @@ def get_workspace_limits(request: HttpRequest) -> dict:
                 allowed=settings.USER_MAX_BYTES,
                 per_workspace=settings.WORKSPACE_MAX_BYTES,
             ),
-            imports=CountLimit(
-                used=ImportJob.objects.filter(
-                    workspace__owner=user, status__in=ImportJob.ACTIVE
-                ).count(),
-                allowed=settings.IMPORT_MAX_CONCURRENT,
-            ),
             max_tables=settings.WORKSPACE_MAX_TABLES,
-            max_columns=settings.IMPORT_MAX_COLUMNS,
+            max_columns=settings.WORKSPACE_MAX_COLUMNS,
             max_relations=settings.WORKSPACE_MAX_RELATIONS,
             max_rows_per_edit=settings.WORKSPACE_MAX_ROWS_PER_EDIT,
-            max_import_file_bytes=settings.IMPORT_MAX_FILE_BYTES,
-            max_import_rows=settings.IMPORT_MAX_ROWS,
         ).model_dump(mode="json")
     )
 

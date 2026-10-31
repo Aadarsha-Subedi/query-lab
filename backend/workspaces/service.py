@@ -95,9 +95,6 @@ def delete(workspace: Workspace, actor: User) -> None:
     which now names nothing. Safe to call again on a half-deleted workspace."""
     workspace.status = Workspace.STATUS_DELETING
     workspace.save(update_fields=["status", "updated_at"])
-    from workspaces.imports import service as import_service
-
-    import_service.cancel_all(workspace)  # nothing may keep loading into it
     _drop(workspace)
     ddl_log.record(workspace.pk, actor, "drop: schema and login roles")
     schema_version.forget(workspace.pk)

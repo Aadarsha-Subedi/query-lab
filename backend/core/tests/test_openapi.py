@@ -11,7 +11,7 @@ from django.conf import settings
 from core.management.commands.export_openapi import render
 
 COMMITTED = Path(settings.BASE_DIR) / "openapi.json"
-SUCCESS_ONLY = {"200", "202", "304"}  # 202: an import was queued
+SUCCESS_ONLY = {"200", "304"}
 
 
 def operations() -> list[tuple[str, str, dict[str, Any]]]:

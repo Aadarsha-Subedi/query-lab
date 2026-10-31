@@ -17,7 +17,7 @@ from psycopg import sql
 from accounts.models import User
 from ask import schema as ask_schema
 from workspaces import credentials, naming
-from workspaces.changes import Changes, changes, import_timeout_ms
+from workspaces.changes import Changes, changes
 from workspaces.errors import (
     CastFailed,
     ColumnLimitReached,
@@ -141,7 +141,7 @@ def _column_definition(spec: ColumnSpec) -> sql.Composed:
 def create_table(workspace: Workspace, actor: User, spec: TableSpec) -> dict[str, Any]:
     if not spec.columns:
         raise InvalidSpec("A table needs at least one column.")
-    if len(spec.columns) > settings.IMPORT_MAX_COLUMNS:
+    if len(spec.columns) > settings.WORKSPACE_MAX_COLUMNS:
         raise ColumnLimitReached()
     name = naming.table_name(spec.name)
     description = clean_description(spec.description)
@@ -250,7 +250,7 @@ def add_column(
     with changes(workspace, actor) as c:
         table = _existing_table(c, table_name)
         visible = [col.name for col in table.columns if col.name != naming.ROW_ID]
-        if len(visible) >= settings.IMPORT_MAX_COLUMNS:
+        if len(visible) >= settings.WORKSPACE_MAX_COLUMNS:
             raise ColumnLimitReached()
         slug = naming.identifier_slug(spec.name, kind="column")
         if slug in [col.name for col in table.columns] or slug == naming.ROW_ID:
@@ -310,7 +310,7 @@ def update_column(
     nullable: bool | None = None,
     type: str | None = None,
 ) -> dict[str, Any]:
-    with changes(workspace, actor, timeout_ms=import_timeout_ms()) as c:
+    with changes(workspace, actor, timeout_ms=settings.WORKSPACE_DDL_TIMEOUT_MS) as c:
         table = _existing_table(c, table_name)
         column = _existing_column(table, column_name)
         reference = sql.SQL("{}.{}")

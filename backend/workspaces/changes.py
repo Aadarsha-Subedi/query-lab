@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import psycopg
-from django.conf import settings
 from psycopg import errors as pg_errors
 from psycopg import sql
 
@@ -81,7 +80,3 @@ def changes(
         schema_version.bump(workspace.pk)
     for action in log._after_commit:
         action()
-
-
-def import_timeout_ms() -> int:
-    return settings.IMPORT_STATEMENT_TIMEOUT_MS

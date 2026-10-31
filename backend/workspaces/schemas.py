@@ -76,11 +76,7 @@ class BytesLimit(Schema):
 class LimitsOut(Schema):
     workspaces: CountLimit
     bytes: BytesLimit
-    # Imports queued or running against the number allowed at once.
-    imports: CountLimit
     max_tables: int
     max_columns: int
     max_relations: int
     max_rows_per_edit: int
-    max_import_file_bytes: int
-    max_import_rows: int

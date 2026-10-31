@@ -5,7 +5,6 @@ from common.exception.domain import (
     BadRequestException,
     ConflictException,
     NotFoundException,
-    PayloadTooLargeException,
     ServiceUnavailableException,
     ThrottledException,
     UnprocessableEntityException,
@@ -184,68 +183,3 @@ class RowInvalid(UnprocessableEntityException):
 class RowRequestTooBig(UnprocessableEntityException):
     message = "Too many rows in one request."
     error_code = "too_many_rows"
-
-
-# ── CSV import (5.7) ──────────────────────────────────────────────────────
-
-
-class ImportNotFound(NotFoundException):
-    message = "Import not found."
-    error_code = "import_not_found"
-
-
-class ImportTooLarge(PayloadTooLargeException):
-    message = "The file is larger than the import limit."
-    error_code = "import_file_too_large"
-
-
-class ImportEmpty(UnprocessableEntityException):
-    message = "The file is empty."
-    error_code = "import_empty"
-
-
-class ImportNotText(UnprocessableEntityException):
-    message = "This does not look like a CSV text file."
-    error_code = "import_not_text"
-
-
-class ImportEncoding(UnprocessableEntityException):
-    message = "The file is not UTF-8. Save it as UTF-8 and upload it again."
-    error_code = "import_encoding"
-
-
-class ImportTooManyColumns(UnprocessableEntityException):
-    message = "The file has more columns than the import limit."
-    error_code = "import_too_many_columns"
-
-
-class ImportTooManyRows(UnprocessableEntityException):
-    message = "The file has more rows than the import limit."
-    error_code = "import_too_many_rows"
-
-
-class ImportBadRow(UnprocessableEntityException):
-    """A row does not fit the table. `errors[0].message` names the row number."""
-
-    message = "A row in the file cannot be loaded."
-    error_code = "import_bad_row"
-
-
-class ImportBusy(ThrottledException):
-    message = "You already have an import running. Wait for it to finish."
-    error_code = "import_limit"
-
-
-class ImportNotCancellable(ConflictException):
-    message = "This import has already finished."
-    error_code = "import_not_cancellable"
-
-
-class ImportDiskFull(ServiceUnavailableException):
-    message = "There is no room to hold the upload right now. Try again later."
-    error_code = "import_disk_full"
-
-
-class ImportOptionsInvalid(UnprocessableEntityException):
-    message = "The import options cannot be used."
-    error_code = "import_options_invalid"
