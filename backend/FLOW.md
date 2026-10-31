@@ -88,6 +88,9 @@ question
   -> confidence score, AskLog row, response                           ask/confidence.py
 ```
 
+If the model says the question cannot be answered (`answerable: false`, e.g. a request to delete data or something outside the schema), nothing runs and the API
+returns 422 `not_answerable` with the model's one-line explanation.
+
 Repair loop: if the guard rejects the SQL or Postgres errors, the failed SQL and
 the first line of the error go back to the model once (`ASK_MAX_REPAIR_ATTEMPTS`).
 A timeout is not retried.
@@ -108,7 +111,7 @@ of which stops a write: the guard (parsed tree, not text), the reader role
 What the model sees: rules, schema text, the question (and on a repair, the bad
 SQL plus one error line). Never result rows or other users' data.
 
-Errors: 400 `question_invalid` / `guard_rejected`, 422 `query_failed`, 429
+Errors: 400 `question_invalid` / `guard_rejected`, 422 `query_failed` / `not_answerable`, 429
 `throttled` / `default_key_limit`, 502 `llm_*`, 504 `query_timeout`. A signed-out
 POST without a CSRF token gets 403 from Django's CSRF check before the 401.
 

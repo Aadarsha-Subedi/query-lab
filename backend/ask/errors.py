@@ -49,3 +49,11 @@ class LLMFailed(AppException):
 class DefaultKeyLimitReached(ThrottledException):
     message = "The daily limit on QueryLab's shared key is reached. Add your own key to keep asking."
     error_code = "default_key_limit"
+
+
+class NotAnswerable(UnprocessableEntityException):
+    """The model says the schema cannot answer this question. The message is
+    the model's own explanation (it never contains SQL or data)."""
+
+    message = "This question cannot be answered from the available data."
+    error_code = "not_answerable"

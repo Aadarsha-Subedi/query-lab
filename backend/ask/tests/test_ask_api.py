@@ -148,3 +148,24 @@ def test_ask_is_listed_in_the_openapi_docs(client: Client) -> None:
     paths = client.get("/api/openapi.json").json()["paths"]
     assert "post" in paths["/api/ask"]
     assert "put" in paths["/api/llm-keys/{provider}"]
+
+
+def test_not_answerable_is_422_with_the_models_explanation(
+    client: Client, user: User, llm: FakeProvider
+) -> None:
+    llm.answers = [
+        json.dumps(
+            {
+                "answerable": False,
+                "sql": "",
+                "rationale": "The data has no weather.",
+                "self_confidence": 0,
+            }
+        )
+    ]
+    client.force_login(user)
+    response = post(client, "What is the weather in Lisbon?")
+    assert response.status_code == 422
+    body = response.json()
+    assert body["code"] == "not_answerable"
+    assert body["message"] == "The data has no weather."

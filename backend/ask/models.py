@@ -36,6 +36,7 @@ class AskLog(TimeStampModel):
     STATUS_QUERY_FAILED = "query_failed"
     STATUS_LLM_FAILED = "llm_failed"
     STATUS_TIMEOUT = "timeout"
+    STATUS_NOT_ANSWERABLE = "not_answerable"
     STATUS_REFUSED = "refused"  # bad question or the default-key limit
 
     user = models.ForeignKey(

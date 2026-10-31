@@ -12,6 +12,7 @@ from ask.errors import (
     DefaultKeyLimitReached,
     GuardRejected,
     LLMFailed,
+    NotAnswerable,
     QueryFailed,
     QueryTimeout,
     QuestionInvalid,
@@ -186,3 +187,25 @@ def test_injected_hostile_sql_never_runs(
     # Nothing changed.
     llm.answers = [reply("SELECT count(*) FROM demo.orders")]
     assert service.answer(user, "How many orders?").rows == [[99441]]
+
+
+def test_not_answerable_is_refused_without_running_anything(
+    user: User, llm: FakeProvider
+) -> None:
+    llm.answers = [
+        json.dumps(
+            {
+                "answerable": False,
+                "sql": "",
+                "rationale": "I can only read data, not delete it.",
+                "self_confidence": 0,
+            }
+        )
+    ]
+    with pytest.raises(NotAnswerable) as caught:
+        service.answer(user, "Delete all orders")
+    assert caught.value.message == "I can only read data, not delete it."
+    assert len(llm.requests) == 1
+    log = AskLog.objects.get()
+    assert log.status == AskLog.STATUS_NOT_ANSWERABLE
+    assert log.sql == ""

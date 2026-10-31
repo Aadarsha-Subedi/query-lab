@@ -91,3 +91,25 @@ def test_confidence_is_clamped() -> None:
 def test_parse_rejects_off_contract_replies(text: str) -> None:
     with pytest.raises(LLMBadResponseError):
         prompt.parse_reply(text)
+
+
+def test_parse_not_answerable_needs_no_sql() -> None:
+    reply = prompt.parse_reply(
+        '{"answerable": false, "sql": "", "rationale": "No weather data.", "self_confidence": 0}'
+    )
+    assert not reply.answerable
+    assert reply.rationale == "No weather data."
+
+
+def test_answerable_defaults_to_true_and_still_needs_sql() -> None:
+    assert prompt.parse_reply(
+        '{"sql": "SELECT 1", "rationale": "", "self_confidence": 1}'
+    ).answerable
+    with pytest.raises(LLMBadResponseError):
+        prompt.parse_reply(
+            '{"answerable": true, "sql": "", "rationale": "", "self_confidence": 1}'
+        )
+    with pytest.raises(LLMBadResponseError):
+        prompt.parse_reply(
+            '{"answerable": "no", "sql": "SELECT 1", "rationale": "", "self_confidence": 1}'
+        )

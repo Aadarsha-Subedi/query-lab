@@ -12,17 +12,26 @@ from django.conf import settings
 
 from accounts.models import User
 from ask import confidence, guard, keys, prompt, runner, schema
-from ask.errors import GuardRejected, LLMFailed, QueryFailed, QueryTimeout
+from ask.errors import (
+    GuardRejected,
+    LLMFailed,
+    NotAnswerable,
+    QueryFailed,
+    QueryTimeout,
+)
 from ask.models import AskLog
 from common.exception.domain import AppException
 from common.llm import LLMError, LLMRequest
 
 logger = logging.getLogger(__name__)
 
+NOT_ANSWERABLE_MAX_CHARS = 300
+
 STATUS_BY_ERROR_CODE = {
     GuardRejected.error_code: AskLog.STATUS_GUARD_REJECTED,
     QueryFailed.error_code: AskLog.STATUS_QUERY_FAILED,
     QueryTimeout.error_code: AskLog.STATUS_TIMEOUT,
+    NotAnswerable.error_code: AskLog.STATUS_NOT_ANSWERABLE,
 }
 
 
@@ -128,6 +137,8 @@ def _answer(user: User, question: str, trace: Trace) -> AskResult:
             parsed = prompt.parse_reply(reply.text)
         except LLMError as error:
             raise LLMFailed(error.message, error_code=error.code) from None
+        if not parsed.answerable:
+            raise NotAnswerable(parsed.rationale[:NOT_ANSWERABLE_MAX_CHARS] or None)
         trace.sql = parsed.sql
         try:
             checked = guard.check(parsed.sql, known)
