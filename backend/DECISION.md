@@ -354,3 +354,11 @@ is an estimate for reports, not billing.
 **Image size.** No new runtime dependency (`pyproject.toml` and `uv.lock` are unchanged); the `agent` app adds about 4 MB with its bytecode. Measured 2026-10-31 with CI's method: **295 MB against the 300 MB budget** (291 MB after step 2). The headroom is now small; the next step that adds code should check it before anything else.
 
 **Results.** *Pending (owner):* the Olist agent run (3.10.3) and the confidence analysis (3.9.2) need the live Gemini key and have not been run. Fill in here: run id, accuracy against the 95.1% baseline, extra cost per question (steps, LLM calls, tokens, latency), and the confidence verdict.
+
+## Analyst API (step 4)
+
+Backend only: the surface the analyst screen (step 9) needs, so the screen is only drawing. Plan: `docs/plan/04-analyst-api.md`.
+
+**Image size, before any code.** Measured 2026-10-31 on the step 3 branch with CI's method (`du -sxm /` in the prod image): **295 MB against the 300 MB budget**, so 5 MB of headroom, above the plan's 3 MB stop line. Step 4 adds no dependency; it is a few small modules and one JSON file.
+
+**Open questions, answered (the plan's recommendations).** (1) No auto-run toggle: every run pauses, as decided in step 3. (2) No run deletion: a delete would remove a human correction that step 6 wants as raw material; if it is ever needed, the cheap shape is a `hidden_at` flag. (3) Full rows come from re-running the stored SQL (see below), not from storing rows.
