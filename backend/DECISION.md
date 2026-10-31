@@ -430,3 +430,9 @@ Backend only: the surface the analyst screen (step 9) needs, so the screen is on
 
 
 **Step 5 without import (final).** What shipped: workspaces and their roles, isolation proof, workspace-aware schema/ask/agent, tables, columns, keys, relations, descriptions, row edits, the SQL console, quotas and the limits endpoint. `UPLOAD_TMP_DIR`, `IMPORT_*` settings, the upload middleware, the Huey import tasks, the compose upload volume, the `ImportJob` table (dropped by migration `0005`), the import endpoints and error codes are removed. Two settings that only had the import prefix were renamed: `IMPORT_MAX_COLUMNS` became `WORKSPACE_MAX_COLUMNS`, `IMPORT_STATEMENT_TIMEOUT_MS` became `WORKSPACE_DDL_TIMEOUT_MS` (retype timeout). **Image size, after dropping import:** 296 MB against 300 (measured 2026-10-31, CI method); the removed code was under 1 MB, so the figure did not move.
+
+## Trace-driven evals (step 6)
+
+**Image size, before any code (6.1.1).** Measured 2026-10-31 on the step 6 branch (from `feat/step-5-workspaces`) with CI's method (`du -sxm /` in the prod image): **296 MB against the 300 MB budget**, 4 MB of headroom, above the plan's 3 MB stop line. Step 6 adds no dependency.
+
+**Settings (6.1.4).** `TRACES_CANDIDATE_MAX_AGE_DAYS`, `TRACES_CLUSTER_SIMILARITY`, `TRACES_CLUSTER_MAX_RUNS`, `TRACES_DRAFT_MODEL`, `TRACES_DRAFT_MAX_PER_BATCH`, `TRACES_PAGE_SIZE_MAX`, `EVAL_GATE_MAX_DROP_POINTS` and `EVAL_GATE_MIN_CASES` are in `.env.example`, `.env.test` and settings with no defaults. Starting values: 90 days, 0.5, 5000 runs, `gemini-3.5-flash`, 20 drafts per batch, page 100, a drop of 2.0 points and 20 shared cases (3 in the tests). They are guesses to be tuned on real traces (6.9.3).

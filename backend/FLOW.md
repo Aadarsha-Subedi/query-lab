@@ -171,6 +171,28 @@ Spider is split once by database into `tune` and `held-out`
 verifies the unpacked data against the split. `review_golden` shows each Olist gold
 query with its rows; only reviewed questions run unless `--include-unreviewed`.
 
+## Trace-driven evals: what a `traces` target provides (step 6)
+
+`evals/runner.py` (`ask` runner) and `evals/agent_runner.py` (`agent` runner) both take a
+`Target` (`evals/targets/base.py`) and a list of `EvalQuestion`, and both end in
+`runner._judge`, which calls `compare.compare` on gold rows and predicted rows. The
+`OlistTarget` loads questions from `olist_golden.jsonl`; a `TraceTarget` loads them from
+approved `TraceCase` rows instead, and nothing else about the harness changes.
+
+| Member | What `OlistTarget` does | What `TraceTarget` must do |
+|--------|-------------------------|----------------------------|
+| `name` | `"olist"` (stored on `EvalRun.target`) | `"traces"` |
+| `dialect`, `compare_as_set` | Postgres, `False` | the same |
+| `questions(split)` | the reviewed golden items; only `all` | the `TraceCase` rows with `status=approved`; only `all`; `tags` = cluster key; `id` = case id |
+| `schema_text(q)` | `schema.render(get_schema(include_samples=True))` | the same demo schema text |
+| `check(q)` | `guard.check(sql, schema)` | the same |
+| `execute(q)` | `runner.run` on the reader, native values | the same |
+| `gold_rows(q)` | runs `gold_sql` on the reader | runs the approved `gold_sql` on the reader |
+| unanswerable | `answerable=False`: declining is correct | a case marked unanswerable: declining is correct |
+
+The model never sees `gold_sql` or gold rows. `run_eval --target traces` serves only
+`approved` cases.
+
 ## Agent: a run with an approval checkpoint (step 3)
 
 `POST /api/agent/runs {question}` (signed in; `AgentThrottle`). The API validates the

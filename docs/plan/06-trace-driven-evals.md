@@ -41,10 +41,10 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 6.1 Preparation
 
-- [ ] **6.1.1** Run the image-size check on the branch and record the number in `DECISION.md`. If headroom is under 3 MB, stop and trim first.
-- [ ] **6.1.2** Branch `feat/step-6-trace-evals` from `feat/step-5-workspaces` (or from `main` once step 5 is merged).
-- [ ] **6.1.3** Read how `evals.runner`, `evals.agent_runner`, `Target`, `compare` and `scoring` fit together, and how `OlistTarget` loads questions. Write a short table in `FLOW.md` of what a new `traces` target must provide.
-- [ ] **6.1.4** Settings, in `.env.example`, `.env`, `.env.test` and settings with no defaults, plus the `.env` sync test: `TRACES_CANDIDATE_MAX_AGE_DAYS`, `TRACES_CLUSTER_SIMILARITY`, `TRACES_CLUSTER_MAX_RUNS`, `TRACES_DRAFT_MODEL`, `TRACES_DRAFT_MAX_PER_BATCH`, `TRACES_PAGE_SIZE_MAX`, `EVAL_GATE_MAX_DROP_POINTS`, `EVAL_GATE_MIN_CASES`.
+- [x] **6.1.1** Run the image-size check on the branch and record the number in `DECISION.md`. If headroom is under 3 MB, stop and trim first.
+- [x] **6.1.2** Branch `feat/step-6-trace-evals` from `feat/step-5-workspaces` (or from `main` once step 5 is merged).
+- [x] **6.1.3** Read how `evals.runner`, `evals.agent_runner`, `Target`, `compare` and `scoring` fit together, and how `OlistTarget` loads questions. Write a short table in `FLOW.md` of what a new `traces` target must provide.
+- [x] **6.1.4** Settings, in `.env.example`, `.env`, `.env.test` and settings with no defaults, plus the `.env` sync test: `TRACES_CANDIDATE_MAX_AGE_DAYS`, `TRACES_CLUSTER_SIMILARITY`, `TRACES_CLUSTER_MAX_RUNS`, `TRACES_DRAFT_MODEL`, `TRACES_DRAFT_MAX_PER_BATCH`, `TRACES_PAGE_SIZE_MAX`, `EVAL_GATE_MAX_DROP_POINTS`, `EVAL_GATE_MIN_CASES`.
 
 ## 6.2 Trace API (staff only)
 
