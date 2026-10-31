@@ -1,4 +1,5 @@
 import inspect
+import sys
 
 import pytest
 from django.test import override_settings
@@ -30,7 +31,7 @@ def test_registry_lists_every_tool_once() -> None:
 
 
 def test_unknown_tool_is_a_tool_error(context: ToolContext) -> None:
-    with pytest.raises(ToolError, match="Unknown tool 'run_sql'.*list_tables"):
+    with pytest.raises(ToolError, match=r"Unknown tool 'run_sql'.*list_tables"):
         tools.call("run_sql", {"sql": "select 1"}, context)
 
 
@@ -122,9 +123,9 @@ def test_finish_needs_a_result_and_give_up_does_not(context: ToolContext) -> Non
     tool, out = tools.call(
         "finish", {"answer": "done"}, ToolContext(context.schema, executed=True)
     )
-    assert tool.terminal and out.answer == "done"
+    assert tool.terminal and out.model_dump() == {"answer": "done"}
     tool, out = tools.call("give_up", {"reason": "no data"}, context)
-    assert tool.terminal and out.reason == "no data"
+    assert tool.terminal and out.model_dump() == {"reason": "no data"}
 
 
 def test_no_tool_can_reach_the_runner(
@@ -149,6 +150,6 @@ def test_no_tool_can_reach_the_runner(
     for name, raw in calls.items():
         tools.call(name, raw, executed)
     for tool in tools.TOOLS:
-        source = inspect.getsource(inspect.getmodule(tool))
+        source = inspect.getsource(sys.modules[tool.__module__])
         assert "runner" not in source
         assert "connections" not in source

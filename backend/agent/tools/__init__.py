@@ -2,8 +2,9 @@
 it are a ToolError. There is deliberately no tool that executes SQL."""
 
 import json
+from typing import Any
 
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 
 from agent.errors import ToolError
 from agent.tools.base import Tool, ToolContext
@@ -32,10 +33,9 @@ def get(name: str) -> type[Tool]:
     return tool
 
 
-def call(
-    name: str, raw_input: object, context: ToolContext
-) -> tuple[type[Tool], BaseModel]:
-    """Validate the model's input and run the tool. Raises ToolError on any problem."""
+def call(name: str, raw_input: object, context: ToolContext) -> tuple[type[Tool], Any]:
+    """Validate the model's input and run the tool; the output is the tool's Output
+    model. Raises ToolError on any problem."""
     tool = get(name)
     try:
         data = tool.Input.model_validate(raw_input if raw_input is not None else {})
