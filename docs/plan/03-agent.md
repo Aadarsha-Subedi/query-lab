@@ -36,15 +36,15 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 - [x] **3.1.4** Limits: `AGENT_MAX_CONCURRENT_RUNS_PER_USER`, `AGENT_MAX_OPEN_STREAMS`, `AGENT_SSE_HEARTBEAT_SECONDS`, `AGENT_SSE_READ_BLOCK_MS`, and the throttle rate for run creation (next to the existing `AskThrottle` rate).
 - [x] **3.1.5** Confidence weights for the new score (3.9), with the old self-rating weight removed from `.env.example`.
 - [x] **3.1.6** Read each with `django-environ` and no default; add to `.env.example` and the test env; the sync test passes.
-- [ ] **3.1.7** Decide how the default-key daily limit counts: **one run = one spend**, however many LLM calls it makes, bounded by `AGENT_MAX_LLM_CALLS`. Note in `DECISION.md` (3.12).
+- [x] **3.1.7** Decide how the default-key daily limit counts: **one run = one spend**, however many LLM calls it makes, bounded by `AGENT_MAX_LLM_CALLS`. Note in `DECISION.md` (3.12).
 
 ## 3.2 Models and migration
 
 - [x] **3.2.1** New Django app `agent` (layout: `models.py`, `tools/`, `loop.py`, `state.py`, `events.py`, `tasks.py`, `confidence.py`, `api.py`, `tests/`). Register in `INSTALLED_APPS`.
-- [ ] **3.2.2** `AgentRun`: user, question, status (`running`, `awaiting_approval`, `succeeded`, `failed`, `cancelled`, `expired`), error code, provider, model, key source, prompt version, plan text, final SQL, row count, confidence (nullable), steps/LLM calls/tokens/latency totals, revisions, finished at.
-- [ ] **3.2.3** `AgentStep`: run, index, kind (`plan`, `tool`, `approval`, `execute`, `reflect`, `final`), tool name, input JSON, output summary (trimmed), status, error code, tokens, latency, `actor` (`agent` or `user`, for edits and approvals). Unique `(run, index)`.
-- [ ] **3.2.4** Migration on `default` only. Result rows are never stored; a step keeps columns, row count and a preview capped by `AGENT_STEP_OUTPUT_MAX_CHARS`. Decide and note: the preview is stored, so replay can show what the user saw without re-running SQL.
-- [ ] **3.2.5** Tests: relations, the unique index, status transitions rejected when illegal (for example `succeeded` back to `running`).
+- [x] **3.2.2** `AgentRun`: user, question, status (`running`, `awaiting_approval`, `succeeded`, `failed`, `cancelled`, `expired`), error code, provider, model, key source, prompt version, plan text, final SQL, row count, confidence (nullable), steps/LLM calls/tokens/latency totals, revisions, finished at.
+- [x] **3.2.3** `AgentStep`: run, index, kind (`plan`, `tool`, `approval`, `execute`, `reflect`, `final`), tool name, input JSON, output summary (trimmed), status, error code, tokens, latency, `actor` (`agent` or `user`, for edits and approvals). Unique `(run, index)`.
+- [x] **3.2.4** Migration on `default` only. Result rows are never stored; a step keeps columns, row count and a preview capped by `AGENT_STEP_OUTPUT_MAX_CHARS`. Decide and note: the preview is stored, so replay can show what the user saw without re-running SQL.
+- [x] **3.2.5** Tests: relations, the unique index, status transitions rejected when illegal (for example `succeeded` back to `running`).
 
 ## 3.3 Tool registry
 
@@ -114,7 +114,7 @@ Step 2 showed the old score at about 1.0 for every Olist answer (rank correlatio
 
 - [x] **3.9.1** Remove the self-rating from the score. Candidate features that do vary: repair/revise count, whether the user edited the SQL, guard changes, whether the agent checked `sample_values` for the filters it used, result shape (empty, one row, truncated), and whether the reflect verdict was `ok` on the first pass.
 - [ ] **3.9.2** Offline analysis first: run the Olist golden set and the Spider held-out set through the agent, then compute each candidate feature against correct/wrong with a small script in `evals` (no new dependency; Spearman in plain Python). **(You)** read the result table.
-- [x] **3.9.3** Keep only features that separate right from wrong. Write the new `agent/confidence.py` with weights from `.env`.
+- [ ] **3.9.3** Keep only features that separate right from wrong. Write the new `agent/confidence.py` with weights from `.env`.
 - [ ] **3.9.4** Acceptance rule, decided now so the result cannot be argued afterwards: if accuracy in the top bucket is not higher than the bottom by `CONFIDENCE_MIN_SEPARATION` (an `.env` value) on the Olist run, the API returns `confidence: null` and the UI shows a plain "checked" or "needs a look" label from reflect and guard instead of a number.
 - [ ] **3.9.5** Tests for the score function; update the `/api/ask` path to use the same function, or leave it and say so in `DECISION.md`.
 
