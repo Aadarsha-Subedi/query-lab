@@ -270,6 +270,26 @@ CONFIDENCE_WEIGHT_NO_RETRY = env.float("CONFIDENCE_WEIGHT_NO_RETRY")
 CONFIDENCE_WEIGHT_NON_EMPTY = env.float("CONFIDENCE_WEIGHT_NON_EMPTY")
 CONFIDENCE_PENALTY_TRUNCATED = env.float("CONFIDENCE_PENALTY_TRUNCATED")
 
+# ── Evals (step 2) ────────────────────────────────────────────────────────
+
+EVAL_ROW_COMPARE_PRECISION = env.int("EVAL_ROW_COMPARE_PRECISION")
+EVAL_MAX_COMPARE_ROWS = env.int("EVAL_MAX_COMPARE_ROWS")
+EVAL_QUERY_TIMEOUT_MS = env.int("EVAL_QUERY_TIMEOUT_MS")
+EVAL_OPENAI_API_KEY = env.str("EVAL_OPENAI_API_KEY")
+EVAL_SPIDER_DIR = env.path("EVAL_SPIDER_DIR")
+EVAL_CONFIDENCE_BUCKETS = sorted(
+    float(edge) for edge in env.list("EVAL_CONFIDENCE_BUCKETS")
+)
+EVAL_LLM_RETRIES = env.int("EVAL_LLM_RETRIES")
+EVAL_CONFIRM_ABOVE_CALLS = env.int("EVAL_CONFIRM_ABOVE_CALLS")
+# model -> (input, output) USD per million tokens; an estimate for reports only.
+EVAL_MODEL_PRICES = {
+    name: (float(price_in), float(price_out))
+    for name, price_in, price_out in (
+        entry.split(":") for entry in env.list("EVAL_MODEL_PRICES")
+    )
+}
+
 # ── Workspaces (step 5) ───────────────────────────────────────────────────
 
 MAX_WORKSPACES_PER_USER = env.int("MAX_WORKSPACES_PER_USER")
