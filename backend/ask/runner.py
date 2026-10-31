@@ -11,12 +11,15 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
+import psycopg
 from django.conf import settings
-from django.db import DatabaseError, connections, transaction
+from django.db import DatabaseError
 from psycopg import errors as pg_errors
 
 from ask.errors import QueryFailed, QueryTimeout
 from ask.prompt import first_line
+from workspaces.context import DEMO, WorkspaceRef
+from workspaces.reader import read_cursor
 
 FETCH_BATCH = 100
 
@@ -49,25 +52,21 @@ def to_json_safe(value: Any) -> Any:
     return str(value)
 
 
-def run(sql: str, *, json_safe: bool = True) -> QueryResult:
-    """Run guarded SQL on the reader. `json_safe=False` keeps native Python values
-    (the eval harness compares numbers, so it needs Decimals, not strings)."""
-    alias = settings.DATA_READER_DB_ALIAS
-    connection = connections[alias]
+def run(
+    sql: str, workspace: WorkspaceRef = DEMO, *, json_safe: bool = True
+) -> QueryResult:
+    """Run guarded SQL for a workspace. The demo runs on the reader connection; a
+    user workspace on a connection opened as its own `ws_<id>_ro` role. There is no
+    SET ROLE: the login identity is the boundary, so a workspace connection can
+    never be handed to another workspace. `json_safe=False` keeps native Python
+    values (the eval harness compares numbers, so it needs Decimals, not strings)."""
     max_rows = settings.ASK_MAX_ROWS
     max_bytes = settings.ASK_MAX_RESULT_BYTES
     rows: list[list[Any]] = []
     size = 0
     truncated = False
     try:
-        with transaction.atomic(using=alias):
-            with connection.cursor() as setup:
-                setup.execute("SET TRANSACTION READ ONLY")
-                setup.execute(
-                    "SELECT set_config('statement_timeout', %s, true)",
-                    [str(settings.READER_STATEMENT_TIMEOUT_MS)],
-                )
-            cursor = connection.chunked_cursor()
+        with read_cursor(workspace, chunked=True) as cursor:
             cursor.execute(sql)
             columns: list[str] = []
             while not truncated:
@@ -83,15 +82,19 @@ def run(sql: str, *, json_safe: bool = True) -> QueryResult:
                         truncated = True
                         break
                     rows.append(row)
-            cursor.close()
     except DatabaseError as error:
-        cause = error.__cause__
-        if isinstance(cause, pg_errors.QueryCanceled):
-            raise QueryTimeout() from None
-        raise QueryFailed(first_line(str(error))) from None
+        raise _translate(error, error.__cause__) from None
+    except psycopg.Error as error:
+        raise _translate(error, error) from None
     return QueryResult(
         columns=columns,
         rows=rows,
         row_count=len(rows),
         truncated=truncated or len(rows) >= max_rows,
     )
+
+
+def _translate(error: Exception, cause: BaseException | None) -> Exception:
+    if isinstance(cause, pg_errors.QueryCanceled):
+        return QueryTimeout()
+    return QueryFailed(first_line(str(error)))
