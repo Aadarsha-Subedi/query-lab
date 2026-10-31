@@ -2,7 +2,7 @@
 
 > Ask your database in plain English, then measure how well the AI answered.
 
-**Status:** In progress (steps 0, 1, 2 and 3 done in code; step 3's live-Gemini checks remain; step 4 next)
+**Status:** In progress (steps 0, 1, 2 and 3 done in code; step 3's live-Gemini checks remain; step 4 done in code; its browser check remains)
 
 Querylab is a text-to-SQL analyst agent with its own evaluation and fine-tuning loop. Visitors ask questions about a database in plain English and get a result table, the exact SQL that ran, and a replayable trace of how the agent got there. Behind it, a workbench turns those traces into an eval set, scores every model version, and benchmarks a LoRA fine-tuned model against its base.
 
@@ -24,14 +24,14 @@ step 9 on the approved design system, just before deployment.
 | 6 | Trace-driven evals | Item 4: trace API, clustering, LLM-drafted expected SQL with hand review, eval results API, regression gate |
 | 7 | LoRA fine-tune *(time-boxed stretch)* | Item 5: instruction dataset, 4-bit load, PEFT adapters, W&B tracking, merge + benchmark |
 | 8 | Schema-RAG + semantic cache *(optional)* | Retrieve table and business definitions before writing SQL; cache question → SQL |
-| 9 | Frontend | The whole UI on the design system: a sign-in page (Continue with Google / GitHub) and logout, landing page, analyst chat with schema panel, approve / edit / cancel, history, workspaces + CSV upload, trace viewer, eval dashboard |
+| 9 | Frontend | The whole UI, built against the contract in [`backend/FLOW.md`](backend/FLOW.md) ("The analyst screen's contract") and the generated `backend/openapi.json`: on the design system: a sign-in page (Continue with Google / GitHub) and logout, landing page, analyst chat with schema panel, approve / edit / cancel, history, workspaces + CSV upload, trace viewer, eval dashboard |
 | 10 | Deploy + portfolio polish | Hosting (Cloudflare Container + static frontend), public read-only eval dashboard, demo script, final results |
 
 - [x] 0. Foundation (your GitHub and OAuth setup tasks remain)
 - [x] 1. Text-to-SQL core (your real-LLM check, 1.12.3, remains)
 - [x] 2. Eval harness skeleton
 - [x] 3. Agent (your live-Gemini checks remain: 3.9.2 confidence analysis, 3.10.3 Olist agent run; [plan](docs/plan/03-agent.md))
-- [ ] 4. Analyst API
+- [x] 4. Analyst API (your real-browser CORS check, 4.7.5, remains; [plan](docs/plan/04-analyst-api.md))
 - [ ] 5. User workspaces
 - [ ] 6. Trace-driven evals
 - [ ] 7. LoRA fine-tune (stretch)

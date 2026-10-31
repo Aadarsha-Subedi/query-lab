@@ -86,8 +86,8 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 ## 4.8 Tests, docs and wrap-up
 
 - [x] **4.8.1** One end-to-end test with the fake LLM: sign in, read the schema, create a run, see `pending`, edit the SQL, approve, read `result`, find the run in a filtered history, replay it.
-- [ ] **4.8.2** `backend/CLAUDE.md`: new endpoints and files in the layout; the rule that `/result` re-runs stored SQL only and never takes SQL from the request.
-- [ ] **4.8.3** `backend/FLOW.md`: the screen's contract table (4.1.3), the approval payload and the result fetch.
-- [ ] **4.8.4** `backend/DECISION.md`: why rows are re-run and not stored; why the screen uses runs and not `/ask`; the open questions' answers; the error list; the image-size number.
+- [x] **4.8.2** `backend/CLAUDE.md`: new endpoints and files in the layout; the rule that `/result` re-runs stored SQL only and never takes SQL from the request.
+- [x] **4.8.3** `backend/FLOW.md`: the screen's contract table (4.1.3), the approval payload and the result fetch.
+- [x] **4.8.4** `backend/DECISION.md`: why rows are re-run and not stored; why the screen uses runs and not `/ask`; the open questions' answers; the error list; the image-size number.
 - [ ] **4.8.5** Full test suite, `ruff`, `mypy`, the `.env` sync test and the image-size check pass.
-- [ ] **4.8.6** Tick step 4 in the root `README.md`, add a link to this plan, and update the step 9 row so it points at the contract in `FLOW.md`.
+- [x] **4.8.6** Tick step 4 in the root `README.md`, add a link to this plan, and update the step 9 row so it points at the contract in `FLOW.md`.

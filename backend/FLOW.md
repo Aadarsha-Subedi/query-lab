@@ -39,7 +39,7 @@ browser ──> Vite dev proxy (/api, /_allauth, /accounts)  [prod: same domain,
               /api/        NinjaAPI (config/api.py)
                              default throttles: AnonThrottle (IP) + UserThrottle (user)
                              routers: core (/health), accounts (/me), ask (/ask, /llm-keys),
-                             agent (/agent/runs...)
+                             schema (/schema...), agent (/agent/runs..., /agent/limits)
                              errors -> common/exception/handler.py -> error envelope
               /_allauth/   allauth headless JSON API (browser client)
               /accounts/   OAuth provider callbacks only (HEADLESS_ONLY)
@@ -239,6 +239,66 @@ runs carry `error_code`: `agent_steps_exceeded`, `agent_llm_calls_exceeded`,
 What the agent's model sees: the question, the tool list, the plan, a trimmed history of
 tool results (schema text, sample values, error lines) and a result *summary* at reflect
 time. Never other users' data, and never more than `AGENT_RESULT_PREVIEW_ROWS` rows.
+
+## Analyst API: the screen's calls (step 4)
+
+```
+Schema panel   GET /schema            ETag + If-None-Match -> 304; tables, columns, keys, comments,
+                                      row estimates; samples only if SCHEMA_API_INCLUDE_SAMPLES
+               GET /schema/tables/{name}   404 table_not_found for an unknown name
+Limits         GET /agent/limits      default key used/allowed/remaining/resets_at, has_own_key,
+                                      unfinished runs vs cap, open streams vs cap (read only)
+History        GET /agent/runs?status=&q=&created_after=&created_before=&ordering=&limit=&offset=
+                                      rows carry has_result and edited; meta.count = matches
+```
+
+**The approval payload.** While a run is `awaiting_approval`, `GET /agent/runs/{id}` (and
+replay) has a `pending` block, and the SSE `status` event that announces the pause carries
+the same block; it is null in every other state:
+
+```
+pending: {sql, rationale, assumptions: [str], guard: [str], revision, expires_at}
+```
+
+It is read from the newest agent `approval` step, so there is nothing extra to store. `guard`
+holds the guard's rewrite codes (`limit_clamped`, `qualified_tables`). Edit with SQL the guard
+refuses answers 400 `guard_rejected` with `errors: [{field: "sql", message}]` and the run stays paused.
+
+**The result fetch.**
+
+```
+GET /agent/runs/{id}/result     owner only; ResultThrottle
+  run is not succeeded                      -> 409 run_not_succeeded
+  guard.check(run.final_sql) again          -> 400 guard_rejected if it would be refused now
+  runner.run(checked sql) on the reader     -> {run_id, sql, columns, rows, row_count, truncated}
+                                               rows capped by ASK_MAX_ROWS / ASK_MAX_RESULT_BYTES
+  query error / timeout                     -> 422 query_failed / 504 query_timeout (run untouched)
+```
+
+Rows are not stored (step 3), so this runs the SQL again; the numbers can differ from the first
+run if the data changed. The request carries no SQL.
+
+**Contract file and errors.** `backend/openapi.json` (`make openapi`) is what the frontend
+generates its types from; CI fails when it is stale. Error codes and what the screen does about
+each are in `backend/API_ERRORS.md`. Every 429 has `retry_after_seconds` (null when waiting does
+not help: `agent_run_limit`, `agent_stream_limit`).
+
+**A whole screen session**, in calls: `GET /me` (sets the CSRF cookie) -> `GET /schema` ->
+`POST /agent/runs` -> open `GET /agent/runs/{id}/events` (SSE) -> the `status` event shows
+`pending` -> `POST .../approve` or `.../edit {sql}` -> reopen the stream with `Last-Event-ID`
+-> `GET .../result` -> `GET /agent/runs?...` for history -> `GET .../replay` to review.
+
+## Browser path check (pending, owner task 4.7.5)
+
+Credentialed CORS (`CORS_ALLOW_CREDENTIALS`, listed origins only) is tested with the test
+client, but a real browser needs the OAuth login, so check it once with both dev servers up,
+from a page on the frontend origin (`http://localhost:3000`) calling the API origin
+(`http://localhost:8000`): (1) `fetch(url + "/api/me", {credentials: "include"})` returns 200 and
+sets `csrftoken`; (2) `fetch(url + "/api/agent/runs", {method: "POST", credentials: "include",
+headers: {"X-CSRFToken": <cookie>, "Content-Type": "application/json"}, body: ...})` returns 200;
+(3) `new EventSource(url + "/api/agent/runs/<id>/events", {withCredentials: true})` receives
+events. Note any `.env` change it needs (`CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`, cookie
+`SameSite`) and record it in DECISION.md. Result: *not run yet.*
 
 ## Agent evals (step 3)
 
