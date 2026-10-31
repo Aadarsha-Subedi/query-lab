@@ -10,6 +10,7 @@ Every error answers in the envelope `{success: false, status_code, message, code
 | `invalid_token` | 401 | A token was invalid (not used by the browser flow). | Go to sign-in. |
 | `token_expired` | 401 | A token expired (not used by the browser flow). | Go to sign-in. |
 | `permission_denied` | 403 | Signed in but not allowed (also a failed CSRF check). | Reload to get a fresh CSRF cookie via `GET /api/me`, then retry once. |
+| `staff_only` | 403 | The workbench (`/api/workbench/...`) is for staff accounts only. | Hide the workbench; show "not available". |
 | `not_found` | 404 | No such route or resource. | Show "not found". |
 | `method_not_allowed` | 405 | Wrong HTTP method for the route. | A bug in the client. |
 | `unsupported_media_type` | 415 | Body was not JSON. | A bug in the client. |

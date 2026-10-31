@@ -9,6 +9,7 @@ import agent.errors
 import agent.service  # noqa: F401
 import ask.errors
 import ask.schema_api  # noqa: F401
+import common.permissions  # noqa: F401
 import workspaces.errors  # noqa: F401
 from common.exception import domain, handler
 
@@ -17,7 +18,16 @@ ROW = re.compile(r"^\| `([a-z_]+)` \|")
 CODE_ASSIGNMENT = re.compile(
     r'(?:\bcode|\berror_code|\b[A-Z_]*CODE[A-Z_]*)\s*=\s*"([a-z][a-z_]*)"'
 )
-SOURCE_DIRS = ["config", "core", "common", "accounts", "ask", "agent", "workspaces"]
+SOURCE_DIRS = [
+    "config",
+    "core",
+    "common",
+    "accounts",
+    "ask",
+    "agent",
+    "workspaces",
+    "evals",
+]
 
 
 def documented() -> tuple[set[str], set[str]]:
