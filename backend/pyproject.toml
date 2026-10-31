@@ -17,6 +17,7 @@ dependencies = [
     "openai>=3.41.0",
     "psycopg[binary]>=3.3.6",
     "redis>=8.1.0",
+    "sqlglot>=30.27.0",
 ]
 
 [dependency-groups]
