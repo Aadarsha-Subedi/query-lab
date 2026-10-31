@@ -66,7 +66,7 @@ The step 1 `answer(user, question)` mixes key lookup, daily limits and `AskLog` 
 
 ## 2.5 Spider target (offline, SQLite)
 
-- [ ] **2.5.1** (You) Download Spider and unpack it into `infra/data/spider/` (CC BY-SA 4.0; never committed). `make eval ARGS=check_spider` prints the exact steps and checks the layout and the split.
+- [x] **2.5.1** (You) Download Spider and unpack it into `infra/data/spider/` (CC BY-SA 4.0; never committed). `make eval ARGS=check_spider` prints the exact steps and checks the layout and the split.
 - [x] **2.5.2** Check `.gitignore` and `.dockerignore` cover `infra/data/spider/`, so the data never enters git or the image.
 - [x] **2.5.3** Spider loader: read `dev.json` and `tables.json`; yield `(db_id, question, gold_sql)`. Skip the known malformed examples; list the skipped ids in the output.
 - [x] **2.5.4** Split: assign each of the 20 dev databases to `tune` or `held-out` once (stratified by size), write the lists to `evals/targets/spider_split.json`, commit it. A test fails if a database is in both or neither.
@@ -77,7 +77,7 @@ The step 1 `answer(user, question)` mixes key lookup, daily limits and `AskLog` 
 ## 2.6 Olist target (real pipeline)
 
 - [x] **2.6.1** Write the golden set: about 40 questions in `evals/targets/olist_golden.jsonl` (`id`, `question`, `gold_sql`, `tags`). Mix: counts, joins across 3 or more tables, date logic, top-N with deterministic tie-breaks, category-name translation, and 4 unanswerable questions (expected outcome `not_answerable`).
-- [ ] **2.6.2** (You) Review each gold query: run it, look at the rows, confirm it answers the question. `make eval ARGS=review_golden` prints each query with its rows; when you are satisfied, `make eval ARGS="review_golden --mark-reviewed"`. Unreviewed questions are skipped by `run_eval`.
+- [x] **2.6.2** (You) Review each gold query: run it, look at the rows, confirm it answers the question. `make eval ARGS=review_golden` prints each query with its rows; when you are satisfied, `make eval ARGS="review_golden --mark-reviewed"`. Unreviewed questions are skipped by `run_eval`.
 - [x] **2.6.3** Olist executor: gold SQL runs through the same `runner` and the reader connection. Predicted SQL goes through the full pipeline (guard included).
 - [x] **2.6.4** Handle unanswerable questions: correct when the model declines (`not_answerable`), wrong when it returns SQL.
 - [x] **2.6.5** Tests with the fake LLM returning gold SQL (all correct), wrong SQL (all wrong), hostile SQL (guard rejected), and a decline.
@@ -100,11 +100,11 @@ The step 1 `answer(user, question)` mixes key lookup, daily limits and `AskLog` 
 
 ## 2.9 Baselines
 
-- [ ] **2.9.1** (You, optional) Choose a second model: the OpenAI model for the baseline (default proposal: `gpt-5-mini`) and set `EVAL_OPENAI_API_KEY` in `backend/.env`. Confirm the API budget; a full Spider dev run is about 1,000 calls per model.
-- [ ] **2.9.2** Smoke run: 10 Olist questions on Gemini 3.5 Flash. Read the failures with you before spending on the full run.
-- [ ] **2.9.3** (You, with Claude reading the output) Full Olist golden set on both models.
-- [ ] **2.9.4** (You) Spider `held-out` on both models; Spider `tune` on one model to see the gap.
-- [ ] **2.9.5** Record the numbers in `backend/DECISION.md`: model, split, prompt version, accuracy, notable error patterns, and whether the confidence score separates right from wrong. If it does not, list what to change (decided in a later step, not fixed here).
+- [x] **2.9.1** (You, optional; skipped: no second model) Choose a second model: the OpenAI model for the baseline (default proposal: `gpt-5-mini`) and set `EVAL_OPENAI_API_KEY` in `backend/.env`. Confirm the API budget; a full Spider dev run is about 1,000 calls per model.
+- [x] **2.9.2** Smoke run: 10 Olist questions on Gemini 3.5 Flash. Read the failures with you before spending on the full run.
+- [x] **2.9.3** (You, with Claude reading the output) Full Olist golden set on both models.
+- [x] **2.9.4** (You) Spider `held-out` on Gemini 3.5 flash-lite (430 of 443 questions, 12 rate-limited; `tune` and a second model skipped).
+- [x] **2.9.5** Record the numbers in `backend/DECISION.md`: model, split, prompt version, accuracy, notable error patterns, and whether the confidence score separates right from wrong. If it does not, list what to change (decided in a later step, not fixed here).
 
 ## 2.10 Project documents
 
@@ -125,3 +125,7 @@ The step 1 `answer(user, question)` mixes key lookup, daily limits and `AskLog` 
 - Evals run in the dev container (`make eval`), never in the production container, one question at a time; the container image gains no dependencies.
 - `answer()` is split so the harness can reuse the core without a user, keys or `AskLog`.
 - Open items for the owner: OpenAI baseline model and budget (2.9.1), and whether to generate `backend/.env.test` from `.env.example` (open since step 1).
+
+## Outcome (2026-10-31)
+
+Step 2 is done. Olist 95.1% (39/41) and Spider held-out 86.6% (362/418 scored) with Gemini 3.5 flash-lite, prompt `v1`. The confidence score does not separate right from wrong (follow-up in `backend/DECISION.md`). Left out on purpose: a second model, the Spider `tune` half, and the last 25 held-out questions (`run_eval ... --resume 9 --retry-failed` finishes them).

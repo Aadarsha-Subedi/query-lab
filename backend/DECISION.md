@@ -316,6 +316,9 @@ the dev container, one question at a time, and never in the production container
 baseline uses `EVAL_OPENAI_API_KEY`. Both live only in `.env`. `EVAL_MODEL_PRICES`
 is an estimate for reports, not billing.
 
-**Baseline results:** to be recorded here after the runs in plan step 2.9 (model,
-split, prompt version, accuracy, error patterns, whether confidence separates right
-from wrong).
+**Baseline results (recorded 2026-10-31, prompt `v1`, Gemini 3.5 flash-lite).**
+- *Olist golden set* (run #7, 41 questions): **95.1%** (39/41), all 4 unanswerable questions declined. Misses: olist-26 (sorted by item count, not by score: a real error) and olist-18 (added `order_status = 'delivered'`, a defensible reading; wording to tighten later). An earlier run on `gemini-3.5-flash` (10 questions) scored 8/10 and is too small to compare.
+- *Spider held-out* (run #9, stopped at 430 of 443 questions; 12 calls failed on provider 429s, so 418 were scored): **86.6%** (362/418; 84.2% if the failures count as wrong). A 20-question smoke run (#8) scored 90%. The 25 unscored questions were not re-run.
+- *Reading the 50 misses by hand:* about 8 to 10 are real model errors (for example an AND of two directors written as IN, an area code taken from the phone number). The rest is Spider noise: gold SQL that answers a different question than the text (about 15), ties at `LIMIT 1` (about 9), inner versus left join (about 6) and an extra column in the model's answer (about 8). The headline number understates the model, and tuning the prompt against these would overfit.
+- *Confidence:* it does not separate right from wrong. On Olist every answer got 1.0 (the model always reports full self-confidence and the other factors are almost always clean). On Spider held-out the buckets were 86.1% (0.70 to 0.85) and 88.0% (0.85 to 1.00), rank correlation 0.09. **Follow-up for steps 3 and 6:** do not show this score as a probability. Candidates: drop the self-rating, add agreement between two samples, or score by features that did vary (row count, result shape, repair attempts).
+- *Not done:* a second model (the Claude and OpenAI baselines were dropped because paid API keys are billed separately), the Spider `tune` half, and the last 25 held-out questions.
