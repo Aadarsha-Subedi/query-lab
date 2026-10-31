@@ -1,7 +1,7 @@
-# Postman: Querylab API (step 0)
+# Postman: Querylab API (step 1)
 
 `collection.json` (Postman Collection v2.1) covers every endpoint the backend has
-after step 0; `environment.json` is the matching *Querylab local* environment.
+after step 1; `environment.json` is the matching *Querylab local* environment.
 Sign-in is Google or GitHub only: there are no email/password accounts.
 
 ## Use it
