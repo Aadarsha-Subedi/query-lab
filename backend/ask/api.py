@@ -1,13 +1,15 @@
-from typing import Literal, cast
+from dataclasses import asdict
+from typing import Any, Literal, cast
 
 from django.http import HttpRequest
 from ninja import Router, Schema
 from ninja.security import django_auth
 
 from accounts.models import User
-from ask import keys
+from ask import keys, service
 from ask.models import UserLLMKey
 from common.response.domain import SuccessEnvelope, success
+from common.throttling.scoped import AskThrottle
 
 router = Router(tags=["ask"])
 
@@ -55,3 +57,36 @@ def save_llm_key(request: HttpRequest, provider: Provider, payload: LLMKeyIn) ->
 def delete_llm_key(request: HttpRequest, provider: Provider) -> dict:
     UserLLMKey.objects.filter(user=cast(User, request.user), provider=provider).delete()
     return success(None, message="Key removed.")
+
+
+class AskIn(Schema):
+    question: str
+
+
+class AskOut(Schema):
+    question: str
+    sql: str
+    columns: list[str]
+    rows: list[list[Any]]
+    row_count: int
+    # True when the result was cut at the row or size cap.
+    truncated: bool
+    # 0 to 1. A heuristic, not a probability; see ask/confidence.py.
+    confidence: float
+    rationale: str
+    model: str
+    latency_ms: int
+
+
+@router.post(
+    "/ask",
+    response=SuccessEnvelope[AskOut],
+    auth=django_auth,
+    throttle=[AskThrottle()],
+)
+def ask(request: HttpRequest, payload: AskIn) -> dict:
+    """Answer a question about the demo database: the SQL that ran, the result
+    table and a confidence score. The SQL is checked before it runs and runs on
+    the read-only connection only."""
+    result = service.answer(cast(User, request.user), payload.question)
+    return success(asdict(result))
