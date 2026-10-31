@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from django.conf import settings
+from django.db.models import Exists, OuterRef, QuerySet
 
 from ninja import Schema
 
@@ -56,6 +57,10 @@ class RunOut(Schema):
     output_tokens: int
     latency_ms: int
     revisions: int
+    # True when the run succeeded: `GET /runs/{id}/result` has rows for it.
+    has_result: bool
+    # True when the person changed the SQL before it ran.
+    edited: bool
     created_at: datetime
     finished_at: datetime | None
 
@@ -108,6 +113,24 @@ def step_dict(step: AgentStep) -> dict[str, Any]:
     ).model_dump(mode="json")
 
 
+def with_edited(runs: QuerySet[AgentRun]) -> QuerySet[AgentRun]:
+    """Annotate runs with `edited_flag`, so a list needs no query per row."""
+    return runs.annotate(
+        edited_flag=Exists(
+            AgentStep.objects.filter(
+                run=OuterRef("pk"), kind=AgentStep.KIND_APPROVAL, input__edited=True
+            )
+        )
+    )
+
+
+def _edited(run: AgentRun) -> bool:
+    flag = getattr(run, "edited_flag", None)
+    if flag is not None:
+        return bool(flag)
+    return run.steps.filter(kind=AgentStep.KIND_APPROVAL, input__edited=True).exists()
+
+
 def run_dict(run: AgentRun) -> dict[str, Any]:
     return {
         "id": run.pk,
@@ -131,6 +154,8 @@ def run_dict(run: AgentRun) -> dict[str, Any]:
         "output_tokens": run.output_tokens,
         "latency_ms": run.latency_ms,
         "revisions": run.revisions,
+        "has_result": run.status == AgentRun.STATUS_SUCCEEDED,
+        "edited": _edited(run),
         "created_at": run.created_at,
         "finished_at": run.finished_at,
     }

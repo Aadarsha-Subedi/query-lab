@@ -901,7 +901,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/agent/runs",
+              "raw": "{{baseUrl}}/api/agent/runs?limit=20&status=succeeded&q=orders&created_after=2026-01-01T00:00:00Z&created_before=2027-01-01T00:00:00Z&ordering=-created_at",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -909,9 +909,41 @@
                 "api",
                 "agent",
                 "runs"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                },
+                {
+                  "key": "status",
+                  "value": "succeeded",
+                  "disabled": true
+                },
+                {
+                  "key": "q",
+                  "value": "orders",
+                  "disabled": true
+                },
+                {
+                  "key": "created_after",
+                  "value": "2026-01-01T00:00:00Z",
+                  "disabled": true
+                },
+                {
+                  "key": "created_before",
+                  "value": "2027-01-01T00:00:00Z",
+                  "disabled": true
+                },
+                {
+                  "key": "ordering",
+                  "value": "-created_at",
+                  "disabled": true
+                }
               ]
             },
-            "description": "Your runs, newest first. `meta` has `count`, `limit`, `offset`; pass `?limit=&offset=`."
+            "description": "Your runs, newest first. `meta` has `count` (runs matching the filters), `limit`, `offset`. Filters: `status` (repeat for several), `q` (text in the question), `created_after`, `created_before`; `ordering` is `created_at` or `latency_ms`, `-` for descending. Each row has `has_result` and `edited`."
           },
           "event": [
             {

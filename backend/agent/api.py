@@ -1,8 +1,9 @@
-from typing import cast
+from datetime import datetime
+from typing import Annotated, ClassVar, Literal, cast
 
 from django.conf import settings
 from django.http import HttpRequest, StreamingHttpResponse
-from ninja import Query, Router, Schema
+from ninja import FilterLookup, FilterSchema, Query, Router, Schema
 from ninja.security import django_auth
 from pydantic import Field
 
@@ -17,8 +18,10 @@ from agent.schemas import (
     RunOut,
     run_detail_dict,
     run_dict,
+    with_edited,
 )
 from agent.stream import EventStream
+from common.order.domain import OrderingSchema
 from common.response.domain import SuccessEnvelope, success
 from common.throttling.scoped import AgentThrottle, ResultThrottle
 
@@ -28,6 +31,27 @@ router = Router(tags=["agent"])
 class PageIn(Schema):
     limit: int | None = Field(None, ge=1)
     offset: int = Field(0, ge=0)
+
+
+RunStatus = Literal[
+    "running", "awaiting_approval", "succeeded", "failed", "cancelled", "expired"
+]
+
+
+class RunFilter(FilterSchema):
+    """`?status=failed&status=expired&q=orders&created_after=...`"""
+
+    status: Annotated[list[RunStatus] | None, FilterLookup("status__in")] = None
+    # Case-insensitive match anywhere in the question.
+    q: Annotated[str | None, FilterLookup("question__icontains")] = None
+    created_after: Annotated[datetime | None, FilterLookup("created_at__gte")] = None
+    created_before: Annotated[datetime | None, FilterLookup("created_at__lte")] = None
+
+
+class RunOrdering(OrderingSchema):
+    """`?ordering=-latency_ms`; the default is newest first."""
+
+    allowed_fields: ClassVar[list[str]] = ["created_at", "latency_ms"]
 
 
 def _user(request: HttpRequest) -> User:
@@ -50,12 +74,24 @@ def create_run(request: HttpRequest, payload: RunIn) -> dict:
 
 
 @router.get("/runs", response=SuccessEnvelope[list[RunOut]], auth=django_auth)
-def list_runs(request: HttpRequest, page: Query[PageIn]) -> dict:
-    """Your runs, newest first."""
+def list_runs(
+    request: HttpRequest,
+    page: Query[PageIn],
+    filters: Query[RunFilter],
+    ordering: Query[RunOrdering],
+) -> dict:
+    """Your runs, newest first unless `ordering` says otherwise (`created_at` or
+    `latency_ms`, `-` for descending). Filter by `status` (repeat it for several),
+    `q` (text in the question) and `created_after` / `created_before`. `meta.count`
+    is the number of runs that match."""
     limit = min(
         page.limit or settings.PAGINATION_DEFAULT_LIMIT, settings.PAGINATION_MAX_LIMIT
     )
-    runs = AgentRun.objects.filter(user=_user(request))
+    runs = with_edited(
+        ordering.apply(filters.filter(AgentRun.objects.filter(user=_user(request))))
+    )
+    if ordering.ordering:  # the id breaks ties, so pages do not shuffle
+        runs = runs.order_by(*runs.query.order_by, "-id")
     items = [run_dict(r) for r in runs[page.offset : page.offset + limit]]
     return success(
         items, meta={"count": runs.count(), "limit": limit, "offset": page.offset}

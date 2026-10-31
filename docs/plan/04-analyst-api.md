@@ -62,10 +62,10 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 4.5 History
 
-- [ ] **4.5.1** `GET /runs` filters: `status` (one or more), `q` (case-insensitive match on the question), `created_after` / `created_before`; ordering by `created_at` or `latency_ms` through the existing `common/order` allowlist. Pagination stays as it is.
-- [ ] **4.5.2** Add `has_result` (true when `succeeded`) and `edited` (true when the user changed the SQL) to `RunOut`, so a list row can show them without loading steps.
-- [ ] **4.5.3** Index on `(user, created_at)` and, if the plan shows a scan, on `(user, status)`. Migration on `default` only.
-- [ ] **4.5.4** Tests: each filter alone and combined, ordering allowlist rejects other fields, another user's runs never appear, the count in `meta` matches the filter.
+- [x] **4.5.1** `GET /runs` filters: `status` (one or more), `q` (case-insensitive match on the question), `created_after` / `created_before`; ordering by `created_at` or `latency_ms` through the existing `common/order` allowlist. Pagination stays as it is.
+- [x] **4.5.2** Add `has_result` (true when `succeeded`) and `edited` (true when the user changed the SQL) to `RunOut`, so a list row can show them without loading steps.
+- [x] **4.5.3** Index on `(user, created_at)` and, if the plan shows a scan, on `(user, status)`. Migration on `default` only.
+- [x] **4.5.4** Tests: each filter alone and combined, ordering allowlist rejects other fields, another user's runs never appear, the count in `meta` matches the filter.
 
 ## 4.6 Limits and errors the screen must handle
 
