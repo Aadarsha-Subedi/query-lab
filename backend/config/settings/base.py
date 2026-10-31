@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "ask",
     "agent",
     "evals",
+    "workspaces",
 ]
 
 MIDDLEWARE = [
