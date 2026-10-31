@@ -10,7 +10,7 @@ def test_run_has_ordered_steps(run: AgentRun) -> None:
     AgentStep.objects.create(run=run, index=1, kind=AgentStep.KIND_TOOL)
     AgentStep.objects.create(run=run, index=0, kind=AgentStep.KIND_PLAN)
     assert [s.index for s in run.steps.all()] == [0, 1]
-    assert run.user.agent_runs.get() == run
+    assert AgentRun.objects.filter(user=run.user).get() == run
 
 
 def test_step_index_is_unique_per_run(run: AgentRun, user) -> None:

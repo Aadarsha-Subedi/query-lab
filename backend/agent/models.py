@@ -76,7 +76,7 @@ class AgentRun(TimeStampModel):
     def is_terminal(self) -> bool:
         return self.status in self.TERMINAL
 
-    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+    def save(self, *args, **kwargs) -> None:
         """Refuse a status change the lifecycle forbids (for example a finished run
         going back to running). The check reads the stored status, so it also holds
         for two writers."""
