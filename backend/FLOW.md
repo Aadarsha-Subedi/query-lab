@@ -335,6 +335,31 @@ deadline (HEALTH_CHECK_TIMEOUT_SECONDS): `SELECT 1` on default, data and
 data_reader, Redis `PING`, and the `common.tasks.ping` Huey task round trip.
 Any failure: `status: degraded`, HTTP 503.
 
+## Step 5: every place that hard-codes `demo` (5.1.3)
+
+Read on branch `feat/step-5-workspaces` before any change. Each row is a change
+in task 5.4 (or the task named).
+
+| Where | What is hard-coded | Change |
+|-------|--------------------|--------|
+| `core/datadb.DEMO_SCHEMA` | the constant, the default for the three below | stays; `workspaces.context.DEMO` wraps it (5.2.1) |
+| `ask/schema.read_schema` | schema name defaults to `demo`; always connects with the `data_reader` alias | takes a workspace; connects as that workspace's reader (5.4.1, 5.4.3) |
+| `ask/schema.get_schema` / `cache_key` / `clear_schema_cache` | default `demo`; key `ask:schema:<schema>:<samples>` has no version | key holds workspace id and a Redis schema version (5.4.1, 5.4.2) |
+| `ask/runner.run` | always the `data_reader` alias and `READER_STATEMENT_TIMEOUT_MS` | takes a workspace; user workspaces open `ws_<id>_ro` per request (5.4.3) |
+| `ask/guard._check_tables` | the schema comes from the `Schema` object, so any other qualifier is already refused; `SET`/`RESET` already in `FORBIDDEN_NODES` | add refusals for `pg_catalog` / `information_schema`, test quoted spellings (5.4.4) |
+| `ask/service._answer` | `schema.get_schema(include_samples=True)`, `execute=runner.run` | take the workspace (5.4.6) |
+| `ask/prompt.py` (`DIALECT_POSTGRES` naming text) | example `demo.orders` | uses the active schema name (5.4.6) |
+| `ask/schema_api._current` and both handlers | `get_schema(include_samples=...)` for the demo | `workspace` query parameter, one ownership dependency (5.4.6) |
+| `agent/prompts.py` (rules text) | `schema "demo"`, `demo.orders` | schema name filled in per run (5.4.6) |
+| `agent/loop._connect` | `schema.get_schema(include_samples=True)` | schema of `run.workspace_id` (5.4.7) |
+| `agent/loop._execute` | `runner.run(sql)` | `runner.run(sql, workspace)` (5.4.3) |
+| `agent/service.decide` (edit) | `guard.check(sql, get_schema(...))` | the run's workspace schema (5.4.6) |
+| `agent/result.py` | `guard.check(...)`, `runner.run(...)` for the run | the run's workspace; a deleted workspace gives a typed error (5.4.6) |
+| `agent/tools/*` | `ToolContext.schema` only; `describe_table.strip_schema` strips `<schema>.` | already workspace-neutral; the context is filled from the run, never from model output (5.4.7) |
+| `evals/targets/olist.py`, `review_golden` | `get_schema(include_samples=True)`, `runner.run` | keep working on the demo through defaults (5.4.9) |
+| `core/health.py` | `data_reader` alias | unchanged |
+| `infra/sql/001_roles.sql` / `020_reader_grants.sql` | `demo` through the `{schema}` placeholder | unchanged; `002_workspace_roles.sql` is new (5.2.3) |
+
 ## Database topology
 
 ```

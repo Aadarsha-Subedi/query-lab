@@ -387,3 +387,8 @@ Backend only: the surface the analyst screen (step 9) needs, so the screen is on
 
 **Image size, after step 4 (4.8.5).** Measured 2026-10-31 with CI's method: **295 MB against the 300 MB budget**, the same as before step 4 (the new modules and `openapi.json` are under 1 MB together; no dependency was added, `pyproject.toml` and `uv.lock` are unchanged). Headroom stays at about 5 MB.
 
+
+
+## User workspaces (step 5)
+
+**Image size, before any code (5.1.1).** Measured 2026-10-31 on the step 5 branch with CI's method (`du -sxm /` in the prod image): **295 MB against the 300 MB budget**, 5 MB of headroom, above the plan's 3 MB stop line. Step 5 adds no dependency.
