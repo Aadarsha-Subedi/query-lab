@@ -2,8 +2,11 @@
 
 It parses the SQL as PostgreSQL and checks the syntax tree (never the text), then
 returns the SQL that will actually run, rewritten from that same tree. It is the
-second layer: the reader role (read-only, SELECT on `demo` only, statement
-timeout) is the wall that still holds if this layer has a bug.
+second layer: the reader role (read-only, SELECT on one schema only, statement
+timeout) is the wall that still holds if this layer has a bug. The allowed schema
+is the `Schema` it is given: `demo`, or a user workspace's `ws_<id>`. Any other
+qualifier (another workspace, `public`, `pg_catalog`, `information_schema`,
+a database name) is refused, and so are SET, RESET and SET ROLE.
 """
 
 from dataclasses import dataclass
