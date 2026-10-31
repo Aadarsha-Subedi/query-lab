@@ -1842,6 +1842,41 @@
               }
             }
           ]
+        },
+        {
+          "name": "Workspace limits",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/limits",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "limits"
+              ]
+            },
+            "description": "Workspaces used / allowed, bytes used (all workspaces) / allowed / per workspace, imports running against the cap, and the per-table and per-request caps. Read only."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 429]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },

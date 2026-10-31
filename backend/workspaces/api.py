@@ -9,10 +9,13 @@ from accounts.models import User
 from common.response.domain import SuccessEnvelope, errors, success
 from common.throttling.scoped import WorkspaceThrottle
 from core.datadb import DEMO_SCHEMA
-from workspaces import service, usage
+from workspaces import quota, service, usage
 from workspaces.errors import DemoWorkspaceReadOnly
-from workspaces.models import Workspace
+from workspaces.models import ImportJob, Workspace
 from workspaces.schemas import (
+    BytesLimit,
+    CountLimit,
+    LimitsOut,
     WorkspaceIn,
     WorkspaceOut,
     WorkspaceRename,
@@ -42,6 +45,8 @@ def list_workspaces(request: HttpRequest) -> dict:
     used. `meta.max_workspaces` is the cap."""
     owned = service.list_owned(_user(request))
     stats = usage.schema_usage([DEMO_SCHEMA, *(w.schema_name for w in owned)])
+    for w in owned:
+        quota.remember(w.pk, stats[w.schema_name].bytes)
     items = [demo_dict(stats[DEMO_SCHEMA])] + [
         workspace_dict(w, stats[w.schema_name], settings.WORKSPACE_MAX_BYTES)
         for w in owned
@@ -80,6 +85,43 @@ def rename_demo_workspace(request: HttpRequest, payload: WorkspaceRename) -> dic
 def delete_demo_workspace(request: HttpRequest) -> dict:
     """Always refused: the shared demo workspace cannot be deleted."""
     raise DemoWorkspaceReadOnly()
+
+
+@router.get(
+    "/limits",
+    response={200: SuccessEnvelope[LimitsOut], **errors(401, 429)},
+    auth=django_auth,
+)
+def get_workspace_limits(request: HttpRequest) -> dict:
+    """What the caller may still do with workspaces: how many workspaces, how many
+    bytes (per workspace and together), the running imports against their cap, and
+    the per-table and per-request caps. Read only."""
+    user = _user(request)
+    return success(
+        LimitsOut(
+            workspaces=CountLimit(
+                used=Workspace.objects.filter(owner=user).count(),
+                allowed=settings.MAX_WORKSPACES_PER_USER,
+            ),
+            bytes=BytesLimit(
+                used=quota.user_bytes(user),
+                allowed=settings.USER_MAX_BYTES,
+                per_workspace=settings.WORKSPACE_MAX_BYTES,
+            ),
+            imports=CountLimit(
+                used=ImportJob.objects.filter(
+                    workspace__owner=user, status__in=ImportJob.ACTIVE
+                ).count(),
+                allowed=settings.IMPORT_MAX_CONCURRENT,
+            ),
+            max_tables=settings.WORKSPACE_MAX_TABLES,
+            max_columns=settings.IMPORT_MAX_COLUMNS,
+            max_relations=settings.WORKSPACE_MAX_RELATIONS,
+            max_rows_per_edit=settings.WORKSPACE_MAX_ROWS_PER_EDIT,
+            max_import_file_bytes=settings.IMPORT_MAX_FILE_BYTES,
+            max_import_rows=settings.IMPORT_MAX_ROWS,
+        ).model_dump(mode="json")
+    )
 
 
 @router.get(

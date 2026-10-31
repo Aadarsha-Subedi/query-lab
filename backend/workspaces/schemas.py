@@ -59,3 +59,28 @@ def demo_dict(stats: usage.Usage) -> dict:
         bytes_allowed=None,
         created_at=None,
     ).model_dump(mode="json")
+
+
+class CountLimit(Schema):
+    used: int
+    allowed: int
+
+
+class BytesLimit(Schema):
+    # All of the user's workspaces together, then the cap for any one of them.
+    used: int
+    allowed: int
+    per_workspace: int
+
+
+class LimitsOut(Schema):
+    workspaces: CountLimit
+    bytes: BytesLimit
+    # Imports queued or running against the number allowed at once.
+    imports: CountLimit
+    max_tables: int
+    max_columns: int
+    max_relations: int
+    max_rows_per_edit: int
+    max_import_file_bytes: int
+    max_import_rows: int

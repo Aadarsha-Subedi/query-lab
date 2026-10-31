@@ -45,6 +45,12 @@ def cached_bytes(workspace: Workspace) -> int:
     return size
 
 
+def remember(workspace_id: int, size: int) -> None:
+    """Keep a size that was just measured for the listing, for the short cache."""
+    if settings.QUOTA_CACHE_SECONDS > 0:
+        get_redis().set(_key(workspace_id), size, ex=settings.QUOTA_CACHE_SECONDS)
+
+
 def forget(workspace_id: int) -> None:
     get_redis().delete(_key(workspace_id))
 

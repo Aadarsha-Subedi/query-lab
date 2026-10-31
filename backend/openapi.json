@@ -102,6 +102,29 @@
         "title": "AskOut",
         "type": "object"
       },
+      "BytesLimit": {
+        "properties": {
+          "allowed": {
+            "title": "Allowed",
+            "type": "integer"
+          },
+          "per_workspace": {
+            "title": "Per Workspace",
+            "type": "integer"
+          },
+          "used": {
+            "title": "Used",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "used",
+          "allowed",
+          "per_workspace"
+        ],
+        "title": "BytesLimit",
+        "type": "object"
+      },
       "ColumnIn": {
         "properties": {
           "default": {
@@ -225,6 +248,24 @@
           }
         },
         "title": "ColumnPatch",
+        "type": "object"
+      },
+      "CountLimit": {
+        "properties": {
+          "allowed": {
+            "title": "Allowed",
+            "type": "integer"
+          },
+          "used": {
+            "title": "Used",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "used",
+          "allowed"
+        ],
+        "title": "CountLimit",
         "type": "object"
       },
       "CountLimitOut": {
@@ -599,37 +640,50 @@
       },
       "LimitsOut": {
         "properties": {
-          "default_key": {
-            "$ref": "#/components/schemas/DefaultKeyLimitOut"
+          "bytes": {
+            "$ref": "#/components/schemas/BytesLimit"
           },
-          "has_own_key": {
-            "title": "Has Own Key",
-            "type": "boolean"
+          "imports": {
+            "$ref": "#/components/schemas/CountLimit"
           },
-          "streams": {
-            "$ref": "#/components/schemas/OpenStreamsOut"
+          "max_columns": {
+            "title": "Max Columns",
+            "type": "integer"
           },
-          "unfinished_runs": {
-            "$ref": "#/components/schemas/CountLimitOut"
+          "max_import_file_bytes": {
+            "title": "Max Import File Bytes",
+            "type": "integer"
           },
-          "workspace_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspace Id"
+          "max_import_rows": {
+            "title": "Max Import Rows",
+            "type": "integer"
+          },
+          "max_relations": {
+            "title": "Max Relations",
+            "type": "integer"
+          },
+          "max_rows_per_edit": {
+            "title": "Max Rows Per Edit",
+            "type": "integer"
+          },
+          "max_tables": {
+            "title": "Max Tables",
+            "type": "integer"
+          },
+          "workspaces": {
+            "$ref": "#/components/schemas/CountLimit"
           }
         },
         "required": [
-          "workspace_id",
-          "default_key",
-          "has_own_key",
-          "unfinished_runs",
-          "streams"
+          "workspaces",
+          "bytes",
+          "imports",
+          "max_tables",
+          "max_columns",
+          "max_relations",
+          "max_rows_per_edit",
+          "max_import_file_bytes",
+          "max_import_rows"
         ],
         "title": "LimitsOut",
         "type": "object"
@@ -4789,6 +4843,54 @@
           }
         ],
         "summary": "Rename Demo Workspace",
+        "tags": [
+          "workspaces"
+        ]
+      }
+    },
+    "/api/workspaces/limits": {
+      "get": {
+        "description": "What the caller may still do with workspaces: how many workspaces, how many\nbytes (per workspace and together), the running imports against their cap, and\nthe per-table and per-request caps. Read only.",
+        "operationId": "get_workspace_limits",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_LimitsOut_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          }
+        ],
+        "summary": "Get Workspace Limits",
         "tags": [
           "workspaces"
         ]
