@@ -6,6 +6,7 @@ signed-in visitor on a public route is not counted as anonymous traffic.
 
 - AnonThrottle: signed-out callers, keyed by client IP.
 - UserThrottle: signed-in callers, keyed by user id.
+- AgentThrottle: the same, for starting agent runs.
 - AskThrottle:  the stricter per-route limit for endpoints that call the LLM,
                 per user when signed in, per IP otherwise.
 """
@@ -65,3 +66,8 @@ class AskThrottle(SettingsRateThrottle):
     def get_cache_key(self, request: HttpRequest) -> str | None:
         ident = request.user.pk if _is_signed_in(request) else self.get_ident(request)
         return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class AgentThrottle(AskThrottle):
+    scope = "agent"
+    rate_setting = "THROTTLE_AGENT_RATE"

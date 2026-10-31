@@ -52,7 +52,8 @@ def test_success_shape(client: Client, user: User, llm: FakeProvider) -> None:
     assert data["rows"][0][0] == "delivered"
     assert data["row_count"] == len(data["rows"])
     assert data["truncated"] is False
-    assert 0 <= data["confidence"] <= 1
+    assert data["confidence"] is None  # hidden until CONFIDENCE_SHOW_SCORE
+    assert data["check"] == "checked"
     assert data["model"] == "fake-model"
     assert data["sql"].upper().startswith("SELECT")
     assert set(data) == {
@@ -63,6 +64,7 @@ def test_success_shape(client: Client, user: User, llm: FakeProvider) -> None:
         "row_count",
         "truncated",
         "confidence",
+        "check",
         "rationale",
         "model",
         "latency_ms",

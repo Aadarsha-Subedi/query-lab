@@ -12,7 +12,8 @@ from dataclasses import dataclass, field
 from django.conf import settings
 
 from accounts.models import User
-from ask import confidence, guard, keys, prompt, runner, schema
+from agent import confidence
+from ask import guard, keys, prompt, runner, schema
 from ask.errors import (
     GuardRejected,
     LLMFailed,
@@ -45,6 +46,7 @@ class AskResult:
     row_count: int
     truncated: bool
     confidence: float
+    check: str
     rationale: str
     model: str
     latency_ms: int
@@ -141,6 +143,7 @@ def _answer(user: User, question: str, trace: Trace) -> AskResult:
         row_count=done.result.row_count,
         truncated=done.result.truncated,
         confidence=done.confidence,
+        check=done.check,
         rationale=done.rationale,
         model=resolved.provider.model,
         latency_ms=trace.latency_ms,
@@ -154,6 +157,7 @@ class Generated:
     sql: str
     result: runner.QueryResult
     confidence: float
+    check: str
     rationale: str
 
 
@@ -202,9 +206,8 @@ def generate_and_run(
         break
 
     trace.confidence = confidence.score(
-        self_confidence=parsed.self_confidence,
         guard=checked.report,
-        attempts=trace.attempts,
+        revisions=trace.attempts - 1,
         row_count=result.row_count,
         truncated=result.truncated,
     )
@@ -213,5 +216,10 @@ def generate_and_run(
         sql=checked.sql,
         result=result,
         confidence=trace.confidence,
+        check=confidence.label(
+            guard=checked.report,
+            row_count=result.row_count,
+            truncated=result.truncated,
+        ),
         rationale=parsed.rationale,
     )

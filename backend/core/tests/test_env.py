@@ -10,7 +10,7 @@ from pathlib import Path
 from django.conf import settings
 
 BACKEND = Path(settings.BASE_DIR)
-SOURCE_DIRS = ["config", "core", "common", "accounts", "ask", "evals"]
+SOURCE_DIRS = ["config", "core", "common", "accounts", "ask", "agent", "evals"]
 READS = re.compile(
     r"""env\.(?:str|bool|int|float|list|path|db_url|cache_url)\(\s*["']([A-Z0-9_]+)["']"""
     r"""|os\.environ\[\s*["']([A-Z0-9_]+)["']\s*\]"""

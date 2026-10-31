@@ -30,17 +30,17 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 3.1 Settings (strict, no fallbacks)
 
-- [ ] **3.1.1** Budgets: `AGENT_MAX_STEPS`, `AGENT_MAX_LLM_CALLS`, `AGENT_MAX_TOKENS` (input plus output per run), `AGENT_MAX_REVISIONS` (times it may propose new SQL after a reflect), `AGENT_RUN_TIMEOUT_SECONDS`.
-- [ ] **3.1.2** State and pause: `AGENT_STATE_TTL_SECONDS` (Redis), `AGENT_APPROVAL_TTL_SECONDS` (how long a paused run waits before it expires).
-- [ ] **3.1.3** Output size: `AGENT_RESULT_PREVIEW_ROWS` (rows shown to the model), `AGENT_STEP_OUTPUT_MAX_CHARS` (trim stored tool output), `AGENT_SAMPLE_VALUES_LIMIT`.
-- [ ] **3.1.4** Limits: `AGENT_MAX_CONCURRENT_RUNS_PER_USER`, `AGENT_MAX_OPEN_STREAMS`, `AGENT_SSE_HEARTBEAT_SECONDS`, `AGENT_SSE_READ_BLOCK_MS`, and the throttle rate for run creation (next to the existing `AskThrottle` rate).
-- [ ] **3.1.5** Confidence weights for the new score (3.9), with the old self-rating weight removed from `.env.example`.
-- [ ] **3.1.6** Read each with `django-environ` and no default; add to `.env.example` and the test env; the sync test passes.
+- [x] **3.1.1** Budgets: `AGENT_MAX_STEPS`, `AGENT_MAX_LLM_CALLS`, `AGENT_MAX_TOKENS` (input plus output per run), `AGENT_MAX_REVISIONS` (times it may propose new SQL after a reflect), `AGENT_RUN_TIMEOUT_SECONDS`.
+- [x] **3.1.2** State and pause: `AGENT_STATE_TTL_SECONDS` (Redis), `AGENT_APPROVAL_TTL_SECONDS` (how long a paused run waits before it expires).
+- [x] **3.1.3** Output size: `AGENT_RESULT_PREVIEW_ROWS` (rows shown to the model), `AGENT_STEP_OUTPUT_MAX_CHARS` (trim stored tool output), `AGENT_SAMPLE_VALUES_LIMIT`.
+- [x] **3.1.4** Limits: `AGENT_MAX_CONCURRENT_RUNS_PER_USER`, `AGENT_MAX_OPEN_STREAMS`, `AGENT_SSE_HEARTBEAT_SECONDS`, `AGENT_SSE_READ_BLOCK_MS`, and the throttle rate for run creation (next to the existing `AskThrottle` rate).
+- [x] **3.1.5** Confidence weights for the new score (3.9), with the old self-rating weight removed from `.env.example`.
+- [x] **3.1.6** Read each with `django-environ` and no default; add to `.env.example` and the test env; the sync test passes.
 - [ ] **3.1.7** Decide how the default-key daily limit counts: **one run = one spend**, however many LLM calls it makes, bounded by `AGENT_MAX_LLM_CALLS`. Note in `DECISION.md` (3.12).
 
 ## 3.2 Models and migration
 
-- [ ] **3.2.1** New Django app `agent` (layout: `models.py`, `tools/`, `loop.py`, `state.py`, `events.py`, `tasks.py`, `confidence.py`, `api.py`, `tests/`). Register in `INSTALLED_APPS`.
+- [x] **3.2.1** New Django app `agent` (layout: `models.py`, `tools/`, `loop.py`, `state.py`, `events.py`, `tasks.py`, `confidence.py`, `api.py`, `tests/`). Register in `INSTALLED_APPS`.
 - [ ] **3.2.2** `AgentRun`: user, question, status (`running`, `awaiting_approval`, `succeeded`, `failed`, `cancelled`, `expired`), error code, provider, model, key source, prompt version, plan text, final SQL, row count, confidence (nullable), steps/LLM calls/tokens/latency totals, revisions, finished at.
 - [ ] **3.2.3** `AgentStep`: run, index, kind (`plan`, `tool`, `approval`, `execute`, `reflect`, `final`), tool name, input JSON, output summary (trimmed), status, error code, tokens, latency, `actor` (`agent` or `user`, for edits and approvals). Unique `(run, index)`.
 - [ ] **3.2.4** Migration on `default` only. Result rows are never stored; a step keeps columns, row count and a preview capped by `AGENT_STEP_OUTPUT_MAX_CHARS`. Decide and note: the preview is stored, so replay can show what the user saw without re-running SQL.
@@ -112,9 +112,9 @@ All under `/api/agent`, session auth (`django_auth`), the usual envelope, and a 
 
 Step 2 showed the old score at about 1.0 for every Olist answer (rank correlation 0.09 on Spider). The model's own rating carried almost all of the weight and never moved.
 
-- [ ] **3.9.1** Remove the self-rating from the score. Candidate features that do vary: repair/revise count, whether the user edited the SQL, guard changes, whether the agent checked `sample_values` for the filters it used, result shape (empty, one row, truncated), and whether the reflect verdict was `ok` on the first pass.
+- [x] **3.9.1** Remove the self-rating from the score. Candidate features that do vary: repair/revise count, whether the user edited the SQL, guard changes, whether the agent checked `sample_values` for the filters it used, result shape (empty, one row, truncated), and whether the reflect verdict was `ok` on the first pass.
 - [ ] **3.9.2** Offline analysis first: run the Olist golden set and the Spider held-out set through the agent, then compute each candidate feature against correct/wrong with a small script in `evals` (no new dependency; Spearman in plain Python). **(You)** read the result table.
-- [ ] **3.9.3** Keep only features that separate right from wrong. Write the new `agent/confidence.py` with weights from `.env`.
+- [x] **3.9.3** Keep only features that separate right from wrong. Write the new `agent/confidence.py` with weights from `.env`.
 - [ ] **3.9.4** Acceptance rule, decided now so the result cannot be argued afterwards: if accuracy in the top bucket is not higher than the bottom by `CONFIDENCE_MIN_SEPARATION` (an `.env` value) on the Olist run, the API returns `confidence: null` and the UI shows a plain "checked" or "needs a look" label from reflect and guard instead of a number.
 - [ ] **3.9.5** Tests for the score function; update the `/api/ask` path to use the same function, or leave it and say so in `DECISION.md`.
 

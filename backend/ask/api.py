@@ -6,6 +6,7 @@ from ninja import Router, Schema
 from ninja.security import django_auth
 
 from accounts.models import User
+from agent import confidence
 from ask import keys, service
 from ask.models import UserLLMKey
 from common.response.domain import SuccessEnvelope, success
@@ -71,8 +72,11 @@ class AskOut(Schema):
     row_count: int
     # True when the result was cut at the row or size cap.
     truncated: bool
-    # 0 to 1. A heuristic, not a probability; see ask/confidence.py.
-    confidence: float
+    # 0 to 1, a heuristic and not a probability (agent/confidence.py). Null until
+    # the measured separation earns showing it (CONFIDENCE_SHOW_SCORE).
+    confidence: float | None
+    # "checked" or "needs_look": plain words that are always present.
+    check: str
     rationale: str
     model: str
     latency_ms: int
@@ -89,4 +93,6 @@ def ask(request: HttpRequest, payload: AskIn) -> dict:
     table and a confidence score. The SQL is checked before it runs and runs on
     the read-only connection only."""
     result = service.answer(cast(User, request.user), payload.question)
-    return success(asdict(result))
+    data = asdict(result)
+    data["confidence"] = confidence.visible(result.confidence)
+    return success(data)
