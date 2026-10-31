@@ -319,3 +319,49 @@ def test_an_unrounded_number_matches_the_rounded_gold_number() -> None:
 def test_spider_compares_as_a_set_and_olist_does_not() -> None:
     assert spider.SpiderTarget.compare_as_set is True
     assert olist.OlistTarget.compare_as_set is False
+
+
+def test_retry_failed_asks_llm_failed_questions_again(
+    spider_dir: Path, monkeypatch
+) -> None:
+    monkeypatch.setattr(
+        spider, "load_split", lambda: {"shop": "tune", "zoo": "held-out"}
+    )
+    target = spider.SpiderTarget()
+    by_question = {q.question: q for q in target.questions("all")}
+    good = ScriptedProvider(lambda q: reply(by_question[q].gold_sql))
+
+    class Down(ScriptedProvider):
+        def generate(self, request):
+            raise LLMUnavailableError()
+
+    with override_settings(EVAL_LLM_RETRIES=0):
+        run = runner.run_eval(
+            target,
+            split="all",
+            provider_name="gemini",
+            provider=Down(lambda q: ""),
+            questions=target.questions("all"),
+            sleep=lambda s: None,
+        )
+    assert run.results.filter(outcome="llm_failed").count() == 2
+    monkeypatch.setattr(runner, "build_provider", lambda model: ("gemini", good))
+    call_command(
+        "run_eval",
+        target="spider",
+        model="m",
+        split="all",
+        yes=True,
+        resume=run.pk,
+        retry_failed=True,
+    )
+    run.refresh_from_db()
+    assert (run.question_count, run.correct_count) == (2, 2)
+    assert good.calls == 2
+
+
+def test_retry_failed_needs_resume() -> None:
+    with pytest.raises(CommandError, match="--resume"):
+        call_command(
+            "run_eval", target="olist", model="gemini-3.5-flash", retry_failed=True
+        )

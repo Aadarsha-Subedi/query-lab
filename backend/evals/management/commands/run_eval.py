@@ -24,6 +24,11 @@ class Command(BaseCommand):
         parser.add_argument("--limit", type=int, help="Ask only a random sample.")
         parser.add_argument("--seed", type=int, default=0, help="Seed for --limit.")
         parser.add_argument("--resume", type=int, help="Continue this run id.")
+        parser.add_argument(
+            "--retry-failed",
+            action="store_true",
+            help="With --resume: also ask again the questions that ended in llm_failed.",
+        )
         parser.add_argument("--yes", action="store_true", help="Skip the cost guard.")
         parser.add_argument(
             "--include-unreviewed",
@@ -69,6 +74,11 @@ class Command(BaseCommand):
                 provider.model,
             ):
                 raise CommandError("That run used a different target, split or model.")
+            if options["retry_failed"]:
+                removed, _ = run.results.filter(outcome="llm_failed").delete()
+                self.stdout.write(f"Dropped {removed} llm_failed results to ask again.")
+        elif options["retry_failed"]:
+            raise CommandError("--retry-failed needs --resume.")
 
         calls = len(questions)
         self.stdout.write(
