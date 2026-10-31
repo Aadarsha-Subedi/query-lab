@@ -300,6 +300,11 @@ AGENT_SSE_MAX_SECONDS = env.int("AGENT_SSE_MAX_SECONDS")
 AGENT_EVENTS_MAXLEN = env.int("AGENT_EVENTS_MAXLEN")
 THROTTLE_AGENT_RATE = env.str("THROTTLE_AGENT_RATE")
 
+# ── Analyst API (step 4) ──────────────────────────────────────────────────
+
+SCHEMA_API_INCLUDE_SAMPLES = env.bool("SCHEMA_API_INCLUDE_SAMPLES")
+THROTTLE_RESULT_RATE = env.str("THROTTLE_RESULT_RATE")
+
 # ── Evals (step 2) ────────────────────────────────────────────────────────
 
 EVAL_ROW_COMPARE_PRECISION = env.int("EVAL_ROW_COMPARE_PRECISION")
