@@ -50,14 +50,14 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 One file per tool in `agent/tools/`; each has a Pydantic input model, a Pydantic output model, and a pure `run(context, input)`.
 
-- [ ] **3.3.1** Registry and base: name, description for the prompt, input/output schemas, `needs_approval` flag. Unknown tool names and invalid inputs are a typed `ToolError` fed back to the model, counted against the budget.
-- [ ] **3.3.2** `list_tables`: names, row estimates and table comments from the cached step 1 schema (`schema.get_schema`).
-- [ ] **3.3.3** `describe_table(table)`: columns, types, keys, comments. Unknown table gives the model the list of valid names.
-- [ ] **3.3.4** `sample_values(table, column)`: from `pg_stats`, as in step 1; capped by `AGENT_SAMPLE_VALUES_LIMIT`; demo schema only.
-- [ ] **3.3.5** `propose_sql(sql, rationale)`: guard-checks the SQL (`guard.check`), stores the checked SQL, and ends the act phase with a pause (3.6). It does **not** execute anything.
-- [ ] **3.3.6** `finish(answer)` and `give_up(reason)`: the only ways to end a run on the agent's side; `give_up` covers unanswerable questions (replaces step 1's `answerable: false`).
-- [ ] **3.3.7** Execution is not a tool the model can call. After approval the loop itself runs `runner.run` on the reader alias (the replica in production), so the model can never skip the checkpoint.
-- [ ] **3.3.8** Tests per tool, and one that proves no tool can reach `runner.run` except through the approved path.
+- [x] **3.3.1** Registry and base: name, description for the prompt, input/output schemas, `needs_approval` flag. Unknown tool names and invalid inputs are a typed `ToolError` fed back to the model, counted against the budget.
+- [x] **3.3.2** `list_tables`: names, row estimates and table comments from the cached step 1 schema (`schema.get_schema`).
+- [x] **3.3.3** `describe_table(table)`: columns, types, keys, comments. Unknown table gives the model the list of valid names.
+- [x] **3.3.4** `sample_values(table, column)`: from `pg_stats`, as in step 1; capped by `AGENT_SAMPLE_VALUES_LIMIT`; demo schema only.
+- [x] **3.3.5** `propose_sql(sql, rationale)`: guard-checks the SQL (`guard.check`), stores the checked SQL, and ends the act phase with a pause (3.6). It does **not** execute anything.
+- [x] **3.3.6** `finish(answer)` and `give_up(reason)`: the only ways to end a run on the agent's side; `give_up` covers unanswerable questions (replaces step 1's `answerable: false`).
+- [x] **3.3.7** Execution is not a tool the model can call. After approval the loop itself runs `runner.run` on the reader alias (the replica in production), so the model can never skip the checkpoint.
+- [x] **3.3.8** Tests per tool, and one that proves no tool can reach `runner.run` except through the approved path.
 
 ## 3.4 Prompts and parsing
 

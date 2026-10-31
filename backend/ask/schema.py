@@ -22,7 +22,8 @@ SELECT c.relname,
        a.attname,
        format_type(a.atttypid, a.atttypmod),
        a.attnotnull,
-       col_description(c.oid, a.attnum)
+       col_description(c.oid, a.attnum),
+       c.reltuples::bigint
 FROM pg_attribute a
 JOIN pg_class c ON c.oid = a.attrelid
 JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -87,6 +88,8 @@ class Table:
     columns: tuple[Column, ...]
     primary_key: tuple[str, ...] = ()
     foreign_keys: tuple[ForeignKey, ...] = ()
+    # Postgres's own estimate (pg_class.reltuples); None until the table is analyzed.
+    row_estimate: int | None = None
 
     def column(self, name: str) -> Column | None:
         return next((c for c in self.columns if c.name == name), None)
@@ -122,9 +125,19 @@ def read_schema(
                 )
 
     comments: dict[str, str | None] = {}
+    estimates: dict[str, int | None] = {}
     columns: dict[str, list[Column]] = {}
-    for table, table_comment, name, type_, not_null, comment in column_rows:
+    for (
+        table,
+        table_comment,
+        name,
+        type_,
+        not_null,
+        comment,
+        estimate,
+    ) in column_rows:
         comments[table] = table_comment
+        estimates[table] = estimate if estimate >= 0 else None
         columns.setdefault(table, []).append(
             Column(
                 name=name,
@@ -158,13 +171,14 @@ def read_schema(
                 columns=tuple(cols),
                 primary_key=primary.get(table, ()),
                 foreign_keys=tuple(foreign.get(table, ())),
+                row_estimate=estimates[table],
             )
             for table, cols in columns.items()
         ),
     )
 
 
-def _comment(text: str | None) -> str:
+def clean_comment(text: str | None) -> str:
     return " ".join(text.split()) if text else ""
 
 
@@ -176,11 +190,11 @@ def render(schema: Schema, *, qualify: bool = True) -> str:
     for table in schema.tables:
         lines = []
         if table.comment:
-            lines.append(f"-- {_comment(table.comment)}")
+            lines.append(f"-- {clean_comment(table.comment)}")
         lines.append(f"CREATE TABLE {prefix}{table.name} (")
         parts = []
         for column in table.columns:
-            note = _comment(column.comment)
+            note = clean_comment(column.comment)
             if column.samples:
                 values = ", ".join(repr(v) for v in column.samples)
                 note = f"{note} Values: {values}.".strip()
