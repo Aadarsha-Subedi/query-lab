@@ -4,7 +4,7 @@ statement goes to the DDL audit log and the schema version moves, so the agent
 and the schema panel see the change on their next read. When it fails, nothing
 is logged and nothing changed."""
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
@@ -26,6 +26,7 @@ class Changes:
     connection: psycopg.Connection
     schema_name: str
     statements: list[str] = field(default_factory=list)
+    _after_commit: list[Callable[[], object]] = field(default_factory=list)
 
     @property
     def schema(self) -> sql.Identifier:
@@ -44,6 +45,10 @@ class Changes:
     ) -> psycopg.Cursor:
         """A read inside the same transaction (not logged)."""
         return self.connection.execute(statement, params)
+
+    def after_commit(self, action: Callable[[], object]) -> None:
+        """Run `action` once the transaction has committed (never when it rolled back)."""
+        self._after_commit.append(action)
 
     def table(self, name: str) -> sql.Composed:
         return sql.SQL("{}.{}").format(self.schema, sql.Identifier(name))
@@ -74,6 +79,8 @@ def changes(
         ddl_log.record(workspace.pk, actor, statement)
     if log.statements:
         schema_version.bump(workspace.pk)
+    for action in log._after_commit:
+        action()
 
 
 def import_timeout_ms() -> int:

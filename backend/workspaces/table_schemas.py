@@ -96,3 +96,50 @@ class SqlOut(Schema):
     statements: list[SqlStatementOut]
     counts: SqlCountsOut
     elapsed_ms: int
+
+
+class RowsQuery(Schema):
+    limit: int | None = None
+    offset: int = 0
+    # A column of the table (including `_row_id`); default `_row_id`.
+    order_by: str | None = None
+    descending: bool = False
+    # Repeat for several, all must match: `age:eq:36`, `name:contains:ad`.
+    filter: list[str] = []
+
+
+class RowsPageColumn(Schema):
+    name: str
+    type: str
+
+
+class RowsPageOut(Schema):
+    columns: list[RowsPageColumn]
+    # Same order as `columns`; the first is the hidden `_row_id`.
+    rows: list[list]
+    # Rows matching the filters, before paging.
+    total: int
+
+
+class RowsIn(Schema):
+    # Each row is {column: value}; a missing column takes its default.
+    rows: list[dict]
+
+
+class RowsInsertedOut(Schema):
+    inserted: int
+    ids: list[int]
+
+
+class RowPatch(Schema):
+    values: dict
+
+
+class RowOut(Schema):
+    row: dict
+
+
+class RowsDeletedOut(Schema):
+    deleted: int
+    # Rows of other tables removed by ON DELETE CASCADE relations.
+    cascaded: int

@@ -77,6 +77,9 @@ Every error answers in the envelope `{success: false, status_code, message, code
 | `sql_busy` | 429 | Another SQL request of the user is still running. `retry_after_seconds` is null. | Wait for it, then run again. |
 | `workspace_full` | 409 | The write would take the workspace over its size cap (and it was rolled back). | Offer to delete data or tables. |
 | `user_storage_full` | 409 | The write would take the user's workspaces over their total size cap. | Offer to delete data or a workspace. |
+| `row_not_found` | 404 | No row with this `_row_id` in the table (also another user's row: the workspace itself is a 404). | Refresh the rows. |
+| `row_invalid` | 422 | A value does not fit its column. `errors[0].field` is `rows[i].column`. Nothing was written. | Mark the cell. |
+| `too_many_rows` | 422 | More rows in one request than the per-request cap. | Send fewer rows. |
 | `invalid_name` | 422 | A workspace, table or column name or a column type cannot be used. | Show the message next to the field. |
 | `workspace_provisioning_failed` | 503 | The schema and roles could not be created; everything was cleaned up. | Retry later. |
 

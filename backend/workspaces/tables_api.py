@@ -1,13 +1,14 @@
 from typing import cast
 
+from django.conf import settings
 from django.http import HttpRequest
-from ninja import Router
+from ninja import Query, Router
 from ninja.security import django_auth
 
 from accounts.models import User
 from common.response.domain import SuccessEnvelope, errors, success
 from common.throttling.scoped import WorkspaceSqlThrottle
-from workspaces import relations, sql, tables
+from workspaces import relations, rows, sql, tables
 from workspaces.access import writable_workspace
 from workspaces.table_schemas import (
     ColumnIn,
@@ -15,6 +16,13 @@ from workspaces.table_schemas import (
     PrimaryKeyIn,
     RelationIn,
     RelationOut,
+    RowOut,
+    RowPatch,
+    RowsDeletedOut,
+    RowsIn,
+    RowsInsertedOut,
+    RowsPageOut,
+    RowsQuery,
     SqlIn,
     SqlOut,
     TableIn,
@@ -255,3 +263,90 @@ def run_workspace_sql(request: HttpRequest, workspace_id: int, payload: SqlIn) -
     next read."""
     workspace = writable_workspace(_user(request), workspace_id)
     return success(sql.run_script(workspace, _user(request), payload.sql))
+
+
+@router.get(
+    "/{workspace_id}/tables/{table}/rows",
+    response={200: SuccessEnvelope[RowsPageOut], **TABLE_ERRORS},
+    auth=django_auth,
+)
+def list_workspace_rows(
+    request: HttpRequest, workspace_id: int, table: str, query: Query[RowsQuery]
+) -> dict:
+    """A page of rows, ordered by `order_by` (default `_row_id`), filtered by
+    `filter=column:eq:value` / `column:contains:value`. Read with the workspace's
+    read-only role, so a row written a moment ago may take a moment to show when
+    reads go to a replica."""
+    workspace = writable_workspace(_user(request), workspace_id)
+    limit = min(
+        query.limit or settings.PAGINATION_DEFAULT_LIMIT, settings.PAGINATION_MAX_LIMIT
+    )
+    page = rows.list_rows(
+        workspace,
+        table,
+        limit=limit,
+        offset=max(query.offset, 0),
+        order_by=query.order_by,
+        descending=query.descending,
+        filters=query.filter,
+    )
+    return success(
+        page, meta={"count": page["total"], "limit": limit, "offset": query.offset}
+    )
+
+
+@router.post(
+    "/{workspace_id}/tables/{table}/rows",
+    response={200: SuccessEnvelope[RowsInsertedOut], **TABLE_ERRORS},
+    auth=django_auth,
+)
+def insert_workspace_rows(
+    request: HttpRequest, workspace_id: int, table: str, payload: RowsIn
+) -> dict:
+    """Insert up to `WORKSPACE_MAX_ROWS_PER_EDIT` rows. Values are converted to the
+    column's type; a bad one is a 422 `row_invalid` naming `rows[i].column`. All or
+    nothing. A broken key or relation is a 409 `constraint_violation`; a full
+    workspace is `workspace_full`."""
+    workspace = writable_workspace(_user(request), workspace_id)
+    return success(rows.insert_rows(workspace, _user(request), table, payload.rows))
+
+
+@router.patch(
+    "/{workspace_id}/tables/{table}/rows/{row_id}",
+    response={200: SuccessEnvelope[RowOut], **TABLE_ERRORS},
+    auth=django_auth,
+)
+def update_workspace_row(
+    request: HttpRequest, workspace_id: int, table: str, row_id: int, payload: RowPatch
+) -> dict:
+    """Change some columns of one row by its `_row_id`."""
+    workspace = writable_workspace(_user(request), workspace_id)
+    return success(
+        rows.update_row(workspace, _user(request), table, row_id, payload.values)
+    )
+
+
+@router.delete(
+    "/{workspace_id}/tables/{table}/rows/{row_id}",
+    response={200: SuccessEnvelope[RowsDeletedOut], **TABLE_ERRORS},
+    auth=django_auth,
+)
+def delete_workspace_row(
+    request: HttpRequest, workspace_id: int, table: str, row_id: int
+) -> dict:
+    workspace = writable_workspace(_user(request), workspace_id)
+    return success(rows.delete_row(workspace, _user(request), table, row_id))
+
+
+@router.delete(
+    "/{workspace_id}/tables/{table}/rows",
+    response={200: SuccessEnvelope[RowsDeletedOut], **TABLE_ERRORS},
+    auth=django_auth,
+)
+def delete_workspace_rows(
+    request: HttpRequest, workspace_id: int, table: str, ids: Query[list[int]]
+) -> dict:
+    """Delete several rows by `ids=1&ids=2` (capped). There is no way to send a
+    WHERE clause."""
+    workspace = writable_workspace(_user(request), workspace_id)
+    return success(rows.delete_rows(workspace, _user(request), table, ids))

@@ -161,3 +161,25 @@ class SqlFailed(UnprocessableEntityException):
 class SqlBusy(ThrottledException):
     message = "A SQL request of yours is still running. Wait for it to finish."
     error_code = "sql_busy"
+
+
+# ── rows (5.6) ────────────────────────────────────────────────────────────
+
+
+class RowNotFound(NotFoundException):
+    message = "Row not found."
+    error_code = "row_not_found"
+
+
+class RowInvalid(UnprocessableEntityException):
+    """A value cannot be stored in its column. `errors[0].field` is
+    `rows[<index>].<column>` and the message says what was expected. All or
+    nothing: no row of the request was written."""
+
+    message = "A value does not fit its column."
+    error_code = "row_invalid"
+
+
+class RowRequestTooBig(UnprocessableEntityException):
+    message = "Too many rows in one request."
+    error_code = "too_many_rows"
