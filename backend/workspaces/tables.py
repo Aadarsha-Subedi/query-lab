@@ -160,39 +160,51 @@ def create_table(workspace: Workspace, actor: User, spec: TableSpec) -> dict[str
             )
         )
     with changes(workspace, actor) as c:
-        existing = _read(c)
-        if existing.table(name) is not None:
-            raise TableNameTaken()
-        if len(existing.tables) >= settings.WORKSPACE_MAX_TABLES:
-            raise TableLimitReached()
-        definitions = [
-            sql.SQL("{key} bigint GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE").format(
-                key=sql.Identifier(naming.ROW_ID)
-            ),
-            *(_column_definition(column) for column in columns),
-        ]
-        c.run(
-            sql.SQL("CREATE TABLE {table} ({columns})").format(
-                table=c.table(name), columns=sql.SQL(", ").join(definitions)
-            )
-        )
-        c.run(
-            sql.SQL("GRANT SELECT ON {table} TO {ro}").format(
-                table=c.table(name),
-                ro=sql.Identifier(credentials.role_name(workspace.pk, "ro")),
-            )
-        )
-        if description:
-            _comment(c, "TABLE", c.table(name), description)
-        for column in columns:
-            if column.description:
-                _comment(
-                    c,
-                    "COLUMN",
-                    sql.SQL("{}.{}").format(c.table(name), sql.Identifier(column.name)),
-                    column.description,
-                )
+        create_table_in(c, workspace, name, columns, description)
         return table_dict(_existing_table(c, name))
+
+
+def create_table_in(
+    c: Changes,
+    workspace: Workspace,
+    name: str,
+    columns: list[ColumnSpec],
+    description: str,
+) -> None:
+    """Create a table inside a change already open (the API call, or an import
+    job). `name` and the column names are already slugs."""
+    existing = _read(c)
+    if existing.table(name) is not None:
+        raise TableNameTaken()
+    if len(existing.tables) >= settings.WORKSPACE_MAX_TABLES:
+        raise TableLimitReached()
+    definitions = [
+        sql.SQL("{key} bigint GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE").format(
+            key=sql.Identifier(naming.ROW_ID)
+        ),
+        *(_column_definition(column) for column in columns),
+    ]
+    c.run(
+        sql.SQL("CREATE TABLE {table} ({columns})").format(
+            table=c.table(name), columns=sql.SQL(", ").join(definitions)
+        )
+    )
+    c.run(
+        sql.SQL("GRANT SELECT ON {table} TO {ro}").format(
+            table=c.table(name),
+            ro=sql.Identifier(credentials.role_name(workspace.pk, "ro")),
+        )
+    )
+    if description:
+        _comment(c, "TABLE", c.table(name), description)
+    for column in columns:
+        if column.description:
+            _comment(
+                c,
+                "COLUMN",
+                sql.SQL("{}.{}").format(c.table(name), sql.Identifier(column.name)),
+                column.description,
+            )
 
 
 def update_table(

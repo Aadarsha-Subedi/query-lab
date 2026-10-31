@@ -80,6 +80,21 @@ Every error answers in the envelope `{success: false, status_code, message, code
 | `row_not_found` | 404 | No row with this `_row_id` in the table (also another user's row: the workspace itself is a 404). | Refresh the rows. |
 | `row_invalid` | 422 | A value does not fit its column. `errors[0].field` is `rows[i].column`. Nothing was written. | Mark the cell. |
 | `too_many_rows` | 422 | More rows in one request than the per-request cap. | Send fewer rows. |
+| `import_not_found` | 404 | No such import job in this workspace. | Go back to the workspace. |
+| `import_file_too_large` | 413 | The file is larger than the import limit (`IMPORT_MAX_FILE_BYTES`); refused from the `Content-Length` before the body is read, and again while it is copied. | Ask for a smaller file or fewer rows. |
+| `import_empty` | 422 | The file is empty, or has a header and no rows. | Pick another file. |
+| `import_not_text` | 422 | The file looks binary, not like CSV text. | Pick a CSV file. |
+| `import_encoding` | 422 | The file is not UTF-8 (UTF-16 and legacy code pages are refused). | Save it as UTF-8 and upload again. |
+| `import_too_many_columns` | 422 | More columns than `IMPORT_MAX_COLUMNS`. | Skip columns or split the file. |
+| `import_too_many_rows` | 422 | More rows than `IMPORT_MAX_ROWS` (on the job as `error_code`). | Split the file. |
+| `import_bad_row` | 422 | A row cannot be loaded; `errors[0].message` (on the job: `error_message`) names the row number and column. Nothing was kept. | Show the row; fix the file or set that column's type to text. |
+| `import_limit` | 429 | The user already has an import queued or running, or (on a job) the server stayed busy for `IMPORT_QUEUE_WAIT_SECONDS`. `retry_after_seconds` is null. | Wait for the first import. |
+| `import_not_cancellable` | 409 | Cancel on an import that already finished. | Show its final state. |
+| `import_disk_full` | 503 | The container disk has no room for the upload. | Retry later. |
+| `import_options_invalid` | 422 | The `options` JSON cannot be used (unknown column, key or relation column that is not imported, bad delimiter). | Show the message. |
+| `import_failed` | 500 | (On a job only.) The import hit an unexpected error; nothing was kept. | Offer to try again. |
+| `import_interrupted` | 500 | (On a job only.) The worker restarted while the job ran; nothing was kept. | Offer to upload again. |
+| `import_upload_lost` | 500 | (On a job only.) The container restarted before the job ran, so the spooled file is gone. | Upload again. |
 | `invalid_name` | 422 | A workspace, table or column name or a column type cannot be used. | Show the message next to the field. |
 | `workspace_provisioning_failed` | 503 | The schema and roles could not be created; everything was cleaned up. | Retry later. |
 

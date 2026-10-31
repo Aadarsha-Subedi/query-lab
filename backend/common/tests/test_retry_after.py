@@ -125,6 +125,7 @@ def test_limits_that_time_does_not_fix_say_null(client: Client, user: User) -> N
 
     assert RunLimitReached().retry_after is None
     assert StreamLimitReached().retry_after is None
-    from workspaces.errors import SqlBusy
+    from workspaces.errors import ImportBusy, SqlBusy
 
     assert SqlBusy().retry_after is None
+    assert ImportBusy().retry_after is None

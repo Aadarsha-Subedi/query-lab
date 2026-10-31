@@ -2665,6 +2665,264 @@
       ]
     },
     {
+      "name": "9. Workspace CSV import (signed in)",
+      "item": [
+        {
+          "name": "Preview a CSV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/imports/preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "imports",
+                "preview"
+              ]
+            },
+            "description": "Pick a CSV file. Returns the delimiter, whether the first row is a header, each column's name and guessed type, and the first rows. Nothing is kept.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "options",
+                  "type": "text",
+                  "value": "{}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401, 404, 409, 413, 422, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 404, 409, 413, 422, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Start an import",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/imports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "imports"
+              ]
+            },
+            "description": "Pick the same CSV file. Answers 202 with a job; follow it on *Watch import events* or poll *Get an import*. `options` may hold table_name, delimiter, has_header, columns [{index,name,type,skip,description}], description, header_descriptions, primary_key and relations. Sets {{importId}}.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "options",
+                  "type": "text",
+                  "value": "{\"header_descriptions\": true}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [202, 400, 401, 404, 409, 413, 422, 429, 503]', () => pm.expect(pm.response.code).to.be.oneOf([202, 400, 401, 404, 409, 413, 422, 429, 503]));",
+                  "if (pm.response.code === 200) pm.environment.set('importId', String(pm.response.json().data.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get an import",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/imports/{{importId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "imports",
+                "{{importId}}"
+              ]
+            },
+            "description": "Status, counters and, once failed, the error code and message (which names the row)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List imports",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/imports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "imports"
+              ]
+            },
+            "description": "The 20 most recent imports of the workspace."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Watch import events (SSE)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/imports/{{importId}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "imports",
+                "{{importId}}",
+                "events"
+              ]
+            },
+            "description": "Server-sent events: `progress`, then `succeeded` (table, rows, bytes), `failed` (error_code, message) or `cancelled`. Postman shows the stream when it ends."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel an import",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/imports/{{importId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}",
+                "imports",
+                "{{importId}}",
+                "cancel"
+              ]
+            },
+            "description": "A queued job is cancelled at once; a running one stops at the next batch and keeps nothing."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 429]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "7. Log out",
       "item": [
         {

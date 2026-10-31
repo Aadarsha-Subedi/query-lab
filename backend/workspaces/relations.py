@@ -76,68 +76,71 @@ def set_primary_key(
     workspace: Workspace, actor: User, table_name: str, columns: list[str]
 ) -> dict[str, Any]:
     with changes(workspace, actor) as c:
-        table = _existing_table(c, table_name)
-        names = _columns(table, columns)
-        null_row = first_bad_row(
-            c,
-            table_name,
-            names[0],
-            sql.SQL(" OR ").join(
-                sql.SQL("{} IS NULL").format(sql.Identifier(n)) for n in names
-            ),
+        apply_primary_key(c, table_name, columns)
+        return table_dict(_existing_table(c, table_name))
+
+
+def apply_primary_key(c: Changes, table_name: str, columns: list[str]) -> None:
+    """Inside a change already open (the API call above, or an import job)."""
+    table = _existing_table(c, table_name)
+    names = _columns(table, columns)
+    null_row = first_bad_row(
+        c,
+        table_name,
+        names[0],
+        sql.SQL(" OR ").join(
+            sql.SQL("{} IS NULL").format(sql.Identifier(n)) for n in names
+        ),
+    )
+    if null_row is not None:
+        raise ConstraintViolated(
+            "A key column has empty values.",
+            errors=[
+                {
+                    "field": "columns",
+                    "message": f"First empty value: row {null_row}.",
+                }
+            ],
         )
-        if null_row is not None:
-            raise ConstraintViolated(
-                "A key column has empty values.",
-                errors=[
-                    {
-                        "field": "columns",
-                        "message": f"First empty value: row {null_row}.",
-                    }
-                ],
-            )
-        keys = _id_list(names)
-        duplicate = c.query(
-            sql.SQL(
-                "SELECT {row} FROM (SELECT {row}, row_number() OVER "
-                "(PARTITION BY {keys} ORDER BY {row}) AS n FROM {table}) t "
-                "WHERE n > 1 ORDER BY {row} LIMIT 1"
-            ).format(
-                row=sql.Identifier(naming.ROW_ID), keys=keys, table=c.table(table_name)
-            )
-        ).fetchone()
-        if duplicate is not None:
-            raise ConstraintViolated(
-                "The key columns are not unique.",
-                errors=[
-                    {
-                        "field": "columns",
-                        "message": f"First repeated value: row {duplicate[0]}.",
-                    }
-                ],
-            )
-        for (existing,) in c.query(
-            PRIMARY_KEY_SQL, [c.schema_name, table_name]
-        ).fetchall():
-            try:
-                c.run(
-                    sql.SQL("ALTER TABLE {table} DROP CONSTRAINT {name}").format(
-                        table=c.table(table_name), name=sql.Identifier(existing)
-                    )
-                )
-            except pg_errors.DependentObjectsStillExist:
-                raise ConstraintViolated(
-                    "A relation depends on the current key. Delete that relation first."
-                ) from None
+    keys = _id_list(names)
+    duplicate = c.query(
+        sql.SQL(
+            "SELECT {row} FROM (SELECT {row}, row_number() OVER "
+            "(PARTITION BY {keys} ORDER BY {row}) AS n FROM {table}) t "
+            "WHERE n > 1 ORDER BY {row} LIMIT 1"
+        ).format(
+            row=sql.Identifier(naming.ROW_ID), keys=keys, table=c.table(table_name)
+        )
+    ).fetchone()
+    if duplicate is not None:
+        raise ConstraintViolated(
+            "The key columns are not unique.",
+            errors=[
+                {
+                    "field": "columns",
+                    "message": f"First repeated value: row {duplicate[0]}.",
+                }
+            ],
+        )
+    for (existing,) in c.query(PRIMARY_KEY_SQL, [c.schema_name, table_name]).fetchall():
         try:
             c.run(
-                sql.SQL("ALTER TABLE {table} ADD PRIMARY KEY ({keys})").format(
-                    table=c.table(table_name), keys=keys
+                sql.SQL("ALTER TABLE {table} DROP CONSTRAINT {name}").format(
+                    table=c.table(table_name), name=sql.Identifier(existing)
                 )
             )
         except pg_errors.DependentObjectsStillExist:
-            raise ConstraintViolated("The key could not be added.") from None
-        return table_dict(_existing_table(c, table_name))
+            raise ConstraintViolated(
+                "A relation depends on the current key. Delete that relation first."
+            ) from None
+    try:
+        c.run(
+            sql.SQL("ALTER TABLE {table} ADD PRIMARY KEY ({keys})").format(
+                table=c.table(table_name), keys=keys
+            )
+        )
+    except pg_errors.DependentObjectsStillExist:
+        raise ConstraintViolated("The key could not be added.") from None
 
 
 def _first_orphan(
@@ -205,57 +208,78 @@ def add_relation(
     parent_columns: list[str],
     on_delete: str,
 ) -> dict[str, Any]:
+    with changes(workspace, actor) as c:
+        name = apply_relation(
+            c,
+            child_table=child_table,
+            child_columns=child_columns,
+            parent_table=parent_table,
+            parent_columns=parent_columns,
+            on_delete=on_delete,
+        )
+        return next(r for r in _relation_dicts(c) if r["name"] == name)
+
+
+def apply_relation(
+    c: Changes,
+    *,
+    child_table: str,
+    child_columns: list[str],
+    parent_table: str,
+    parent_columns: list[str],
+    on_delete: str,
+) -> str:
+    """Inside a change already open. Returns the constraint's name."""
     if on_delete not in ON_DELETE:
         raise InvalidSpec("on_delete is NO ACTION or CASCADE.")
-    with changes(workspace, actor) as c:
-        existing = _relation_dicts(c)
-        if len(existing) >= settings.WORKSPACE_MAX_RELATIONS:
-            raise RelationLimitReached()
-        child = _existing_table(c, child_table)
-        parent = _existing_table(c, parent_table)
-        child_names = _columns(child, child_columns)
-        parent_names = _columns(parent, parent_columns)
-        if len(child_names) != len(parent_names):
-            raise InvalidSpec("Both sides need the same number of columns.")
-        constraint = naming.unique(
-            naming.identifier_slug(
-                f"fk_{child_table}_{'_'.join(child_names)}_{parent_table}",
-                kind="relation",
-            ),
-            [r["name"] for r in existing],
+    existing = _relation_dicts(c)
+    if len(existing) >= settings.WORKSPACE_MAX_RELATIONS:
+        raise RelationLimitReached()
+    child = _existing_table(c, child_table)
+    parent = _existing_table(c, parent_table)
+    child_names = _columns(child, child_columns)
+    parent_names = _columns(parent, parent_columns)
+    if len(child_names) != len(parent_names):
+        raise InvalidSpec("Both sides need the same number of columns.")
+    constraint = naming.unique(
+        naming.identifier_slug(
+            f"fk_{child_table}_{'_'.join(child_names)}_{parent_table}",
+            kind="relation",
+        ),
+        [r["name"] for r in existing],
+    )
+    orphan = _first_orphan(c, child_table, child_names, parent_table, parent_names)
+    if orphan is not None:
+        raise ConstraintViolated(
+            "Some rows point at a row that does not exist.",
+            errors=[
+                {
+                    "field": "child_columns",
+                    "message": f"First row with no matching parent: row {orphan}.",
+                }
+            ],
         )
-        orphan = _first_orphan(c, child_table, child_names, parent_table, parent_names)
-        if orphan is not None:
-            raise ConstraintViolated(
-                "Some rows point at a row that does not exist.",
-                errors=[
-                    {
-                        "field": "child_columns",
-                        "message": f"First row with no matching parent: row {orphan}.",
-                    }
-                ],
+    try:
+        c.run(
+            sql.SQL(
+                "ALTER TABLE {child} ADD CONSTRAINT {name} FOREIGN KEY ({cols}) "
+                "REFERENCES {parent} ({pcols}) ON DELETE {action}"
+            ).format(
+                child=c.table(child_table),
+                name=sql.Identifier(constraint),
+                cols=_id_list(child_names),
+                parent=c.table(parent_table),
+                pcols=_id_list(parent_names),
+                action=sql.SQL(on_delete),
             )
-        try:
-            c.run(
-                sql.SQL(
-                    "ALTER TABLE {child} ADD CONSTRAINT {name} FOREIGN KEY ({cols}) "
-                    "REFERENCES {parent} ({pcols}) ON DELETE {action}"
-                ).format(
-                    child=c.table(child_table),
-                    name=sql.Identifier(constraint),
-                    cols=_id_list(child_names),
-                    parent=c.table(parent_table),
-                    pcols=_id_list(parent_names),
-                    action=sql.SQL(on_delete),
-                )
-            )
-        except pg_errors.InvalidForeignKey:
-            raise RelationInvalid(
-                "The parent columns must be the table's primary key or unique."
-            ) from None
-        except (pg_errors.DatatypeMismatch, pg_errors.UndefinedFunction):
-            raise RelationInvalid("The two sides have different types.") from None
-        return next(r for r in _relation_dicts(c) if r["name"] == constraint)
+        )
+    except pg_errors.InvalidForeignKey:
+        raise RelationInvalid(
+            "The parent columns must be the table's primary key or unique."
+        ) from None
+    except (pg_errors.DatatypeMismatch, pg_errors.UndefinedFunction):
+        raise RelationInvalid("The two sides have different types.") from None
+    return constraint
 
 
 def delete_relation(workspace: Workspace, actor: User, name: str) -> None:
