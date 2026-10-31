@@ -25,3 +25,36 @@ class UserLLMKey(TimeStampModel):
 
     def __str__(self) -> str:
         return f"{self.user_id}:{self.provider}"
+
+
+class AskLog(TimeStampModel):
+    """One row per ask, success or failure. Holds the question and the SQL that
+    ran, never the result rows. These rows seed the traces of steps 3 and 6."""
+
+    STATUS_OK = "ok"
+    STATUS_GUARD_REJECTED = "guard_rejected"
+    STATUS_QUERY_FAILED = "query_failed"
+    STATUS_LLM_FAILED = "llm_failed"
+    STATUS_TIMEOUT = "timeout"
+    STATUS_REFUSED = "refused"  # bad question or the default-key limit
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ask_logs"
+    )
+    question = models.TextField()
+    sql = models.TextField(blank=True)
+    status = models.CharField(max_length=20)
+    error_code = models.CharField(max_length=50, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    provider = models.CharField(max_length=20, blank=True)
+    model = models.CharField(max_length=100, blank=True)
+    key_source = models.CharField(max_length=10, blank=True)
+    input_tokens = models.PositiveIntegerField(default=0)
+    output_tokens = models.PositiveIntegerField(default=0)
+    latency_ms = models.PositiveIntegerField(default=0)
+    confidence = models.FloatField(null=True, blank=True)
+    row_count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["user", "-created_at"])]

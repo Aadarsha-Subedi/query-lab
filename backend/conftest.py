@@ -47,10 +47,30 @@ def owner() -> Iterator[psycopg.Connection]:
 
 
 @pytest.fixture
-def data_connections(django_db_blocker: Any) -> Iterator[None]:
-    """Lets code under test use the Django `data` / `data_reader` connections."""
+def data_connections(
+    request: pytest.FixtureRequest, django_db_blocker: Any
+) -> Iterator[None]:
+    """Lets code under test use the Django `data` / `data_reader` connections,
+    also in a test that uses the app database (`db`), whose guard would
+    otherwise forbid them."""
+    if "db" in request.fixturenames:
+        request.getfixturevalue("db")  # its guards go in first, ours come off after
+    guards: list[tuple[Any, str, Any]] = []
     with django_db_blocker.unblock():
+        for alias in (settings.DATA_DB_ALIAS, settings.DATA_READER_DB_ALIAS):
+            connection = connections[alias]
+            for (
+                name,
+                _,
+            ) in connection.features.disallowed_simple_test_case_connection_methods:
+                method = getattr(connection, name)
+                if hasattr(method, "wrapped"):
+                    guards.append((connection, name, method))
+                    setattr(connection, name, method.wrapped)
         yield
+        # Put the guards back: Django removes them itself when the test ends.
+        for connection, name, method in guards:
+            setattr(connection, name, method)
         connections[settings.DATA_DB_ALIAS].close()
         connections[settings.DATA_READER_DB_ALIAS].close()
 
