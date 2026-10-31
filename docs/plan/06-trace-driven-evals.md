@@ -48,10 +48,10 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 6.2 Trace API (staff only)
 
-- [ ] **6.2.1** `IsStaff` dependency in `common`, a typed `403 staff_only` in `API_ERRORS.md`, and the route-list test (every route under `/api/workbench/` has it).
-- [ ] **6.2.2** `GET /api/workbench/runs`: all demo-workspace runs with `excluded_from_evals=False`, filters for status, error code, edited, revisions, check label, feedback, date range, text search, ordering through the `common/order` allowlist, standard pagination. One query per page (annotations, no per-row lookups).
-- [ ] **6.2.3** `GET /api/workbench/runs/{id}`: the run, all its steps (plan, tools, approval, execute preview, reflect), the SQL the agent proposed first and the SQL finally approved, and a `diff` flag when the user edited it. Result rows stay out; the stored preview is shown as is.
-- [ ] **6.2.4** Tests: a staff user sees demo runs only; a workspace run is never returned or fetched (404); a non-staff user gets 403 on every route.
+- [x] **6.2.1** `IsStaff` dependency in `common`, a typed `403 staff_only` in `API_ERRORS.md`, and the route-list test (every route under `/api/workbench/` has it).
+- [x] **6.2.2** `GET /api/workbench/runs`: all demo-workspace runs with `excluded_from_evals=False`, filters for status, error code, edited, revisions, check label, feedback, date range, text search, ordering through the `common/order` allowlist, standard pagination. One query per page (annotations, no per-row lookups).
+- [x] **6.2.3** `GET /api/workbench/runs/{id}`: the run, all its steps (plan, tools, approval, execute preview, reflect), the SQL the agent proposed first and the SQL finally approved, and a `diff` flag when the user edited it. Result rows stay out; the stored preview is shown as is.
+- [x] **6.2.4** Tests: a staff user sees demo runs only; a workspace run is never returned or fetched (404); a non-staff user gets 403 on every route.
 
 ## 6.3 Feedback signal
 
