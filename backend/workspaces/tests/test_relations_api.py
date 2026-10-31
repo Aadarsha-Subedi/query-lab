@@ -43,7 +43,7 @@ def ws(client: Client, user: User) -> int:
 
 def sql(ws: int, statement: str) -> None:
     with connections.workspace_connection(ws, "rw", 1) as connection:
-        connection.execute(statement)  # type: ignore[arg-type]
+        connection.execute(statement)
 
 
 def url(ws: int, rest: str) -> str:
