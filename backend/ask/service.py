@@ -6,6 +6,7 @@ Postgres rejects it. Every ask writes one AskLog row."""
 
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from django.conf import settings
@@ -21,7 +22,7 @@ from ask.errors import (
 )
 from ask.models import AskLog
 from common.exception.domain import AppException
-from common.llm import LLMError, LLMRequest
+from common.llm import LLMError, LLMProvider, LLMRequest
 
 logger = logging.getLogger(__name__)
 
@@ -124,13 +125,60 @@ def _answer(user: User, question: str, trace: Trace) -> AskResult:
     known = schema.get_schema(include_samples=True)
     schema_text = schema.render(known)
 
+    done = generate_and_run(
+        resolved.provider,
+        question,
+        schema_text,
+        check=lambda sql: guard.check(sql, known),
+        execute=runner.run,
+        trace=trace,
+    )
+    return AskResult(
+        question=question,
+        sql=done.sql,
+        columns=done.result.columns,
+        rows=done.result.rows,
+        row_count=done.result.row_count,
+        truncated=done.result.truncated,
+        confidence=done.confidence,
+        rationale=done.rationale,
+        model=resolved.provider.model,
+        latency_ms=trace.latency_ms,
+    )
+
+
+@dataclass(frozen=True)
+class Generated:
+    """What the core path produced: the SQL that ran and its result."""
+
+    sql: str
+    result: runner.QueryResult
+    confidence: float
+    rationale: str
+
+
+def generate_and_run(
+    provider: LLMProvider,
+    question: str,
+    schema_text: str,
+    *,
+    check: Callable[[str], guard.GuardResult],
+    execute: Callable[[str], runner.QueryResult],
+    trace: Trace,
+    dialect: str = prompt.DIALECT_POSTGRES,
+) -> Generated:
+    """The core of an ask, with no user, key or log: prompt, LLM, parse, check,
+    run, and the repair loop. `check` and `execute` are the guard and the runner
+    for the database being asked (Postgres for users, SQLite for Spider evals).
+    Raises a typed AppException; `trace` collects tokens, attempts and the SQL."""
+    system = prompt.system_prompt(dialect)
     text = prompt.build_prompt(question, schema_text)
     max_attempts = 1 + settings.ASK_MAX_REPAIR_ATTEMPTS
     for attempt in range(1, max_attempts + 1):
         trace.attempts = attempt
         try:
-            reply = resolved.provider.generate(
-                LLMRequest(prompt=text, system=prompt.SYSTEM_PROMPT, json_output=True)
+            reply = provider.generate(
+                LLMRequest(prompt=text, system=system, json_output=True)
             )
             trace.input_tokens += reply.input_tokens
             trace.output_tokens += reply.output_tokens
@@ -141,9 +189,9 @@ def _answer(user: User, question: str, trace: Trace) -> AskResult:
             raise NotAnswerable(parsed.rationale[:NOT_ANSWERABLE_MAX_CHARS] or None)
         trace.sql = parsed.sql
         try:
-            checked = guard.check(parsed.sql, known)
+            checked = check(parsed.sql)
             trace.sql = checked.sql
-            result = runner.run(checked.sql)
+            result = execute(checked.sql)
         except (GuardRejected, QueryFailed) as error:
             if attempt == max_attempts:
                 raise
@@ -161,15 +209,9 @@ def _answer(user: User, question: str, trace: Trace) -> AskResult:
         truncated=result.truncated,
     )
     trace.row_count = result.row_count
-    return AskResult(
-        question=question,
+    return Generated(
         sql=checked.sql,
-        columns=result.columns,
-        rows=result.rows,
-        row_count=result.row_count,
-        truncated=result.truncated,
+        result=result,
         confidence=trace.confidence,
         rationale=parsed.rationale,
-        model=resolved.provider.model,
-        latency_ms=trace.latency_ms,
     )
