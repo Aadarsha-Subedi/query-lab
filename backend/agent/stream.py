@@ -19,7 +19,7 @@ from django.conf import settings
 from agent import events
 from agent.errors import StreamLimitReached
 from agent.models import AgentRun
-from agent.schemas import step_dict
+from agent.schemas import pending_dict, step_dict
 from common.redis import get_redis
 
 STREAMS_KEY = "agent:streams"
@@ -83,7 +83,12 @@ class EventStream:
             if status != AgentRun.STATUS_RUNNING:
                 yield format_event(
                     "status",
-                    {"status": status, "error_code": run.error_code},
+                    {
+                        "status": status,
+                        "error_code": run.error_code,
+                        # the same block as GET /runs/{id}; null unless paused
+                        "pending": pending_dict(run),
+                    },
                 )
                 return
             now = time.monotonic()

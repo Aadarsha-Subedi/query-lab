@@ -54,11 +54,11 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 4.4 Approval payload
 
-- [ ] **4.4.1** Check how the `approval` step stores the SQL, assumptions and guard report (`agent/loop.py`, `agent/trace.py`), and write the finding in `DECISION.md`.
-- [ ] **4.4.2** Add `pending` to `RunDetailOut` and to `GET /runs/{id}`: present only while `awaiting_approval`, with `sql`, `rationale`, `assumptions` (list of strings), `guard` (changes the guard made, such as an added `LIMIT`) and `expires_at` (created from `AGENT_APPROVAL_TTL_SECONDS`).
-- [ ] **4.4.3** The SSE `status` event carries the same `pending` block when it announces a pause, so the screen needs no extra request.
-- [ ] **4.4.4** Edited SQL that the guard refuses returns the refusal reason in the typed error body (for example the offending statement type), and the run stays paused. Test that the body never echoes more than the SQL the user sent.
-- [ ] **4.4.5** Tests: `pending` exists only while paused, matches the approval step, disappears after approve / edit / cancel; the SSE pause event includes it; `expires_at` is correct.
+- [x] **4.4.1** Check how the `approval` step stores the SQL, assumptions and guard report (`agent/loop.py`, `agent/trace.py`), and write the finding in `DECISION.md`.
+- [x] **4.4.2** Add `pending` to `RunDetailOut` and to `GET /runs/{id}`: present only while `awaiting_approval`, with `sql`, `rationale`, `assumptions` (list of strings), `guard` (changes the guard made, such as an added `LIMIT`) and `expires_at` (created from `AGENT_APPROVAL_TTL_SECONDS`).
+- [x] **4.4.3** The SSE `status` event carries the same `pending` block when it announces a pause, so the screen needs no extra request.
+- [x] **4.4.4** Edited SQL that the guard refuses returns the refusal reason in the typed error body (for example the offending statement type), and the run stays paused. Test that the body never echoes more than the SQL the user sent.
+- [x] **4.4.5** Tests: `pending` exists only while paused, matches the approval step, disappears after approve / edit / cancel; the SSE pause event includes it; `expires_at` is correct.
 
 ## 4.5 History
 

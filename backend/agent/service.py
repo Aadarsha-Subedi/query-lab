@@ -22,6 +22,7 @@ from agent.errors import (
 )
 from agent.models import AgentRun, AgentStep
 from ask import guard, keys, schema
+from ask.errors import GuardRejected
 from ask import prompt as ask_prompt
 from common.exception.domain import ConflictException
 
@@ -162,7 +163,14 @@ def decide(
         edited = decision == DECISION_EDIT
         if edited:
             assert sql is not None
-            checked = guard.check(sql, schema.get_schema(include_samples=True))
+            try:
+                checked = guard.check(sql, schema.get_schema(include_samples=True))
+            except GuardRejected as refusal:
+                # Say why. The reason only names what the user's own SQL contains
+                # (a statement kind, a function, a table or column they wrote).
+                reason = GuardRejected(refusal.detail)
+                reason.errors = [{"field": "sql", "message": refusal.detail}]
+                raise reason from None
             current.pending_sql = checked.sql
             current.pending_rewrites = list(checked.report.rewrites)
             current.edited = True

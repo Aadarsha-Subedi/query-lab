@@ -1,7 +1,9 @@
 """API shapes for runs and steps, and the dicts built from the models."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
+
+from django.conf import settings
 
 from ninja import Schema
 
@@ -58,7 +60,23 @@ class RunOut(Schema):
     finished_at: datetime | None
 
 
+class PendingOut(Schema):
+    """What a person is asked to approve, so the screen needs no step parsing."""
+
+    sql: str
+    rationale: str
+    assumptions: list[str]
+    # What the guard changed in the SQL, as codes: `limit_clamped`, `qualified_tables`.
+    guard: list[str]
+    # Which proposal this is: 0 for the first, up from there after a revision.
+    revision: int
+    # After this the run expires (AGENT_APPROVAL_TTL_SECONDS since the pause).
+    expires_at: datetime
+
+
 class RunDetailOut(RunOut):
+    # Present only while the run is awaiting approval.
+    pending: PendingOut | None
     steps: list[StepOut]
 
 
@@ -118,8 +136,35 @@ def run_dict(run: AgentRun) -> dict[str, Any]:
     }
 
 
+def pending_dict(run: AgentRun) -> dict[str, Any] | None:
+    """The proposal the run waits on, read from its newest agent `approval` step
+    (agent/loop.py `_pause` writes sql, rationale, assumptions, guard_rewrites and
+    revision there). None unless the run is awaiting approval."""
+    if run.status != AgentRun.STATUS_AWAITING_APPROVAL:
+        return None
+    step = (
+        run.steps.filter(kind=AgentStep.KIND_APPROVAL, actor=AgentStep.ACTOR_AGENT)
+        .order_by("-index")
+        .first()
+    )
+    if step is None:
+        return None
+    data = step.input
+    return PendingOut(
+        sql=data.get("sql", ""),
+        rationale=data.get("rationale", ""),
+        assumptions=list(data.get("assumptions", [])),
+        guard=list(data.get("guard_rewrites", [])),
+        revision=int(data.get("revision", 0)),
+        # `updated_at` is when the pause was saved; service._expired measures from it.
+        expires_at=run.updated_at
+        + timedelta(seconds=settings.AGENT_APPROVAL_TTL_SECONDS),
+    ).model_dump(mode="json")
+
+
 def run_detail_dict(run: AgentRun) -> dict[str, Any]:
     return {
         **run_dict(run),
+        "pending": pending_dict(run),
         "steps": [step_dict(s) for s in run.steps.order_by("index")],
     }

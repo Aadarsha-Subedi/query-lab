@@ -947,7 +947,7 @@
                 "{{agentRunId}}"
               ]
             },
-            "description": "The run and its steps (plan, tool calls, approval, execute, reflect, final). Poll this when the live stream is not available."
+            "description": "The run and its steps (plan, tool calls, approval, execute, reflect, final). While the run is `awaiting_approval` it also has a `pending` block (`sql`, `rationale`, `assumptions`, `guard`, `revision`, `expires_at`), so the approval card needs no step parsing. Poll this when the live stream is not available."
           },
           "event": [
             {
@@ -1112,7 +1112,7 @@
                 "edit"
               ]
             },
-            "description": "Run your own SQL instead. It goes through the same guard: a refusal is 400 `guard_rejected` and the run stays paused. The edit is kept in the trace.",
+            "description": "Run your own SQL instead. It goes through the same guard; a refusal is a 400 `guard_rejected` whose `errors[0].message` says why, and the run stays paused.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"sql\": \"SELECT count(*) AS delivered FROM demo.orders WHERE order_status = 'delivered'\"\n}",
