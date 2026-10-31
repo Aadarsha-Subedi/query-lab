@@ -15,6 +15,10 @@ x-backend: &backend
     - ./infra/sql:/infra/sql:ro
     - ./infra/data/olist:/data/olist:ro
     - ./infra/data/spider:/data/spider:ro
+    # CSV uploads wait here for the worker. Production runs web and worker in one
+    # container with one disk; locally they are two containers, so the folder
+    # (UPLOAD_TMP_DIR) is a volume both mount.
+    - uploads-data:/tmp/querylab-uploads
   depends_on:
     postgres:
       condition: service_healthy
@@ -115,6 +119,7 @@ services:
 
 volumes:
   postgres-data:
+  uploads-data:
   frontend-node-modules:
   frontend-pnpm-store:
 
