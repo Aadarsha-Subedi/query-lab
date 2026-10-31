@@ -1340,6 +1340,294 @@
       ]
     },
     {
+      "name": "7. Workspaces (signed in)",
+      "item": [
+        {
+          "name": "List workspaces",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces"
+              ]
+            },
+            "description": "The shared demo workspace first (`id` null, read only), then your own with table counts and bytes. `meta.max_workspaces` is the cap."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create a workspace",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces"
+              ]
+            },
+            "description": "Creates a private workspace (a schema and two login roles). Sets {{workspaceId}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My sales data\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 409, 422, 429, 503]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 409, 422, 429, 503]));",
+                  "if (pm.response.code === 200) pm.environment.set('workspaceId', String(pm.response.json().data.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get a workspace",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}"
+              ]
+            },
+            "description": "One of your workspaces. Someone else's is a 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rename a workspace",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}"
+              ]
+            },
+            "description": "Renames it. `workspace_name_taken` when you already have that name.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Renamed\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 422, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 422, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rename the demo (always refused)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/demo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "demo"
+              ]
+            },
+            "description": "409 `demo_workspace_read_only`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [409, 401, 429]', () => pm.expect(pm.response.code).to.be.oneOf([409, 401, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete the demo (always refused)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/demo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "demo"
+              ]
+            },
+            "description": "409 `demo_workspace_read_only`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [409, 401, 429]', () => pm.expect(pm.response.code).to.be.oneOf([409, 401, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete a workspace",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspaceId}}"
+              ]
+            },
+            "description": "Drops the schema, tables and both login roles. Run history stays."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 429]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "7. Log out",
       "item": [
         {

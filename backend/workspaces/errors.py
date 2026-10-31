@@ -5,7 +5,6 @@ from common.exception.domain import (
     ConflictException,
     NotFoundException,
     ServiceUnavailableException,
-    ThrottledException,
     UnprocessableEntityException,
 )
 
@@ -40,10 +39,6 @@ class InvalidName(UnprocessableEntityException):
 class DemoWorkspaceReadOnly(ConflictException):
     message = "The demo workspace cannot be changed."
     error_code = "demo_workspace_read_only"
-
-
-class WorkspaceThrottled(ThrottledException):
-    error_code = "workspace_throttled"
 
 
 class WorkspaceProvisioningFailed(ServiceUnavailableException):

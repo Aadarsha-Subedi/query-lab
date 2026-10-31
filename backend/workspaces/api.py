@@ -10,6 +10,7 @@ from common.response.domain import SuccessEnvelope, errors, success
 from common.throttling.scoped import WorkspaceThrottle
 from core.datadb import DEMO_SCHEMA
 from workspaces import service, usage
+from workspaces.errors import DemoWorkspaceReadOnly
 from workspaces.models import Workspace
 from workspaces.schemas import (
     WorkspaceIn,
@@ -59,6 +60,26 @@ def create_workspace(request: HttpRequest, payload: WorkspaceIn) -> dict:
     reach. `workspace_limit_reached` when you already have the maximum."""
     workspace = service.create(_user(request), payload.name)
     return success(_one(workspace), message="Workspace created.")
+
+
+@router.patch(
+    "/demo",
+    response={200: SuccessEnvelope[WorkspaceOut], **errors(401, 409, 429)},
+    auth=django_auth,
+)
+def rename_demo_workspace(request: HttpRequest, payload: WorkspaceRename) -> dict:
+    """Always refused: the shared demo workspace is read-only for everyone."""
+    raise DemoWorkspaceReadOnly()
+
+
+@router.delete(
+    "/demo",
+    response={200: SuccessEnvelope[None], **errors(401, 409, 429)},
+    auth=django_auth,
+)
+def delete_demo_workspace(request: HttpRequest) -> dict:
+    """Always refused: the shared demo workspace cannot be deleted."""
+    raise DemoWorkspaceReadOnly()
 
 
 @router.get(

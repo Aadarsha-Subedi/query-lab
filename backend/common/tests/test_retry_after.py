@@ -53,6 +53,10 @@ def hit_result(client: Client) -> object:
     return client.get("/api/agent/runs/1/result")
 
 
+def hit_workspace(client: Client) -> object:
+    return client.delete("/api/workspaces/1")  # counts, and changes nothing
+
+
 # throttle class -> (setting, a request that counts against it, signed in?)
 CASES: dict[type, tuple[str, Callable[[Client], object], bool]] = {
     scoped.AnonThrottle: ("THROTTLE_ANON_RATE", hit_health, False),
@@ -60,6 +64,7 @@ CASES: dict[type, tuple[str, Callable[[Client], object], bool]] = {
     scoped.AskThrottle: ("THROTTLE_ASK_RATE", hit_ask, True),
     scoped.AgentThrottle: ("THROTTLE_AGENT_RATE", hit_agent, True),
     scoped.ResultThrottle: ("THROTTLE_RESULT_RATE", hit_result, True),
+    scoped.WorkspaceThrottle: ("THROTTLE_WORKSPACE_RATE", hit_workspace, True),
 }
 
 

@@ -55,6 +55,13 @@ Every error answers in the envelope `{success: false, status_code, message, code
 | `run_expired` | 409 | Nobody approved the SQL in time. | Show "expired"; offer to ask again. |
 | `run_busy` | 409 | The run is being worked on right now. | Retry in a moment. |
 | `table_not_found` | 404 | No such table in the schema. | Refresh the schema panel. |
+| `workspace_not_found` | 404 | No such workspace (also another user's workspace: the answer is the same). | Go back to the workspace list. |
+| `workspace_limit_reached` | 409 | The user already has the maximum number of workspaces (`meta.max_workspaces` on the list). | Offer to delete one. |
+| `workspace_name_taken` | 409 | The user already has a workspace with this name. | Ask for another name. |
+| `workspace_not_ready` | 409 | The workspace is still being created, or is being deleted. | Retry in a moment. |
+| `demo_workspace_read_only` | 409 | Rename or delete on the shared demo workspace. | Hide those actions for the demo. |
+| `invalid_name` | 422 | A workspace, table or column name or a column type cannot be used. | Show the message next to the field. |
+| `workspace_provisioning_failed` | 503 | The schema and roles could not be created; everything was cleaned up. | Retry later. |
 
 ## Run error codes (`error_code` on a failed or expired run, and on a step)
 
