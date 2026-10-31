@@ -261,7 +261,6 @@ ASK_DEFAULT_KEY_DAILY_LIMIT = env.int("ASK_DEFAULT_KEY_DAILY_LIMIT")
 
 # QueryLab's own key, used when a user has not saved one. Never stored in the
 # database or logged.
-LLM_DEFAULT_PROVIDER = env.str("LLM_DEFAULT_PROVIDER")
 LLM_DEFAULT_GEMINI_API_KEY = env.str("LLM_DEFAULT_GEMINI_API_KEY")
 LLM_DEFAULT_MODEL = env.str("LLM_DEFAULT_MODEL")
 
