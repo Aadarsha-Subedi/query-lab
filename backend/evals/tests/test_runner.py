@@ -286,3 +286,19 @@ def test_provider_overload_is_retried_too() -> None:
         sleep=lambda seconds: None,
     )
     assert outcome.outcome == EvalResult.OUTCOME_CORRECT
+
+
+@override_settings(EVAL_CALL_DELAY_SECONDS=2.5)
+def test_pauses_between_questions_but_not_before_the_first() -> None:
+    slept: list[float] = []
+    target = olist_target()
+    questions = target.questions("all")[:4]
+    runner.run_eval(
+        target,
+        split="all",
+        provider_name="gemini",
+        provider=ScriptedProvider(gold_answers),
+        questions=questions,
+        sleep=slept.append,
+    )
+    assert slept == [2.5, 2.5, 2.5]

@@ -191,6 +191,8 @@ def run_eval(
     todo = [q for q in questions if q.id not in done_ids]
     try:
         for index, question in enumerate(todo, start=1):
+            if index > 1:
+                sleep(settings.EVAL_CALL_DELAY_SECONDS)  # stay under the rate limit
             started = time.perf_counter()
             outcome = ask_once(target, question, provider, sleep=sleep)
             EvalResult.objects.create(
