@@ -70,7 +70,7 @@ def test_get_schema_uses_the_cache() -> None:
     connection = connections[settings.DATA_READER_DB_ALIAS]
     queries: list[str] = []
 
-    def record(execute, sql, params, many, context):  # type: ignore[no-untyped-def]
+    def record(execute, sql, params, many, context):
         queries.append(sql)
         return execute(sql, params, many, context)
 
