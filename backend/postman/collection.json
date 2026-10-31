@@ -2700,6 +2700,130 @@
       ]
     },
     {
+      "name": "9. Workbench (staff only)",
+      "item": [
+        {
+          "name": "List traces",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workbench/runs?limit=20&status=failed&error_code=query_failed&check=needs_look&edited=true&revisions_min=1&q=orders&created_after=2026-01-01T00:00:00Z&ordering=-created_at",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workbench",
+                "runs"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                },
+                {
+                  "key": "status",
+                  "value": "failed",
+                  "disabled": false
+                },
+                {
+                  "key": "error_code",
+                  "value": "query_failed",
+                  "disabled": false
+                },
+                {
+                  "key": "check",
+                  "value": "needs_look",
+                  "disabled": false
+                },
+                {
+                  "key": "edited",
+                  "value": "true",
+                  "disabled": false
+                },
+                {
+                  "key": "revisions_min",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "q",
+                  "value": "orders",
+                  "disabled": false
+                },
+                {
+                  "key": "created_after",
+                  "value": "2026-01-01T00:00:00Z",
+                  "disabled": false
+                },
+                {
+                  "key": "ordering",
+                  "value": "-created_at",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Staff only (403 `staff_only` for others). Demo runs that are allowed in evals; a user-workspace run never appears. Filters: `status` (repeat), `error_code`, `check` (`checked`/`needs_look`), `key_source`, `revisions_min`, `edited`, `q`, `created_after`/`created_before`; `ordering` is `created_at`, `latency_ms`, `revisions`, `llm_calls` or `row_count`. `meta.count` is the match count."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 403]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 403]));",
+                  "const body = pm.response.json(); if (pm.response.code === 200 && body.data.length) pm.environment.set('traceRunId', body.data[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get a trace",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workbench/runs/{{traceRunId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workbench",
+                "runs",
+                "{{traceRunId}}"
+              ]
+            },
+            "description": "Staff only. One run with every step, `proposed_sql` (the agent's first proposal), `approved_sql` and `diff` (true when the person edited the SQL). Run *List traces* first: it saves `traceRunId`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 403, 404]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 404]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "7. Log out",
       "item": [
         {

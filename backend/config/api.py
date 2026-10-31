@@ -11,6 +11,7 @@ from ask.schema_api import router as schema_router
 from common.exception.handler import install_exception_handlers
 from common.throttling.scoped import AnonThrottle, UserThrottle
 from core.api import router as core_router
+from evals.workbench_api import router as workbench_router
 from workspaces.api import router as workspaces_router
 from workspaces.tables_api import router as workspace_tables_router
 
@@ -37,3 +38,4 @@ api.add_router("/schema", schema_router)
 api.add_router("/agent", agent_router)
 api.add_router("/workspaces", workspaces_router)
 api.add_router("/workspaces", workspace_tables_router)
+api.add_router("/workbench", workbench_router)
