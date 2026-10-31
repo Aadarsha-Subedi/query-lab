@@ -3,7 +3,8 @@
 ## The analyst screen's contract (step 4)
 
 Everything the analyst screen (step 9) calls, all under `/api` and signed in unless
-noted. Rows marked *new* are step 4; the rest exist. Demo schema only until step 5.
+noted. Rows marked *new* are step 4; the rest exist. Since step 5, `schema`, `ask`,
+`agent/runs` and `agent/limits` take an optional `workspace` (see "Workspaces").
 
 | The screen needs | Endpoint | State |
 |------------------|----------|-------|
@@ -22,7 +23,7 @@ noted. Rows marked *new* are step 4; the rest exist. Demo schema only until step
 | What every error code means, and what to do | `backend/API_ERRORS.md` | new (4.6) |
 | Generated client types | `backend/openapi.json` (`make openapi`) | new (4.7) |
 
-Not in this step: an auto-run toggle, deleting runs, CSV export, workspaces.
+Not in this step: an auto-run toggle, deleting runs, CSV export. Workspaces came in step 5 (below).
 
 ## Request path
 
@@ -335,10 +336,10 @@ deadline (HEALTH_CHECK_TIMEOUT_SECONDS): `SELECT 1` on default, data and
 data_reader, Redis `PING`, and the `common.tasks.ping` Huey task round trip.
 Any failure: `status: degraded`, HTTP 503.
 
-## Step 5: every place that hard-codes `demo` (5.1.3)
+## Step 5: every place that hard-coded `demo` (5.1.3), and what became of it
 
-Read on branch `feat/step-5-workspaces` before any change. Each row is a change
-in task 5.4 (or the task named).
+Read before step 5 changed anything. Each row was a change in task 5.4 (or the task
+named); all are done and tested.
 
 | Where | What is hard-coded | Change |
 |-------|--------------------|--------|
@@ -360,6 +361,60 @@ in task 5.4 (or the task named).
 | `core/health.py` | `data_reader` alias | unchanged |
 | `infra/sql/001_roles.sql` / `020_reader_grants.sql` | `demo` through the `{schema}` placeholder | unchanged; `002_workspace_roles.sql` is new (5.2.3) |
 
+## Workspaces: the lifecycle and a query's path (step 5)
+
+```
+POST /api/workspaces {name}                       (WorkspaceThrottle, cap MAX_WORKSPACES_PER_USER)
+  lock the user row ─> check cap and name ─> Workspace row (creating)
+  ─> owner connection: CREATE ROLE ws_<id>_rw / ws_<id>_ro, CREATE SCHEMA ws_<id> AUTHORIZATION ws_<id>_rw,
+     GRANT CONNECT, default privileges (SELECT on future tables to _ro)     [workspaces/provisioning.py]
+  ─> status ready (any failure: drop what was made, delete the row, 503 workspace_provisioning_failed)
+DELETE /api/workspaces/{id}
+  status deleting ─> cancel its imports ─> terminate its sessions ─> DROP SCHEMA CASCADE, DROP OWNED, DROP ROLE x2
+  ─> delete the row, forget the schema version. AgentRun rows stay with their workspace_id (a tombstone).
+```
+
+How a request reaches a workspace schema (nothing from the request or the model is a name):
+
+```
+?workspace=7 / body.workspace ─> workspaces.access.workspace_for(user, 7): Workspace owned by user and ready, else 404
+   ├─ schema panel / ask / agent tools ─> ask.schema.get_schema(ref): cache key holds id + Redis schema version
+   │      introspection as ws_7_ro (bound schema name); `_row_id` is hidden from it
+   ├─ agent SQL ─> guard.check(sql, schema ws_7)  (only that qualifier; SET/RESET refused)
+   │              ─> runner.run(sql, ref) ─> connection opened AS ws_7_ro (read-only txn, statement timeout, row/byte caps)
+   ├─ table / column / key / relation / row APIs and the SQL console ─> connection AS ws_7_rw, one transaction,
+   │      DDL logged to workspace_ddl_log, schema version bumped, size caps checked before and after
+   └─ the demo (no workspace) ─> querylab_reader as before
+```
+
+A run remembers its workspace: `AgentRun.workspace_id` (null = demo), `excluded_from_evals` (true for any user workspace).
+`GET /runs/{id}/result` and the loop resolve it again; a deleted workspace ends a run `workspace_gone`.
+
+### Changing a workspace
+
+| Call | What happens | Errors you will see |
+|------|--------------|---------------------|
+| `POST /workspaces/{id}/tables` | `CREATE TABLE` with hidden `_row_id` identity key, `COMMENT ON` for descriptions | `table_name_taken`, `table_limit_reached`, `column_limit_reached`, `invalid_spec`, `invalid_name` |
+| `PATCH/DELETE .../tables/{t}`, `.../columns` | rename, describe, add, drop; retype = `ALTER ... TYPE ... USING` after a `pg_input_is_valid` check | `cast_failed` (names the row), `constraint_violation`, `column_name_taken` |
+| `PUT .../primary-key`, `POST/DELETE /relations` | real constraints; existing rows checked first | `constraint_violation` (names the row), `relation_invalid`, `relation_limit_reached` |
+| `GET/POST/PATCH/DELETE .../rows` | by `_row_id`, values coerced and bound, all or nothing, size guard | `row_invalid` (`rows[i].col`), `constraint_violation`, `workspace_full` |
+| `POST /workspaces/{id}/sql` | the user's own SQL as `_rw`, one transaction, watchdog deadline | `sql_failed` (SQLSTATE), `sql_invalid`, `sql_busy`, `query_timeout`, `workspace_full` |
+
+### CSV import (Huey + SSE)
+
+```
+POST /workspaces/{id}/imports/preview   (multipart; nothing kept)  ─> delimiter, header?, columns + guessed types, first rows
+POST /workspaces/{id}/imports           (multipart: file, options)
+  UploadSizeMiddleware: Content-Length > IMPORT_MAX_FILE_BYTES ─> 413 before the body is read
+  one active import per user ─> room check ─> spool to UPLOAD_TMP_DIR (bytes counted) ─> sniff + validate options
+  ─> ImportJob(queued) ─> enqueue run_import ─> 202 {id, events_url}
+Huey worker: claim (queued->running) ─> wait for the one slot (IMPORT_MAX_CONCURRENT) ─> pass 1 scan (rows cap, types)
+  ─> ONE transaction as ws_<id>_rw: CREATE TABLE, COPY in batches (progress -> Redis, cancel flag checked),
+     primary key, relations, size check ─> commit ─> job succeeded | failed(code, row) | cancelled; temp file always deleted
+GET /workspaces/{id}/imports/{job}/events   SSE: progress ... succeeded {table, rows, bytes} | failed {error_code, message} | cancelled
+Sweeps: worker start marks every running job import_interrupted; every 5 min: stalled jobs, queued jobs with no file, stale temp files
+```
+
 ## Database topology
 
 ```
@@ -377,7 +432,15 @@ Django data_reader >│ querylab       as querylab_reader:                      
                     │                statement_timeout = READER_STATEMENT_TIMEOUT_MS,
                     │                no CREATE anywhere, no TEMP                 │
                     └────────────────────────────────────────────────────────────┘
-Deployed: the same, on Neon; data_reader points at the Neon read replica.
+                    │                                                            │
+ workspace roles ──>│ querylab       schema ws_<id>, owned by ws_<id>_rw;        │
+ (ws_<id>_rw primary│                ws_<id>_ro has SELECT only. Both: members   │
+  ws_<id>_ro reader)│                of nothing, one-schema search_path, no TEMP, │
+                    │                CONNECT on querylab only, nothing on demo,   │
+                    │                public or querylab_app (infra/sql/002)       │
+                    └────────────────────────────────────────────────────────────┘
+Deployed: the same, on Neon; data_reader and every ws_<id>_ro connection point at the read
+replica (pooled endpoint), every ws_<id>_rw connection at the primary (pooled endpoint).
 ```
 
 ## Data setup

@@ -46,6 +46,16 @@ agent/             the agent (step 3): loop.py (plan, act, pause, execute, refle
                    Step 4: result.py (rows of a finished run, by re-running its stored SQL),
                    limits.py (what is left before a limit), `pending` block in schemas.py,
                    history filters in api.py
+workspaces/        user workspaces (step 5): models.py (Workspace, WorkspaceDDLLog, ImportJob), context.py
+                   (WorkspaceRef, DEMO), naming.py (slugs, column types), credentials.py + provisioning.py
+                   (schema and two login roles, owner connection) + connections.py (a connection per request
+                   as ws_<id>_rw / _ro), service.py + api.py (create / list / rename / delete), access.py (the
+                   one place a `workspace` parameter becomes a workspace), changes.py (a logged _rw
+                   transaction), tables.py + relations.py + rows.py + values.py + tables_api.py (tables,
+                   columns, keys, relations, row edits), sql.py + sqltext.py (the user's SQL console),
+                   quota.py + usage.py (sizes and caps), schema_version.py (Redis counter), reader.py (the
+                   read cursor ask/runner use), resolve.py (run -> workspace), middleware.py (upload size),
+                   imports/ (sniff.py, plan.py, loader.py, tasks.py, sweep.py, progress.py, stream.py, api.py)
 evals/             eval harness (step 2, agent runner step 3): compare.py (execution accuracy), runner.py,
                    agent_runner.py, confidence_analysis.py, scoring.py,
                    targets/{olist,spider}.py + olist_golden.jsonl + spider_split.json,
@@ -66,6 +76,7 @@ postman/           Postman collection + local environment for every endpoint
 openapi.json       the API contract the frontend generates its types from (`make openapi`)
 API_ERRORS.md      every error code, its HTTP status and what the screen should do
 ../infra/sql/      SQL applied to the data DB by bootstrap_data_db, in numeric order
+                   (001 reader role, 002 the wall around workspaces, 010 demo, 020 reader grants)
 ```
 
 ## Conventions
@@ -83,10 +94,10 @@ API_ERRORS.md      every error code, its HTTP status and what the screen should 
 
 1. **No fallback settings.** Every setting is read with `env.<type>("KEY")` and no default. A missing key stops startup. Never add `default=`.
 2. **No magic numbers.** Any new timeout, limit, size or rate goes into `.env.example`, `.env.test` and settings. `core/tests/test_env.py` fails if the code and `.env.example` disagree.
-3. **The agent only ever uses the reader connection** (`data_reader` / `querylab_reader`). Never run agent SQL on `default` or `data`.
+3. **The agent only ever uses a reader connection**: `data_reader` / `querylab_reader` for the demo, a connection opened as the workspace's own `ws_<id>_ro` role for a user workspace (`workspaces/reader.py`). Never run agent SQL on `default` or `data`, and never as a `_rw` or owner role.
 4. **Django never migrates `querylab`.** `core.routers.AppOnlyRouter` allows migrations on `default` only; the data DB schema lives in `infra/sql/` and is applied by `bootstrap_data_db`.
 5. **Never commit secrets.** `.env` files are git-ignored; only `.env.example` and the throwaway `.env.test` are committed. `infra/data/` (the Olist CSVs) is never committed.
-6. **No local disk writes** in app code: logs go to stdout, uploads stream to Postgres (or R2 later).
+6. **No local disk writes** in app code: logs go to stdout. The one exception is CSV uploads, spooled to `UPLOAD_TMP_DIR` until the import job loads them and deleted after (rule 18).
 7. Don't skip or disable failing tests; fix the cause.
 8. **SQL from an LLM is untrusted.** It runs only after `ask.guard.check` and only through `ask.runner.run`, which uses the reader connection. Never execute model SQL any other way, never loosen the guard to make a test pass, and never put result rows into a prompt or an `AskLog`.
 9. **Keys:** a user's LLM key is stored only encrypted (`common.crypto`) and never returned, logged or echoed (only its last four characters). QueryLab's default key lives only in `.env` (`LLM_DEFAULT_GEMINI_API_KEY`).
@@ -96,3 +107,7 @@ API_ERRORS.md      every error code, its HTTP status and what the screen should 
 13. **`agent` settings** (`AGENT_*`, `CONFIDENCE_*`, `THROTTLE_AGENT_RATE`) follow rule 2. The confidence number is hidden (`confidence: null`) until `CONFIDENCE_SHOW_SCORE` is set after the offline analysis passes (DECISION.md); responses always carry the `check` label.
 14. **`GET /api/agent/runs/{id}/result` re-runs stored SQL and nothing else** (step 4). It is the one place SQL runs outside the agent loop, so it is narrow: the SQL is always the run's own `final_sql` (never anything from the request), only for a `succeeded` run the caller owns, through `guard.check` again and `runner.run` on the reader connection, behind `ResultThrottle`. It writes nothing: no step, no change to the run, no rows kept (rule 12 still holds: rows are never stored). `GET /api/schema` reads the cached `ask.schema.get_schema` and has no write path; sample values show only when `SCHEMA_API_INCLUDE_SAMPLES` is on.
 15. **`SCHEMA_API_*` and `THROTTLE_RESULT_RATE`** follow rule 2. A new endpoint also needs: its error statuses declared with `errors(...)`, a Postman request, a regenerated `openapi.json`, and any new `AppException` code in `API_ERRORS.md`. Every 429 carries `retry_after_seconds` (null when waiting does not help).
+16. **Workspaces: the login identity is the boundary** (step 5). A user workspace is a schema `ws_<id>` with two LOGIN roles that are members of nothing: `ws_<id>_rw` (the user's SQL, imports, row and table APIs; primary only) and `ws_<id>_ro` (SELECT only; the agent). Never `SET ROLE`, never share a connection between workspaces, never open a workspace connection with anything but `workspaces/connections.py`. The **owner role** is used only in `workspaces/provisioning.py` (create and drop a workspace), `workspaces/usage.py` (catalog sizes) and bootstrap; it never runs user SQL, imports or agent SQL.
+17. **Identifiers are never concatenated.** Schema and role names come from the workspace id; table and column names are slugged by `workspaces/naming.py` and still passed through `psycopg.sql.Identifier`; names of existing tables and columns are looked up in the catalog before use; cell values are only bound parameters or COPY data; a request never carries a WHERE clause.
+18. **The workspace comes from the run (or the authenticated request), never from the model.** `AgentRun.workspace_id` is set at creation from a checked ownership; `agent/loop.py` resolves it with `workspaces.resolve`; tools get their schema from the loop. A deleted workspace is `workspace_gone`, never a fallback to the demo. A `workspace` request parameter goes through `workspaces.access.workspace_for` / `writable_workspace` once, and someone else's workspace is the same 404 as a missing one. Imports spool uploads to `UPLOAD_TMP_DIR` (the one allowed local write), delete them in all cases, and load in one transaction.
+19. **Workspace settings** (`WORKSPACE_*`, `USER_MAX_BYTES`, `IMPORT_*`, `UPLOAD_TMP_DIR`, `QUOTA_CACHE_SECONDS`, `MASTER_WORKSPACE_SECRET`, `THROTTLE_WORKSPACE_*`) follow rule 2. `MASTER_WORKSPACE_SECRET` derives every workspace role password (HMAC) and is never stored or logged; rotating it needs a re-provision. Tests that create workspaces use ids from 900000 up (`conftest.TEST_WORKSPACE_ID_START`) and drop what they made, because workspaces are real schemas in the shared `querylab` database.
