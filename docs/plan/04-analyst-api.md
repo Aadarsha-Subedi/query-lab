@@ -35,7 +35,7 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 - [x] **4.1.1** Run the image-size check on the branch and record the number in `DECISION.md`. If headroom is under 3 MB, stop and trim before adding code.
 - [x] **4.1.2** Branch `feat/step-4-analyst-api` from the step 3 branch (or from `main` once step 3 is merged).
-- [ ] **4.1.3** List every endpoint the screen will call and map each to an existing or new endpoint in a short table at the top of `FLOW.md` (the screen's contract). Gaps in that table are exactly 4.2 to 4.6.
+- [x] **4.1.3** List every endpoint the screen will call and map each to an existing or new endpoint in a short table at the top of `FLOW.md` (the screen's contract). Gaps in that table are exactly 4.2 to 4.6.
 
 ## 4.2 Schema browser
 

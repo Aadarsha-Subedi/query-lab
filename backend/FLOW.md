@@ -1,5 +1,29 @@
 # Backend: FLOW.md
 
+## The analyst screen's contract (step 4)
+
+Everything the analyst screen (step 9) calls, all under `/api` and signed in unless
+noted. Rows marked *new* are step 4; the rest exist. Demo schema only until step 5.
+
+| The screen needs | Endpoint | State |
+|------------------|----------|-------|
+| Who am I, CSRF cookie | `GET /me` (401 when signed out) | exists |
+| Sign in / out | `/_allauth/browser/v1/...` | exists |
+| Schema panel (tables, columns, keys, comments) | `GET /schema`, `GET /schema/tables/{name}` | new (4.2) |
+| Does the user have their own key | `GET /llm-keys`, `PUT/DELETE /llm-keys/{provider}` | exists |
+| What is left before a limit | `GET /agent/limits` | new (4.6) |
+| Ask a question | `POST /agent/runs {question}` | exists |
+| Live progress | `GET /agent/runs/{id}/events` (SSE) | exists; `status` event gains `pending` (4.4) |
+| Render the approval card without parsing steps | `pending` on `GET /agent/runs/{id}` | new (4.4) |
+| Approve / edit SQL / cancel | `POST /agent/runs/{id}/approve \| edit \| cancel` | exists; a guard refusal now says why (4.4) |
+| Full result table of a finished run | `GET /agent/runs/{id}/result` | new (4.3) |
+| History, filtered and ordered | `GET /agent/runs?status=&q=&created_after=&created_before=&ordering=` | extended (4.5) |
+| Replay a run | `GET /agent/runs/{id}/replay` | exists |
+| What every error code means | the error list in this file | new (4.6) |
+| Generated client types | `backend/openapi.json` (`make openapi`) | new (4.7) |
+
+Not in this step: an auto-run toggle, deleting runs, CSV export, workspaces.
+
 ## Request path
 
 ```
