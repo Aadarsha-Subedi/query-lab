@@ -89,10 +89,10 @@ def test_a_burst_from_several_workspaces_stays_under_the_ceiling(
                         held.append(connect(workspace_id, kind))
                     except psycopg.OperationalError:
                         refused += 1
-        ceiling = int(owner.execute("SHOW max_connections").fetchone()[0])  # type: ignore[index]
+        ceiling = int(owner.execute("SHOW max_connections").fetchone()[0])
         in_use = owner.execute(
             "SELECT count(*) FROM pg_stat_activity WHERE usename LIKE 'ws\\_%' ESCAPE '\\'"
-        ).fetchone()[0]  # type: ignore[index]
+        ).fetchone()[0]
         assert len(held) == 3 * 2 * 2  # the limits held, per role
         assert refused == 3 * 2 * 3
         assert in_use == len(held) < ceiling

@@ -134,3 +134,67 @@ def test_a_provisioning_failure_leaves_nothing_behind(
         "SELECT count(*) FROM pg_roles WHERE rolname = 'ws_broken_half'"
     ).fetchone() == (0,)
     assert credentials.role_name(1, "rw") == "ws_1_rw"
+
+
+def test_delete_drops_the_schema_and_the_roles(
+    client: Client, user: User, owner: psycopg.Connection
+) -> None:
+    client.force_login(user)
+    workspace_id = post(client, BASE, {"name": "Gone"}).json()["data"]["id"]
+    response = client.delete(f"{BASE}/{workspace_id}")
+    assert response.status_code == 200 and response.json()["success"] is True
+    assert not Workspace.objects.filter(pk=workspace_id).exists()
+    assert owner.execute(
+        "SELECT (SELECT count(*) FROM pg_namespace WHERE nspname = %(s)s),"
+        " (SELECT count(*) FROM pg_roles WHERE rolname LIKE %(r)s)",
+        {"s": f"ws_{workspace_id}", "r": f"ws\\_{workspace_id}\\_%"},
+    ).fetchone() == (0, 0)
+    assert client.get(f"{BASE}/{workspace_id}").status_code == 404
+    # deleting again is the same 404 as any missing workspace
+    assert client.delete(f"{BASE}/{workspace_id}").status_code == 404
+    from workspaces.models import WorkspaceDDLLog
+
+    assert list(
+        WorkspaceDDLLog.objects.filter(workspace_id=workspace_id).values_list(
+            "statement", flat=True
+        )
+    ) == [
+        "provision: create schema and login roles",
+        "drop: schema and login roles",
+    ]
+
+
+def test_delete_works_with_tables_and_open_sessions(client: Client, user: User) -> None:
+    from workspaces import connections
+
+    client.force_login(user)
+    workspace_id = post(client, BASE, {"name": "Busy"}).json()["data"]["id"]
+    with connections.workspace_connection(workspace_id, "rw", 1) as connection:
+        connection.execute("CREATE TABLE t (id int)")
+    kept = connections.workspace_connection(workspace_id, "ro", 1)
+    kept.__enter__()
+    try:
+        assert client.delete(f"{BASE}/{workspace_id}").status_code == 200
+    finally:
+        kept.__exit__(None, None, None)
+
+
+def test_someone_elses_workspace_cannot_be_deleted(
+    client: Client, user: User, other_user: User
+) -> None:
+    client.force_login(other_user)
+    theirs = post(client, BASE, {"name": "Theirs"}).json()["data"]["id"]
+    client.force_login(user)
+    assert client.delete(f"{BASE}/{theirs}").status_code == 404
+    assert Workspace.objects.filter(pk=theirs).exists()
+
+
+@override_settings(THROTTLE_WORKSPACE_RATE="2/m")
+def test_create_and_delete_share_a_throttle(client: Client, user: User) -> None:
+    client.force_login(user)
+    first = post(client, BASE, {"name": "T1"}).json()["data"]["id"]
+    assert client.delete(f"{BASE}/{first}").status_code == 200
+    third = post(client, BASE, {"name": "T2"})
+    assert third.status_code == 429
+    assert third.json()["code"] == "throttled"
+    assert client.get(BASE).status_code == 200  # reading is not throttled here

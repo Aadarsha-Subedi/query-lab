@@ -7,6 +7,7 @@ from ninja.security import django_auth
 
 from accounts.models import User
 from common.response.domain import SuccessEnvelope, errors, success
+from common.throttling.scoped import WorkspaceThrottle
 from core.datadb import DEMO_SCHEMA
 from workspaces import service, usage
 from workspaces.models import Workspace
@@ -51,6 +52,7 @@ def list_workspaces(request: HttpRequest) -> dict:
     "",
     response={200: SuccessEnvelope[WorkspaceOut], **errors(401, 409, 422, 429, 503)},
     auth=django_auth,
+    throttle=[WorkspaceThrottle()],
 )
 def create_workspace(request: HttpRequest, payload: WorkspaceIn) -> dict:
     """Create a private workspace: an empty schema only you and your agent can
@@ -80,3 +82,16 @@ def rename_workspace(
 ) -> dict:
     workspace = service.get_owned(_user(request), workspace_id)
     return success(_one(service.rename(workspace, payload.name)), message="Renamed.")
+
+
+@router.delete(
+    "/{workspace_id}",
+    response={200: SuccessEnvelope[None], **errors(401, 404, 429)},
+    auth=django_auth,
+    throttle=[WorkspaceThrottle()],
+)
+def delete_workspace(request: HttpRequest, workspace_id: int) -> dict:
+    """Drop the workspace's schema, tables and login roles for good. Your past
+    agent runs stay in your history and can still be replayed."""
+    service.delete(service.get_owned(_user(request), workspace_id), _user(request))
+    return success(None, message="Workspace deleted.")

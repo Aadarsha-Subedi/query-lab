@@ -7,6 +7,7 @@ signed-in visitor on a public route is not counted as anonymous traffic.
 - AnonThrottle: signed-out callers, keyed by client IP.
 - UserThrottle: signed-in callers, keyed by user id.
 - AgentThrottle: the same, for starting agent runs.
+- WorkspaceThrottle: creating and deleting workspaces.
 - AskThrottle:  the stricter per-route limit for endpoints that call the LLM,
                 per user when signed in, per IP otherwise.
 """
@@ -78,3 +79,10 @@ class ResultThrottle(AskThrottle):
 
     scope = "result"
     rate_setting = "THROTTLE_RESULT_RATE"
+
+
+class WorkspaceThrottle(AskThrottle):
+    """Creating or deleting a workspace makes or drops a schema and two roles."""
+
+    scope = "workspace"
+    rate_setting = "THROTTLE_WORKSPACE_RATE"

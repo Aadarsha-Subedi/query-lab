@@ -87,3 +87,14 @@ def rename(workspace: Workspace, name: str) -> Workspace:
 def _drop(workspace: Workspace) -> None:
     with connections.owner_connection() as connection:
         provisioning.drop_workspace_schema(connection, workspace.pk)
+
+
+def delete(workspace: Workspace, actor: User) -> None:
+    """Mark the workspace `deleting`, drop its schema and both roles, then remove
+    the row. Run traces (AgentRun) are not touched: they keep the workspace id,
+    which now names nothing. Safe to call again on a half-deleted workspace."""
+    workspace.status = Workspace.STATUS_DELETING
+    workspace.save(update_fields=["status", "updated_at"])
+    _drop(workspace)
+    ddl_log.record(workspace.pk, actor, "drop: schema and login roles")
+    workspace.delete()
