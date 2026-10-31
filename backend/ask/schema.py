@@ -7,6 +7,7 @@ the schema stays cheap on the small instance.
 """
 
 from dataclasses import dataclass, field
+from typing import Any
 
 from django.conf import settings
 from django.core.cache import cache
@@ -105,26 +106,48 @@ class Schema:
         return next((t for t in self.tables if t.name == name), None)
 
 
+# The hidden row key every user table has (workspaces/naming.py ROW_ID). The agent
+# and the schema panel never see it; the workspace table API does.
+HIDDEN_COLUMN = "_row_id"
+
+
 def read_schema(
-    workspace: WorkspaceRef = DEMO, *, include_samples: bool = False
+    workspace: WorkspaceRef = DEMO,
+    *,
+    include_samples: bool = False,
+    show_hidden: bool = False,
 ) -> Schema:
     """Read the schema fresh from the database as the workspace's reader role
     (querylab_reader for the demo). The schema name is a bound parameter."""
-    schema_name = workspace.schema_name
     with read_cursor(workspace) as cursor:
-        cursor.execute(COLUMNS_SQL, [schema_name])
-        column_rows = cursor.fetchall()
-        cursor.execute(KEYS_SQL, [schema_name])
-        key_rows = cursor.fetchall()
-        samples: dict[tuple[str, str], tuple[str, ...]] = {}
-        if include_samples:
-            cursor.execute(
-                SAMPLES_SQL, [schema_name, settings.ASK_SAMPLE_VALUES_MAX_DISTINCT]
-            )
-            for table, column, _distinct, values in cursor.fetchall():
-                samples[(table, column)] = tuple(
-                    values[: settings.ASK_SAMPLE_VALUES_MAX]
-                )
+        return schema_from_cursor(
+            cursor,
+            workspace.schema_name,
+            include_samples=include_samples,
+            show_hidden=show_hidden,
+        )
+
+
+def schema_from_cursor(
+    cursor: Any,
+    schema_name: str,
+    *,
+    include_samples: bool = False,
+    show_hidden: bool = False,
+) -> Schema:
+    """The same read on any cursor that may select from the schema (the table API
+    reads on the primary through the workspace's own `_rw` role)."""
+    cursor.execute(COLUMNS_SQL, [schema_name])
+    column_rows = cursor.fetchall()
+    cursor.execute(KEYS_SQL, [schema_name])
+    key_rows = cursor.fetchall()
+    samples: dict[tuple[str, str], tuple[str, ...]] = {}
+    if include_samples:
+        cursor.execute(
+            SAMPLES_SQL, [schema_name, settings.ASK_SAMPLE_VALUES_MAX_DISTINCT]
+        )
+        for table, column, _distinct, values in cursor.fetchall():
+            samples[(table, column)] = tuple(values[: settings.ASK_SAMPLE_VALUES_MAX])
 
     comments: dict[str, str | None] = {}
     estimates: dict[str, int | None] = {}
@@ -140,7 +163,10 @@ def read_schema(
     ) in column_rows:
         comments[table] = table_comment
         estimates[table] = estimate if estimate >= 0 else None
-        columns.setdefault(table, []).append(
+        table_columns = columns.setdefault(table, [])
+        if name == HIDDEN_COLUMN and not show_hidden:
+            continue
+        table_columns.append(
             Column(
                 name=name,
                 type=type_,

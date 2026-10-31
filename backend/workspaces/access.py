@@ -18,3 +18,12 @@ def workspace_for(user: User, workspace_id: int | None) -> WorkspaceRef:
     if workspace.status != Workspace.STATUS_READY:
         raise WorkspaceNotReady()
     return workspace.ref
+
+
+def writable_workspace(user: User, workspace_id: int) -> Workspace:
+    """The caller's own ready workspace, for the endpoints that change it or read
+    it by id (the schema and ask endpoints use `workspace_for`)."""
+    workspace = service.get_owned(user, workspace_id)
+    if workspace.status != Workspace.STATUS_READY:
+        raise WorkspaceNotReady()
+    return workspace

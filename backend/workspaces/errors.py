@@ -52,3 +52,68 @@ class WorkspaceGone(NotFoundException):
 
     message = "The workspace this run used no longer exists."
     error_code = "workspace_gone"
+
+
+# ── tables, columns, keys (5.5) ───────────────────────────────────────────
+
+
+class TableNotFound(NotFoundException):
+    message = "Table not found."
+    error_code = "table_not_found"
+
+
+class ColumnNotFound(NotFoundException):
+    message = "Column not found."
+    error_code = "column_not_found"
+
+
+class RelationNotFound(NotFoundException):
+    message = "Relation not found."
+    error_code = "relation_not_found"
+
+
+class InvalidSpec(UnprocessableEntityException):
+    message = "The request does not describe a usable table or column."
+    error_code = "invalid_spec"
+
+
+class TableNameTaken(ConflictException):
+    message = "This workspace already has a table with this name."
+    error_code = "table_name_taken"
+
+
+class ColumnNameTaken(ConflictException):
+    message = "This table already has a column with this name."
+    error_code = "column_name_taken"
+
+
+class TableLimitReached(ConflictException):
+    message = "This workspace has the maximum number of tables."
+    error_code = "table_limit_reached"
+
+
+class ColumnLimitReached(ConflictException):
+    message = "This table has the maximum number of columns."
+    error_code = "column_limit_reached"
+
+
+class RelationLimitReached(ConflictException):
+    message = "This workspace has the maximum number of relations."
+    error_code = "relation_limit_reached"
+
+
+class CastFailed(UnprocessableEntityException):
+    """Retyping a column found a value that does not convert. Nothing changed;
+    `errors[0]` names the first bad row id."""
+
+    message = "A value in this column cannot be converted to the new type."
+    error_code = "cast_failed"
+
+
+class ConstraintViolated(ConflictException):
+    """A key, relation or NOT NULL cannot be added or kept because of existing
+    rows, or a row edit would break one. `errors[0]` names the constraint and,
+    when there is one, the first row id involved. Nothing changed."""
+
+    message = "The data does not satisfy this constraint."
+    error_code = "constraint_violation"
