@@ -128,9 +128,9 @@ Step 2 showed the old score at about 1.0 for every Olist answer (rank correlatio
 
 ## 3.11 Safety and abuse checks
 
-- [ ] **3.11.1** Tests that a prompt injection in the question or in a stored value (`sample_values` output) cannot reach `runner.run` before approval, cannot add a tool, and cannot raise a budget.
-- [ ] **3.11.2** Test that approving or editing someone else's run fails, and that two simultaneous approves run the SQL once.
-- [ ] **3.11.3** Check a stalled worker: the container sleeps with a run paused; on wake the run is still there (state in Redis may be gone, so `resume` rebuilds from `AgentStep`). Decide and record whether a run survives a restart.
+- [x] **3.11.1** Tests that a prompt injection in the question or in a stored value (`sample_values` output) cannot reach `runner.run` before approval, cannot add a tool, and cannot raise a budget.
+- [x] **3.11.2** Test that approving or editing someone else's run fails, and that two simultaneous approves run the SQL once.
+- [x] **3.11.3** Check a stalled worker: the container sleeps with a run paused; on wake the run is still there (state in Redis may be gone, so `resume` rebuilds from `AgentStep`). Decide and record whether a run survives a restart.
 
 ## 3.12 Docs and wrap-up
 
