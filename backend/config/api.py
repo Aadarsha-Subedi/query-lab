@@ -4,6 +4,7 @@ signed-out callers by IP, signed-in callers by user."""
 from ninja import NinjaAPI
 
 from accounts.api import router as accounts_router
+from agent.api import router as agent_router
 from ask.api import router as ask_router
 from common.exception.handler import install_exception_handlers
 from common.throttling.scoped import AnonThrottle, UserThrottle
@@ -20,3 +21,4 @@ install_exception_handlers(api)
 api.add_router("/", core_router)
 api.add_router("/", accounts_router)
 api.add_router("/", ask_router)
+api.add_router("/agent", agent_router)

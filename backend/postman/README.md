@@ -1,7 +1,7 @@
-# Postman: Querylab API (step 1)
+# Postman: Querylab API (step 3)
 
 `collection.json` (Postman Collection v2.1) covers every endpoint the backend has
-after step 1; `environment.json` is the matching *Querylab local* environment.
+after step 3; `environment.json` is the matching *Querylab local* environment.
 Sign-in is Google or GitHub only: there are no email/password accounts.
 
 ## Use it
@@ -31,4 +31,5 @@ as a redirect URI. *Session*,
 - *Log out* answers 401: that is allauth saying the session has ended.
 - *Start Google/GitHub sign-in* answers with a redirect to the provider. Until the
   OAuth apps exist in `backend/.env`, the provider's error page is expected.
+- *6. Agent*: *Start a run* saves `agentRunId`; the run then waits for *Approve*, *Edit* or *Cancel*.
 - When an endpoint is added or changed, update this collection in the same commit.

@@ -768,7 +768,405 @@
       ]
     },
     {
-      "name": "6. Log out",
+      "name": "6. Agent (signed in)",
+      "description": "Needs a signed-in session (see README). A run plans, looks at the schema with tools, proposes SQL and then WAITS for you: run *Approve*, *Edit* or *Cancel* while `status` is `awaiting_approval`. *Start a run* saves `agentRunId` for the other requests. One run is one spend of the default Gemini key (`default_key_limit` past the daily cap). At most AGENT_MAX_CONCURRENT_RUNS_PER_USER unfinished runs: `agent_run_limit` (429). Someone else's run is 404 `run_not_found`; a decision on a run that is not waiting is 409 `run_not_awaiting_approval`. Postman does not stream: *Watch events* shows the stream once the run is paused or finished (it closes then); open it from a browser or `curl -N` to watch live.",
+      "item": [
+        {
+          "name": "Start a run",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/runs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agent",
+                "runs"
+              ]
+            },
+            "description": "Starts a run and returns it (status `running`, or already `awaiting_approval` when the worker is quick). Follow it on *Watch events* or poll *Get a run*.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"How many orders were delivered?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 429]));",
+                  "if (pm.response.code === 200) pm.environment.set('agentRunId', String(pm.response.json().data.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List my runs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/runs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agent",
+                "runs"
+              ]
+            },
+            "description": "Your runs, newest first. `meta` has `count`, `limit`, `offset`; pass `?limit=&offset=`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get a run",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/runs/{{agentRunId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agent",
+                "runs",
+                "{{agentRunId}}"
+              ]
+            },
+            "description": "The run and its steps (plan, tool calls, approval, execute, reflect, final). Poll this when the live stream is not available."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Watch events (SSE)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/runs/{{agentRunId}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agent",
+                "runs",
+                "{{agentRunId}}",
+                "events"
+              ]
+            },
+            "description": "Server-sent events: one `step` event per step (event id = step index), then a `status` event when the run pauses for approval or ends. Reconnect with the `Last-Event-ID` header to continue. Over the open-stream limit: 429 `agent_stream_limit`, poll *Get a run* instead."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Approve",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/runs/{{agentRunId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agent",
+                "runs",
+                "{{agentRunId}}",
+                "approve"
+              ]
+            },
+            "description": "Run the SQL the agent proposed on the read-only connection. Only while `awaiting_approval`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Edit the SQL",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/runs/{{agentRunId}}/edit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agent",
+                "runs",
+                "{{agentRunId}}",
+                "edit"
+              ]
+            },
+            "description": "Run your own SQL instead. It goes through the same guard: a refusal is 400 `guard_rejected` and the run stays paused. The edit is kept in the trace.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sql\": \"SELECT count(*) AS delivered FROM demo.orders WHERE order_status = 'delivered'\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401, 404, 409]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 404, 409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/runs/{{agentRunId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agent",
+                "runs",
+                "{{agentRunId}}",
+                "cancel"
+              ]
+            },
+            "description": "End the run without running anything. Its trace is kept.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Replay the trace",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/runs/{{agentRunId}}/replay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agent",
+                "runs",
+                "{{agentRunId}}",
+                "replay"
+              ]
+            },
+            "description": "The stored steps in order, as they happened. No model call and no query on the demo database."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Start a run with an empty question",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/runs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agent",
+                "runs"
+              ]
+            },
+            "description": "A blank question is 400 `question_invalid`; nothing is created.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"   \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [400, 401, 429]', () => pm.expect(pm.response.code).to.be.oneOf([400, 401, 429]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "7. Log out",
       "item": [
         {
           "name": "Log out",

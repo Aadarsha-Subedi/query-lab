@@ -91,22 +91,22 @@ One file per tool in `agent/tools/`; each has a Pydantic input model, a Pydantic
 
 ## 3.7 Jobs and SSE
 
-- [ ] **3.7.1** Huey tasks `start_run(run_id)` and `resume_run(run_id, decision)`; both call `loop`. Tests run Huey in immediate mode as before.
-- [ ] **3.7.2** `events.py`: publish each step to a Redis stream `agent:events:{run_id}` (trimmed, TTL). Event ids are the step index, so a client can resume with `Last-Event-ID`.
-- [ ] **3.7.3** `GET /api/agent/runs/{id}/events`: `StreamingHttpResponse` of `text/event-stream`. On connect it first sends any stored steps after `Last-Event-ID` from Postgres, then reads the stream with a blocking read (`AGENT_SSE_READ_BLOCK_MS`), sends a heartbeat comment every `AGENT_SSE_HEARTBEAT_SECONDS`, and closes on a terminal status. Owner only. Refused over `AGENT_MAX_OPEN_STREAMS` with a typed error the client can answer by polling `GET /runs/{id}`.
+- [x] **3.7.1** Huey tasks `start_run(run_id)` and `resume_run(run_id, decision)`; both call `loop`. Tests run Huey in immediate mode as before.
+- [x] **3.7.2** `events.py`: publish each step to a Redis stream `agent:events:{run_id}` (trimmed, TTL). Event ids are the step index, so a client can resume with `Last-Event-ID`.
+- [x] **3.7.3** `GET /api/agent/runs/{id}/events`: `StreamingHttpResponse` of `text/event-stream`. On connect it first sends any stored steps after `Last-Event-ID` from Postgres, then reads the stream with a blocking read (`AGENT_SSE_READ_BLOCK_MS`), sends a heartbeat comment every `AGENT_SSE_HEARTBEAT_SECONDS`, and closes on a terminal status. Owner only. Refused over `AGENT_MAX_OPEN_STREAMS` with a typed error the client can answer by polling `GET /runs/{id}`.
 - [ ] **3.7.4** Headers that keep proxies from buffering (`Cache-Control: no-cache`, `X-Accel-Buffering: no`); check that gunicorn's `gthread` worker and Cloudflare pass chunks through (manual check on the local container; recorded in `DECISION.md`).
-- [ ] **3.7.5** Tests: stream replays stored steps, resumes from `Last-Event-ID`, ends on terminal status, enforces the open-stream cap, and refuses another user's run.
+- [x] **3.7.5** Tests: stream replays stored steps, resumes from `Last-Event-ID`, ends on terminal status, enforces the open-stream cap, and refuses another user's run.
 
 ## 3.8 API
 
 All under `/api/agent`, session auth (`django_auth`), the usual envelope, and a run-creation throttle.
 
-- [ ] **3.8.1** `POST /runs` (question): validates with `prompt.validate_question`, resolves the key (`keys.resolve_provider`, one default-key spend per run), creates the run, enqueues `start_run`, returns the run.
-- [ ] **3.8.2** `GET /runs` (own runs, newest first, paginated) and `GET /runs/{id}` (run plus steps). Owner only; someone else's id is a 404.
-- [ ] **3.8.3** `POST /runs/{id}/approve`, `/edit` (body: `sql`), `/cancel`. Only valid while `awaiting_approval`; otherwise a typed 409.
-- [ ] **3.8.4** `GET /runs/{id}/replay`: the steps in order, as stored, with no LLM and no database query against `demo`.
-- [ ] **3.8.5** Schemas in the OpenAPI doc; update the Postman collection in `backend/postman/`.
-- [ ] **3.8.6** Tests: auth required, ownership, state rules, throttle, envelope shape, and one end-to-end test with the fake LLM from `POST /runs` through approve to `succeeded`.
+- [x] **3.8.1** `POST /runs` (question): validates with `prompt.validate_question`, resolves the key (`keys.resolve_provider`, one default-key spend per run), creates the run, enqueues `start_run`, returns the run.
+- [x] **3.8.2** `GET /runs` (own runs, newest first, paginated) and `GET /runs/{id}` (run plus steps). Owner only; someone else's id is a 404.
+- [x] **3.8.3** `POST /runs/{id}/approve`, `/edit` (body: `sql`), `/cancel`. Only valid while `awaiting_approval`; otherwise a typed 409.
+- [x] **3.8.4** `GET /runs/{id}/replay`: the steps in order, as stored, with no LLM and no database query against `demo`.
+- [x] **3.8.5** Schemas in the OpenAPI doc; update the Postman collection in `backend/postman/`.
+- [x] **3.8.6** Tests: auth required, ownership, state rules, throttle, envelope shape, and one end-to-end test with the fake LLM from `POST /runs` through approve to `succeeded`.
 
 ## 3.9 Confidence, replaced
 

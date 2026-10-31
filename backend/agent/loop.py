@@ -18,6 +18,7 @@ from sqlglot import exp
 
 from agent import confidence, events, prompts, state, tools, trace
 from agent.errors import (
+    CODE_INTERNAL,
     CODE_KEY_CHANGED,
     CODE_LLM_CALLS,
     CODE_NOT_ANSWERABLE,
@@ -117,6 +118,9 @@ class Loop:
                 self._turn()
         except RunStop as stop:
             self._fail(stop)
+        except Exception:  # a bug must end the run, not strand it
+            logger.exception("Agent run %s crashed", self.run.pk)
+            self._fail(RunStop(CODE_INTERNAL, "The run hit an unexpected error."))
         finally:
             self._settle()
 
