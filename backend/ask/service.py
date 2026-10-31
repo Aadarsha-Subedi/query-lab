@@ -24,6 +24,8 @@ from ask.errors import (
 from ask.models import AskLog
 from common.exception.domain import AppException
 from common.llm import LLMError, LLMProvider, LLMRequest
+from core.datadb import DEMO_SCHEMA
+from workspaces.context import DEMO, WorkspaceRef
 
 logger = logging.getLogger(__name__)
 
@@ -101,11 +103,11 @@ def _failure_status(error: AppException) -> str:
     return STATUS_BY_ERROR_CODE.get(error.error_code, AskLog.STATUS_REFUSED)
 
 
-def answer(user: User, question: str) -> AskResult:
+def answer(user: User, question: str, workspace: WorkspaceRef = DEMO) -> AskResult:
     """Answer one question, or raise a typed AppException."""
     trace = Trace(question=question)
     try:
-        result = _answer(user, question, trace)
+        result = _answer(user, question, trace, workspace)
     except AppException as error:
         _write_log(user, trace, _failure_status(error), error.error_code)
         raise
@@ -113,7 +115,9 @@ def answer(user: User, question: str) -> AskResult:
     return result
 
 
-def _answer(user: User, question: str, trace: Trace) -> AskResult:
+def _answer(
+    user: User, question: str, trace: Trace, workspace: WorkspaceRef
+) -> AskResult:
     question = prompt.validate_question(question)
     trace.question = question
 
@@ -124,7 +128,7 @@ def _answer(user: User, question: str, trace: Trace) -> AskResult:
     if resolved.key_source == keys.KEY_DEFAULT:
         keys.spend_default_key(user)
 
-    known = schema.get_schema(include_samples=True)
+    known = schema.get_schema(workspace, include_samples=True)
     schema_text = schema.render(known)
 
     done = generate_and_run(
@@ -132,8 +136,9 @@ def _answer(user: User, question: str, trace: Trace) -> AskResult:
         question,
         schema_text,
         check=lambda sql: guard.check(sql, known),
-        execute=runner.run,
+        execute=lambda sql: runner.run(sql, workspace),
         trace=trace,
+        schema_name=workspace.schema_name,
     )
     return AskResult(
         question=question,
@@ -170,12 +175,13 @@ def generate_and_run(
     execute: Callable[[str], runner.QueryResult],
     trace: Trace,
     dialect: str = prompt.DIALECT_POSTGRES,
+    schema_name: str = DEMO_SCHEMA,
 ) -> Generated:
     """The core of an ask, with no user, key or log: prompt, LLM, parse, check,
     run, and the repair loop. `check` and `execute` are the guard and the runner
     for the database being asked (Postgres for users, SQLite for Spider evals).
     Raises a typed AppException; `trace` collects tokens, attempts and the SQL."""
-    system = prompt.system_prompt(dialect)
+    system = prompt.system_prompt(dialect, schema_name)
     text = prompt.build_prompt(question, schema_text)
     max_attempts = 1 + settings.ASK_MAX_REPAIR_ATTEMPTS
     for attempt in range(1, max_attempts + 1):

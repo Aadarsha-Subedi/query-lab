@@ -46,8 +46,11 @@ Reply with one JSON object and nothing else:
 """
 
 
-def system_prompt(dialect: str = DIALECT_POSTGRES) -> str:
-    return _SYSTEM_TEMPLATE.format(**_DIALECTS[dialect])
+def system_prompt(dialect: str = DIALECT_POSTGRES, schema_name: str = "demo") -> str:
+    values = dict(_DIALECTS[dialect])
+    if dialect == DIALECT_POSTGRES and schema_name != "demo":
+        values["naming"] = f"with schema-qualified names ({schema_name}.<table>)"
+    return _SYSTEM_TEMPLATE.format(**values)
 
 
 SYSTEM_PROMPT = system_prompt(DIALECT_POSTGRES)

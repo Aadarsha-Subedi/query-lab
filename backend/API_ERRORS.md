@@ -60,6 +60,7 @@ Every error answers in the envelope `{success: false, status_code, message, code
 | `workspace_name_taken` | 409 | The user already has a workspace with this name. | Ask for another name. |
 | `workspace_not_ready` | 409 | The workspace is still being created, or is being deleted. | Retry in a moment. |
 | `demo_workspace_read_only` | 409 | Rename or delete on the shared demo workspace. | Hide those actions for the demo. |
+| `workspace_gone` | 404 | A run's workspace was deleted: its trace can still be replayed, but its result can no longer be fetched. | Show the trace only. |
 | `invalid_name` | 422 | A workspace, table or column name or a column type cannot be used. | Show the message next to the field. |
 | `workspace_provisioning_failed` | 503 | The schema and roles could not be created; everything was cleaned up. | Retry later. |
 
@@ -79,6 +80,7 @@ These are not HTTP errors: they sit in `RunOut.error_code` of a run with status 
 | `agent_revisions_exceeded` | The agent revised its SQL too many times. | Same. |
 | `agent_timeout` | The run worked too long. | Same. |
 | `agent_worker_lost` | The background worker stopped before the run finished. | Offer to ask again. |
+| `workspace_gone` | The workspace the run asked about was deleted before the run could continue. | Show the trace; offer to ask again in another workspace. |
 | `agent_internal_error` | An unexpected error inside the run. | Offer to ask again. |
 | `llm_key_changed` | The user's key was removed or changed mid-run. | Ask again. |
 | `run_expired` | Status `expired`: nobody approved in time. | Offer to ask again. |

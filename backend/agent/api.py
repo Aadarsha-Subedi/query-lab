@@ -22,9 +22,11 @@ from agent.schemas import (
     with_edited,
 )
 from agent.stream import EventStream
+from common.exception.domain import ValidationException
 from common.order.domain import OrderingSchema
 from common.response.domain import SuccessEnvelope, errors, success
 from common.throttling.scoped import AgentThrottle, ResultThrottle
+from workspaces.access import workspace_for
 
 router = Router(tags=["agent"])
 
@@ -61,28 +63,34 @@ def _user(request: HttpRequest) -> User:
 
 @router.get(
     "/limits",
-    response={200: SuccessEnvelope[LimitsOut], **errors(401, 429)},
+    response={200: SuccessEnvelope[LimitsOut], **errors(401, 404, 409, 429)},
     auth=django_auth,
 )
-def get_limits(request: HttpRequest) -> dict:
+def get_limits(request: HttpRequest, workspace: int | None = None) -> dict:
     """What is left before a limit: asks on the shared default key today, unfinished
     runs against the cap, whether you saved your own key, and open live streams.
-    Read only."""
-    return success(
-        LimitsOut(**limits.limits_for(_user(request))).model_dump(mode="json")
-    )
+    The limits are yours, not per workspace; `workspace` only checks that it is
+    one you may use (404 otherwise) and is echoed back. Read only."""
+    ref = workspace_for(_user(request), workspace)
+    data = limits.limits_for(_user(request))
+    return success(LimitsOut(workspace_id=ref.id, **data).model_dump(mode="json"))
 
 
 @router.post(
     "/runs",
-    response={200: SuccessEnvelope[RunOut], **errors(400, 401, 422, 429)},
+    response={200: SuccessEnvelope[RunOut], **errors(400, 401, 404, 409, 422, 429)},
     auth=django_auth,
     throttle=[AgentThrottle()],
 )
 def create_run(request: HttpRequest, payload: RunIn) -> dict:
-    """Start a run. The agent plans and proposes SQL, then waits for approval; follow
-    it on `/runs/{id}/events`. One run counts as one spend of the shared default key."""
-    run = service.create_run(_user(request), payload.question)
+    """Start a run on the demo, or on one of your own workspaces (`workspace`).
+    The agent plans and proposes SQL, then waits for approval; follow it on
+    `/runs/{id}/events`. One run counts as one spend of the shared default key.
+    Runs on your own workspace are kept out of eval data."""
+    user = _user(request)
+    run = service.create_run(
+        user, payload.question, workspace_for(user, payload.workspace)
+    )
     tasks.start_run(run.pk)
     run.refresh_from_db()
     return success(run_dict(run), message="Run started.")
@@ -98,6 +106,7 @@ def list_runs(
     page: Query[PageIn],
     filters: Query[RunFilter],
     ordering: Query[RunOrdering],
+    workspace: str | None = None,
 ) -> dict:
     """Your runs, newest first unless `ordering` says otherwise (`created_at` or
     `latency_ms`, `-` for descending). Filter by `status` (repeat it for several),
@@ -106,9 +115,18 @@ def list_runs(
     limit = min(
         page.limit or settings.PAGINATION_DEFAULT_LIMIT, settings.PAGINATION_MAX_LIMIT
     )
-    runs = with_edited(
-        ordering.apply(filters.filter(AgentRun.objects.filter(user=_user(request))))
-    )
+    mine = AgentRun.objects.filter(user=_user(request))
+    if workspace == "demo":
+        mine = mine.filter(workspace_id__isnull=True)
+    elif workspace is not None:
+        if not workspace.isdigit():
+            raise ValidationException(
+                errors=[
+                    {"field": "workspace", "message": "Use a workspace id or demo."}
+                ]
+            )
+        mine = mine.filter(workspace_id=int(workspace))
+    runs = with_edited(ordering.apply(filters.filter(mine)))
     if ordering.ordering:  # the id breaks ties, so pages do not shuffle
         runs = runs.order_by(*runs.query.order_by, "-id")
     items = [run_dict(r) for r in runs[page.offset : page.offset + limit]]

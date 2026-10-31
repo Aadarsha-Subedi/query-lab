@@ -155,7 +155,9 @@ def scripted(monkeypatch: pytest.MonkeyPatch, schema: Schema) -> Scripted:
     )
     monkeypatch.setattr(schema_module, "get_schema", lambda *a, **k: schema)
 
-    def fake_run(sql: str, **kwargs: object) -> runner.QueryResult:
+    def fake_run(
+        sql: str, workspace: object = None, **kwargs: object
+    ) -> runner.QueryResult:
         script.executed.append(sql)
         outcome = script.results.pop(0) if script.results else TWO_BY_TWO
         if isinstance(outcome, Exception):

@@ -1,20 +1,23 @@
-"""The schema browser: the demo schema as the analyst screen's schema panel shows it.
+"""The schema browser: a workspace's schema as the analyst screen's schema panel
+shows it (the demo, or one of the caller's own with `?workspace=`).
 
 Read from `ask.schema.get_schema`, so it shares the cache the agent's tools use and
-never writes. Demo schema only (step 5 adds a workspace parameter)."""
+never writes."""
 
 import hashlib
 import json
-from typing import Any
+from typing import Any, cast
 
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from ninja import Router, Schema
 from ninja.security import django_auth
 
+from accounts.models import User
 from ask import schema as ask_schema
 from common.exception.domain import NotFoundException
 from common.response.domain import SuccessEnvelope, errors, success
+from workspaces.access import workspace_for
 
 router = Router(tags=["schema"])
 
@@ -82,9 +85,12 @@ def table_dict(table: ask_schema.Table, *, samples: bool) -> dict[str, Any]:
     }
 
 
-def _current() -> tuple[ask_schema.Schema, bool]:
+def _current(
+    request: HttpRequest, workspace: int | None
+) -> tuple[ask_schema.Schema, bool]:
     samples = settings.SCHEMA_API_INCLUDE_SAMPLES
-    return ask_schema.get_schema(include_samples=samples), samples
+    ref = workspace_for(cast(User, request.user), workspace)
+    return ask_schema.get_schema(ref, include_samples=samples), samples
 
 
 def _etag(data: Any) -> str:
@@ -113,14 +119,14 @@ def _respond(request: HttpRequest, data: Any) -> HttpResponse:
 
 @router.get(
     "",
-    response={200: SuccessEnvelope[SchemaOut], 304: None, **errors(401, 429)},
+    response={200: SuccessEnvelope[SchemaOut], 304: None, **errors(401, 404, 409, 429)},
     auth=django_auth,
 )
-def get_schema(request: HttpRequest) -> HttpResponse:
-    """Every table of the demo schema with columns, keys, comments and row
-    estimates. Send `If-None-Match` with the last `ETag` to get a 304 when
-    nothing changed."""
-    schema, samples = _current()
+def get_schema(request: HttpRequest, workspace: int | None = None) -> HttpResponse:
+    """Every table of the demo schema, or of your workspace (`workspace`), with
+    columns, keys, comments and row estimates. Send `If-None-Match` with the last
+    `ETag` to get a 304 when nothing changed."""
+    schema, samples = _current(request, workspace)
     data = {
         "name": schema.name,
         "tables": [table_dict(t, samples=samples) for t in schema.tables],
@@ -130,13 +136,15 @@ def get_schema(request: HttpRequest) -> HttpResponse:
 
 @router.get(
     "/tables/{name}",
-    response={200: SuccessEnvelope[TableOut], 304: None, **errors(401, 404, 429)},
+    response={200: SuccessEnvelope[TableOut], 304: None, **errors(401, 404, 409, 429)},
     auth=django_auth,
 )
-def get_table(request: HttpRequest, name: str) -> HttpResponse:
+def get_table(
+    request: HttpRequest, name: str, workspace: int | None = None
+) -> HttpResponse:
     """One table, same shape as in the full schema. An unknown name is a 404
     `table_not_found` that says nothing else about the schema."""
-    schema, samples = _current()
+    schema, samples = _current(request, workspace)
     table = schema.table(name)
     if table is None:
         raise TableNotFound()

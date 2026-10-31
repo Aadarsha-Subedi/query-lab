@@ -13,6 +13,8 @@ from agent.models import AgentRun, AgentStep
 
 class RunIn(Schema):
     question: str
+    # One of your own workspaces; leave out for the shared demo.
+    workspace: int | None = None
 
 
 class EditIn(Schema):
@@ -56,6 +58,9 @@ class RunOut(Schema):
     output_tokens: int
     latency_ms: int
     revisions: int
+    # The workspace the run asked about; null is the shared demo. It may name a
+    # workspace that has since been deleted (the trace stays).
+    workspace_id: int | None
     # True when the run succeeded: `GET /runs/{id}/result` has rows for it.
     has_result: bool
     # True when the person changed the SQL before it ran.
@@ -84,6 +89,8 @@ class OpenStreamsOut(Schema):
 
 
 class LimitsOut(Schema):
+    # The workspace asked about; null is the shared demo.
+    workspace_id: int | None
     """Used against allowed, so the screen can warn before a 429. A user with
     their own key (`has_own_key`) does not spend the default key."""
 
@@ -182,6 +189,7 @@ def run_dict(run: AgentRun) -> dict[str, Any]:
         "output_tokens": run.output_tokens,
         "latency_ms": run.latency_ms,
         "revisions": run.revisions,
+        "workspace_id": run.workspace_id,
         "has_result": run.status == AgentRun.STATUS_SUCCEEDED,
         "edited": _edited(run),
         "created_at": run.created_at,

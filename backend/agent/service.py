@@ -25,6 +25,8 @@ from ask import guard, keys, schema
 from ask import prompt as ask_prompt
 from ask.errors import GuardRejected
 from common.exception.domain import ConflictException
+from workspaces.context import DEMO, WorkspaceRef
+from workspaces.resolve import resolve
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +48,7 @@ def get_run(user: User, run_id: int) -> AgentRun:
     return run
 
 
-def create_run(user: User, question: str) -> AgentRun:
+def create_run(user: User, question: str, workspace: WorkspaceRef = DEMO) -> AgentRun:
     """Validate, take the key (one default-key spend per run), store the run.
     The caller enqueues `start_run`."""
     question = ask_prompt.validate_question(question)
@@ -67,6 +69,8 @@ def create_run(user: User, question: str) -> AgentRun:
             model=resolved.provider.model,
             key_source=resolved.key_source,
             prompt_version=prompts.PROMPT_VERSION,
+            workspace_id=workspace.id,
+            excluded_from_evals=not workspace.is_demo,
         )
 
 
@@ -164,7 +168,10 @@ def decide(
         if edited:
             assert sql is not None
             try:
-                checked = guard.check(sql, schema.get_schema(include_samples=True))
+                known = schema.get_schema(
+                    resolve(run.workspace_id), include_samples=True
+                )
+                checked = guard.check(sql, known)
             except GuardRejected as refusal:
                 # Say why. The reason only names what the user's own SQL contains
                 # (a statement kind, a function, a table or column they wrote).

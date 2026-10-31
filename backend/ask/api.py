@@ -11,6 +11,7 @@ from ask import keys, service
 from ask.models import UserLLMKey
 from common.response.domain import SuccessEnvelope, errors, success
 from common.throttling.scoped import AskThrottle
+from workspaces.access import workspace_for
 
 router = Router(tags=["ask"])
 
@@ -72,6 +73,8 @@ def delete_llm_key(request: HttpRequest, provider: Provider) -> dict:
 
 class AskIn(Schema):
     question: str
+    # One of your own workspaces; leave out for the shared demo.
+    workspace: int | None = None
 
 
 class AskOut(Schema):
@@ -94,15 +97,21 @@ class AskOut(Schema):
 
 @router.post(
     "/ask",
-    response={200: SuccessEnvelope[AskOut], **errors(400, 401, 422, 429, 502, 504)},
+    response={
+        200: SuccessEnvelope[AskOut],
+        **errors(400, 401, 404, 409, 422, 429, 502, 504),
+    },
     auth=django_auth,
     throttle=[AskThrottle()],
 )
 def ask(request: HttpRequest, payload: AskIn) -> dict:
-    """Answer a question about the demo database: the SQL that ran, the result
-    table and a confidence score. The SQL is checked before it runs and runs on
-    the read-only connection only."""
-    result = service.answer(cast(User, request.user), payload.question)
+    """Answer a question about the demo database, or about one of your own
+    workspaces (`workspace`): the SQL that ran, the result table and a confidence
+    score. The SQL is checked before it runs and runs on the read-only connection
+    of that workspace only."""
+    user = cast(User, request.user)
+    workspace = workspace_for(user, payload.workspace)
+    result = service.answer(user, payload.question, workspace)
     data = asdict(result)
     data["confidence"] = confidence.visible(result.confidence)
     return success(data)

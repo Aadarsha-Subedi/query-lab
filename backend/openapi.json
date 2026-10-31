@@ -6,6 +6,17 @@
           "question": {
             "title": "Question",
             "type": "string"
+          },
+          "workspace": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace"
           }
         },
         "required": [
@@ -398,7 +409,6 @@
         "type": "object"
       },
       "LimitsOut": {
-        "description": "Used against allowed, so the screen can warn before a 429. A user with\ntheir own key (`has_own_key`) does not spend the default key.",
         "properties": {
           "default_key": {
             "$ref": "#/components/schemas/DefaultKeyLimitOut"
@@ -412,9 +422,21 @@
           },
           "unfinished_runs": {
             "$ref": "#/components/schemas/CountLimitOut"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
           }
         },
         "required": [
+          "workspace_id",
           "default_key",
           "has_own_key",
           "unfinished_runs",
@@ -682,6 +704,17 @@
             },
             "title": "Steps",
             "type": "array"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
           }
         },
         "required": [
@@ -704,6 +737,7 @@
           "output_tokens",
           "latency_ms",
           "revisions",
+          "workspace_id",
           "has_result",
           "edited",
           "created_at",
@@ -783,6 +817,17 @@
           "question": {
             "title": "Question",
             "type": "string"
+          },
+          "workspace": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace"
           }
         },
         "required": [
@@ -918,6 +963,17 @@
           "step_count": {
             "title": "Step Count",
             "type": "integer"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
           }
         },
         "required": [
@@ -940,6 +996,7 @@
           "output_tokens",
           "latency_ms",
           "revisions",
+          "workspace_id",
           "has_result",
           "edited",
           "created_at",
@@ -1747,9 +1804,26 @@
   "paths": {
     "/api/agent/limits": {
       "get": {
-        "description": "What is left before a limit: asks on the shared default key today, unfinished\nruns against the cap, whether you saved your own key, and open live streams.\nRead only.",
+        "description": "What is left before a limit: asks on the shared default key today, unfinished\nruns against the cap, whether you saved your own key, and open live streams.\nThe limits are yours, not per workspace; `workspace` only checks that it is\none you may use (404 otherwise) and is echoed back. Read only.",
         "operationId": "get_limits",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "workspace",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -1770,6 +1844,26 @@
               }
             },
             "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
           },
           "429": {
             "content": {
@@ -1918,6 +2012,22 @@
               ],
               "title": "Ordering"
             }
+          },
+          {
+            "in": "query",
+            "name": "workspace",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace"
+            }
           }
         ],
         "responses": {
@@ -1973,7 +2083,7 @@
         ]
       },
       "post": {
-        "description": "Start a run. The agent plans and proposes SQL, then waits for approval; follow\nit on `/runs/{id}/events`. One run counts as one spend of the shared default key.",
+        "description": "Start a run on the demo, or on one of your own workspaces (`workspace`).\nThe agent plans and proposes SQL, then waits for approval; follow it on\n`/runs/{id}/events`. One run counts as one spend of the shared default key.\nRuns on your own workspace are kept out of eval data.",
         "operationId": "create_run",
         "parameters": [],
         "requestBody": {
@@ -2016,6 +2126,26 @@
               }
             },
             "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
           },
           "422": {
             "content": {
@@ -2620,7 +2750,7 @@
     },
     "/api/ask": {
       "post": {
-        "description": "Answer a question about the demo database: the SQL that ran, the result\ntable and a confidence score. The SQL is checked before it runs and runs on\nthe read-only connection only.",
+        "description": "Answer a question about the demo database, or about one of your own\nworkspaces (`workspace`): the SQL that ran, the result table and a confidence\nscore. The SQL is checked before it runs and runs on the read-only connection\nof that workspace only.",
         "operationId": "ask",
         "parameters": [],
         "requestBody": {
@@ -2663,6 +2793,26 @@
               }
             },
             "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
           },
           "422": {
             "content": {
@@ -3008,9 +3158,26 @@
     },
     "/api/schema": {
       "get": {
-        "description": "Every table of the demo schema with columns, keys, comments and row\nestimates. Send `If-None-Match` with the last `ETag` to get a 304 when\nnothing changed.",
+        "description": "Every table of the demo schema, or of your workspace (`workspace`), with\ncolumns, keys, comments and row estimates. Send `If-None-Match` with the last\n`ETag` to get a 304 when nothing changed.",
         "operationId": "get_schema",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "workspace",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -3034,6 +3201,26 @@
               }
             },
             "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
           },
           "429": {
             "content": {
@@ -3070,6 +3257,22 @@
               "title": "Name",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "workspace",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace"
+            }
           }
         ],
         "responses": {
@@ -3105,6 +3308,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
           },
           "429": {
             "content": {

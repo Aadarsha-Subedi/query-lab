@@ -26,6 +26,7 @@ from agent.errors import (
     CODE_STEPS,
     CODE_TIMEOUT,
     CODE_TOKENS,
+    CODE_WORKSPACE_GONE,
     RunStop,
     ToolError,
 )
@@ -38,6 +39,9 @@ from ask.errors import QueryFailed, QueryTimeout
 from ask.guard import GuardReport
 from ask.prompt import first_line
 from common.llm import LLMError, LLMProvider, LLMRequest
+from workspaces.context import DEMO, WorkspaceRef
+from workspaces.errors import WorkspaceGone
+from workspaces.resolve import resolve
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +114,9 @@ class Loop:
         self.state = state.load(run)
         self.provider: LLMProvider | None = None
         self.known: schema.Schema | None = None
+        # Where this run's schema and SQL live. It comes from the run row, never
+        # from the model's output.
+        self.workspace: WorkspaceRef = DEMO
 
     # ── driving ──────────────────────────────────────────────────────────
 
@@ -152,7 +159,13 @@ class Loop:
                     CODE_KEY_CHANGED, "The LLM key changed while the run waited."
                 )
             self.provider = resolved.provider
-        self.known = schema.get_schema(include_samples=True)
+        try:
+            self.workspace = resolve(self.run.workspace_id)
+        except WorkspaceGone:
+            raise RunStop(
+                CODE_WORKSPACE_GONE, "The workspace this run used was deleted."
+            ) from None
+        self.known = schema.get_schema(self.workspace, include_samples=True)
 
     def _settle(self) -> None:
         """Add the time spent, and keep or drop the saved state."""
@@ -258,7 +271,7 @@ class Loop:
 
     def _plan(self) -> None:
         plan = self._ask(
-            prompts.PLAN_SYSTEM,
+            prompts.plan_system(self.workspace.schema_name),
             prompts.plan_prompt(self.run.question, self._schema_text()),
             prompts.parse_plan,
         )
@@ -275,7 +288,7 @@ class Loop:
 
     def _act(self) -> None:
         turn = self._ask(
-            prompts.act_system(),
+            prompts.act_system(self.workspace.schema_name),
             prompts.act_prompt(
                 self.run.question,
                 self._schema_text(),
@@ -362,7 +375,7 @@ class Loop:
         sql = st.pending_sql
         started = time.monotonic()
         try:
-            result = runner.run(sql)
+            result = runner.run(sql, self.workspace)
         except QueryTimeout:
             self._step(
                 AgentStep.KIND_EXECUTE,

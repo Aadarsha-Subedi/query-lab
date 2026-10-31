@@ -1624,6 +1624,224 @@
               }
             }
           ]
+        },
+        {
+          "name": "Schema of my workspace",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schema?workspace={{workspaceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schema"
+              ],
+              "query": [
+                {
+                  "key": "workspace",
+                  "value": "{{workspaceId}}"
+                }
+              ]
+            },
+            "description": "The schema panel for one of your workspaces. Leave `workspace` out for the demo. Someone else's workspace is a 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 304, 401, 404, 409, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 304, 401, 404, 409, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ask in my workspace",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ask",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ask"
+              ]
+            },
+            "description": "One-shot answer against your workspace.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"How many rows are in each table?\",\n  \"workspace\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401, 404, 409, 422, 429, 502, 504]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 404, 409, 422, 429, 502, 504]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Start a run in my workspace",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/runs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agent",
+                "runs"
+              ]
+            },
+            "description": "Starts an agent run on your workspace. The run is kept out of eval data. Sets {{agentRunId}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"How many rows are in each table?\",\n  \"workspace\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401, 404, 409, 422, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 404, 409, 422, 429]));",
+                  "if (pm.response.code === 200) pm.environment.set('agentRunId', String(pm.response.json().data.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List runs of my workspace",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/runs?workspace={{workspaceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agent",
+                "runs"
+              ],
+              "query": [
+                {
+                  "key": "workspace",
+                  "value": "{{workspaceId}}"
+                }
+              ]
+            },
+            "description": "History filtered to one workspace (`workspace=demo` for the demo only)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401, 422, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 422, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Limits for my workspace",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/limits?workspace={{workspaceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agent",
+                "limits"
+              ],
+              "query": [
+                {
+                  "key": "workspace",
+                  "value": "{{workspaceId}}"
+                }
+              ]
+            },
+            "description": "Same limits, checks the workspace is yours."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404, 409, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 409, 429]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
