@@ -122,3 +122,18 @@ class ConstraintViolated(ConflictException):
 class RelationInvalid(UnprocessableEntityException):
     message = "These columns cannot be related."
     error_code = "relation_invalid"
+
+
+# ── storage (5.8) ─────────────────────────────────────────────────────────
+
+
+class WorkspaceFull(ConflictException):
+    message = "This workspace is full. Delete data or tables to make room."
+    error_code = "workspace_full"
+
+
+class UserStorageFull(ConflictException):
+    message = (
+        "Your workspaces together are full. Delete data or a workspace to make room."
+    )
+    error_code = "user_storage_full"

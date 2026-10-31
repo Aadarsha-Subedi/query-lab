@@ -86,3 +86,10 @@ class WorkspaceThrottle(AskThrottle):
 
     scope = "workspace"
     rate_setting = "THROTTLE_WORKSPACE_RATE"
+
+
+class WorkspaceSqlThrottle(AskThrottle):
+    """Running SQL in the workspace console."""
+
+    scope = "workspace_sql"
+    rate_setting = "THROTTLE_WORKSPACE_SQL_RATE"
