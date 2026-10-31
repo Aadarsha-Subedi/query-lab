@@ -61,11 +61,17 @@ class AgentRun(TimeStampModel):
     latency_ms = models.PositiveIntegerField(default=0)
     revisions = models.PositiveSmallIntegerField(default=0)
     finished_at = models.DateTimeField(null=True, blank=True)
+    # The user workspace this run asked about; null is the shared demo. A plain
+    # number, not a foreign key: deleting a workspace must not touch its traces.
+    workspace_id = models.PositiveIntegerField(null=True, blank=True)
+    # Runs on a user's own data are not eval data (step 6 skips them).
+    excluded_from_evals = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-created_at", "-id"]
         indexes = [
             models.Index(fields=["user", "-created_at"]),
+            models.Index(fields=["user", "workspace_id", "-created_at"]),
             models.Index(fields=["status", "updated_at"]),
         ]
 
