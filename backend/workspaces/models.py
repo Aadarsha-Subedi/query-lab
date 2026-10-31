@@ -20,6 +20,8 @@ class Workspace(TimeStampModel):
     )
     name = models.CharField(max_length=100)
     status = models.CharField(max_length=10, default=STATUS_CREATING)
+    # Part of the derived role passwords; bump it and reprovision to rotate them.
+    credential_version = models.PositiveIntegerField(default=1)
 
     class Meta:
         ordering = ["created_at", "id"]
