@@ -8,7 +8,7 @@
 - Execution accuracy is computed by running the gold SQL and the model's SQL on the same database and comparing rows (rules in 2.4).
 - The Olist target goes through the real `ask` pipeline (prompt, guard, reader role). The Spider target runs offline on SQLite.
 - Spider dev is split once, by database, into `tune` and `held-out`; the split list is committed and the headline score is reported on `held-out` only.
-- Baselines are recorded for Gemini 3.5 Flash and one OpenAI model on both targets, with accuracy per confidence bucket.
+- Baselines are recorded for Gemini 3.5 Flash on both targets (a second model, such as OpenAI, is optional: paid API keys are billed separately from chat plans), with accuracy per confidence bucket.
 - The comparison logic is unit tested (including tricky cases), and the harness is tested end to end with the fake LLM.
 - `backend/CLAUDE.md`, `FLOW.md` and `DECISION.md` are updated, and step 2 is ticked in the README.
 
@@ -100,7 +100,7 @@ The step 1 `answer(user, question)` mixes key lookup, daily limits and `AskLog` 
 
 ## 2.9 Baselines
 
-- [ ] **2.9.1** (You) Choose the OpenAI model for the baseline (default proposal: `gpt-5-mini`) and set `EVAL_OPENAI_API_KEY` in `backend/.env`. Confirm the API budget; a full Spider dev run is about 1,000 calls per model.
+- [ ] **2.9.1** (You, optional) Choose a second model: the OpenAI model for the baseline (default proposal: `gpt-5-mini`) and set `EVAL_OPENAI_API_KEY` in `backend/.env`. Confirm the API budget; a full Spider dev run is about 1,000 calls per model.
 - [ ] **2.9.2** Smoke run: 10 Olist questions on Gemini 3.5 Flash. Read the failures with you before spending on the full run.
 - [ ] **2.9.3** (You, with Claude reading the output) Full Olist golden set on both models.
 - [ ] **2.9.4** (You) Spider `held-out` on both models; Spider `tune` on one model to see the gap.
