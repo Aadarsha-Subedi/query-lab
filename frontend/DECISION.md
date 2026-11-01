@@ -170,3 +170,46 @@ frame; `boot.ts` only times its exit or shows the failure.
 typed `ApiError` (with the request id), a toast on 429, and no retries. Django
 sets the `csrftoken` cookie only when asked, so `GET /api/me` (called at every
 boot) carries `ensure_csrf_cookie`.
+
+## Step 9: the product screens (2026-11-01)
+
+**Types come from the contract.** `openapi-typescript` (dev only, no runtime weight) writes
+`src/lib/api/schema.gen.ts` from `backend/openapi.json`; CI runs `pnpm gen:api:check`. Building on it
+found two real backend defects, both fixed (schema classes with the same name merge in
+`openapi.json`): the agent and workspace `LimitsOut`, and the agent and eval `ResultOut`. The agent ones are
+now `AgentLimitsOut` and `RunResultOut`, and a backend test fails when two schema classes share a name.
+
+**No retries, polling or timers.** The owner's rule: a failed request shows its error and the user reloads
+or presses Try again. The live run follows the same rule: the SSE reader (`fetch`, so cookies and
+`Last-Event-ID` work; not `EventSource`, which reconnects by itself) opens once, again after approve/edit
+(the server closes the stream at the pause), and again only when the user presses Reconnect. `API_ERRORS.md`
+suggests polling after `agent_stream_limit`; we show the message and Reconnect instead. `no-retry.test.ts` bans
+`retry`, `refetchInterval`, `setInterval`, `setTimeout` (except the boot screen) and `EventSource` in `src/`.
+
+**Staff flag on `/api/me`.** The workbench needed to know who is staff; `GET /api/me` now returns `is_staff`
+(additive, tested). The guard and the nav use it; the API still enforces `staff_only`.
+
+**What was left out or changed from the plan.**
+
+- CSV upload: dropped with backend 5.7. Tables are filled through the rows form and the SQL console.
+- The workspace picker sits on the ask page, not in the header (the header chip shows the shared key's limit).
+- Eval filters in the UI are target and model; runner and prompt version are accepted in the URL only.
+- Diff of proposed vs approved SQL is a small inline line diff (no library).
+- No chart library: accuracy by cluster is a table with inline bars. Revisit only if a trend over time is wanted.
+- The LLM keys page has an optional model text field, because the API has no endpoint that lists allowed models.
+- Rows grid page size = the API's `max_rows_per_edit`, so no new `.env` value was needed.
+- `column types` and `on delete` choices and the provider names are constants checked against the backend source (`ws-contract.test.ts`).
+
+**Quality checks that run in `pnpm test`.** `states.test.tsx` (every data screen shows a loading box and an error box
+with its own Try again and does not retry), `a11y.test.tsx` (axe on every screen, colour contrast off because jsdom has no
+layout), `api-errors.test.ts` (every code in `API_ERRORS.md` has wording).
+
+**Sizes (2026-11-01).** `pnpm build`: entry chunk 287 kB (about 93 kB gzip); the largest lazy chunks are the schema/table
+library 86 kB, alert-dialog and select 56 kB, and the workspace editor 40 kB. Route-level splitting keeps the workbench and
+workspace editor out of the first load. `/design` is still absent from the production build.
+
+**Checked against the running stack (9.11.1).** With a signed-in test session in headless Chrome: the pages load without
+errors or horizontal overflow at 375, 768 and 1280 px; a real run reached the approval card, approved, ran, showed the result;
+creating a workspace, a table, a row, running SQL and deleting the workspace all worked. Findings fixed: three pending
+migrations in the dev database (not a code bug), the schema list clipped by the scroll area, long SQL scrolling under the copy
+button, and the ask page order on phones. Not checked: the Google/GitHub sign-in itself, which needs your accounts.

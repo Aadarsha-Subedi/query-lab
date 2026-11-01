@@ -475,3 +475,8 @@ Backend only: the surface the analyst screen (step 9) needs, so the screen is on
 **Left for the owner (7.1.3, 7.1.4, 7.3.5, 7.3.6, 7.4.4, 7.6).** Add `train_spider.json`, make the W&B account and Colab secret, run a 50-step smoke training, the full training, then both prediction passes; score the files with `run_eval --predictions` and record here: base vs tuned accuracy on Spider held-out and Olist, the hand reading of misses, training time and the W&B link.
 
 **Colab TensorFlow clash (7.3.5).** The first real run failed on Colab (Python 3.13): its preinstalled TensorFlow needs a newer `protobuf` than the pinned libraries leave installed, and `transformers` imports TensorFlow when it finds it. Both notebooks now uninstall TensorFlow, set `USE_TF=0`/`USE_FLAX=0` before any `transformers` import, and ask for a runtime restart after the install cell. Colab's image changes over time, so expect a pin to need a bump again.
+
+**Contract fixes found while building step 9 (2026-11-01).** `openapi.json` keys schemas by class name, so two classes with one name
+become one and the generated client gets the wrong type. Two did: `LimitsOut` (agent and workspaces) and `ResultOut` (agent and evals).
+The agent ones are now `AgentLimitsOut` and `RunResultOut`, and `common/tests/test_schema_names.py` fails when two schema classes share a name.
+`GET /api/me` also returns `is_staff` so the screens can show the workbench to staff only; the API still enforces it.

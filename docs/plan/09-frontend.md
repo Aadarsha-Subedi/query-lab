@@ -124,20 +124,20 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 9.10 Quality: states, accessibility, responsive
 
-- [ ] **9.10.1** Audit every fetching component against §13: loading skeleton, error with Try again, empty, success, same box size. A test per feature renders each of the four states.
+- [x] **9.10.1** Audit every fetching component against §13: loading skeleton, error with Try again, empty, success, same box size. A test per feature renders each of the four states.
 - [x] **9.10.2** Grep-based test: no `retry`, `refetchOnWindowFocus`, `refetchInterval`, `setInterval`, `setTimeout`-driven refetch or `EventSource` auto-reconnect in `src/`; the one allowed manual reconnect is named in an allowlist. This enforces decision 4.
-- [ ] **9.10.3** Keyboard and screen-reader pass: focus order, dialog focus trap, live region for run status changes (`aria-live=polite`), approval buttons reachable, tables with headers and captions. `eslint-plugin-jsx-a11y` rules via the existing lint config only if it adds no peer conflicts; otherwise manual checklist in `DECISION.md`.
-- [ ] **9.10.4** Responsive pass at 375 px, 768 px, desktop for ask, history, workspaces, workbench; no horizontal page scroll (tables scroll inside their box).
-- [ ] **9.10.5** Dark and light check of every new screen; add each new composite component to `/design` where it is reusable (`ApprovalCard`, `ResultTable`, status badges).
-- [ ] **9.10.6** Route-level code splitting verified: the production build's main chunk size is recorded; workbench and workspace chunks are separate; `build.test.ts` still proves `/design` is absent.
+- [x] **9.10.3** Keyboard and screen-reader pass: focus order, dialog focus trap, live region for run status changes (`aria-live=polite`), approval buttons reachable, tables with headers and captions. `eslint-plugin-jsx-a11y` rules via the existing lint config only if it adds no peer conflicts; otherwise manual checklist in `DECISION.md`.
+- [x] **9.10.4** Responsive pass at 375 px, 768 px, desktop for ask, history, workspaces, workbench; no horizontal page scroll (tables scroll inside their box).
+- [x] **9.10.5** Dark and light check of every new screen; add each new composite component to `/design` where it is reusable (`ApprovalCard`, `ResultTable`, status badges).
+- [x] **9.10.6** Route-level code splitting verified: the production build's main chunk size is recorded; workbench and workspace chunks are separate; `build.test.ts` still proves `/design` is absent.
 
 ## 9.11 Run it against the real backend
 
-- [ ] **9.11.1** `make dev`, sign in with the local dev sign-in, and click through the whole path in the built-in browser: ask, approve, edit, result, history, replay, a workspace with a table and rows, keys page, workbench as staff. Fix what breaks; record findings in `DECISION.md`.
-- [ ] **9.11.2** **(You)** The real-browser CORS and OAuth checks that were left over from 4.7.5 and 0.8.5-0.8.6 (Google and GitHub sign-in) need your credentials; with them done, test the sign-in page end to end. Needs the live Gemini key for a real agent run.
+- [x] **9.11.1** `make dev`, sign in with the local dev sign-in, and click through the whole path in the built-in browser: ask, approve, edit, result, history, replay, a workspace with a table and rows, keys page, workbench as staff. Fix what breaks; record findings in `DECISION.md`.
+- [ ] **9.11.2** **(You)** Click through the real Google and GitHub sign-in on `http://localhost:3000/login` (your OAuth apps are set up; I could not do this part, so the checks above used a test session cookie) and confirm you land on `/app`. Then ask one real question end to end.
 
 ## 9.12 Close-out
 
-- [ ] **9.12.1** `pnpm lint`, `typecheck`, `test`, `build`, `gen:api:check` all pass, run locally with the same commands the CI frontend job uses (nothing is pushed).
-- [ ] **9.12.2** Update `frontend/CLAUDE.md` (layout of new features, new conventions), `frontend/FLOW.md` (the run's live flow, approval flow, staff guard, manual-reconnect rule) and `frontend/DECISION.md` (each decision above, bundle sizes, anything deferred).
-- [ ] **9.12.3** Tick step 9 in the root README with a note of what remains for you (9.11.2).
+- [x] **9.12.1** `pnpm lint`, `typecheck`, `test`, `build`, `gen:api:check` all pass, run locally with the same commands the CI frontend job uses (nothing is pushed).
+- [x] **9.12.2** Update `frontend/CLAUDE.md` (layout of new features, new conventions), `frontend/FLOW.md` (the run's live flow, approval flow, staff guard, manual-reconnect rule) and `frontend/DECISION.md` (each decision above, bundle sizes, anything deferred).
+- [x] **9.12.3** Tick step 9 in the root README with a note of what remains for you (9.11.2).

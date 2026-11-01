@@ -36,7 +36,7 @@ step 9 on the approved design system, just before deployment.
 - [x] 6. Trace-driven evals (backend only; your review of the first drafted batch and the live Olist agent eval, 6.9.2, remain, then 6.9.3; [plan](docs/plan/06-trace-driven-evals.md))
 - [ ] 7. LoRA fine-tune (stretch; code done, data built; your remaining steps: finish the Colab training (7.3.5-7.3.6), run the prediction notebook (7.4.4), score base and tuned with `run_eval --predictions` (7.6), record the result in `DECISION.md` (7.8.1); [plan](docs/plan/07-lora-fine-tune.md))
 - [ ] 8. Schema-RAG + semantic cache (optional)
-- [ ] 9. Frontend
+- [x] 9. Frontend (built and checked against the running stack; your Google/GitHub sign-in click-through, 9.11.2, remains; [plan](docs/plan/09-frontend.md))
 - [ ] 10. Deploy + portfolio polish
 
 ## Demo data

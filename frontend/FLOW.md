@@ -20,13 +20,23 @@ index.html            boot screen (plain HTML + tokens.css + boot.css), themed b
 ## Routes (src/routes, file-based; src/routeTree.gen.ts is generated)
 
 ```
-__root            ThemeController, TooltipProvider, Toaster
+__root            ThemeController, TooltipProvider, Toaster; not-found and error pages (RouteStatus)
 _public           beforeLoad: signed in -> redirect /app
-  /                 landing (placeholder)
-  /login            sign-in placeholder (Google / GitHub buttons in step 9)
-  /auth/callback    OAuth return
-_app              beforeLoad: signed out -> redirect /; adds { me } to the route context
-  /app              workspaces (placeholder) + HealthPanel
+  /                 landing: what it is, ask / approve / measure, dataset licence
+  /login            Continue with Google / GitHub (real form POSTs to allauth)
+  /auth/callback    only seen when a sign-in did not finish (a finished one is moved on to /app by the guard)
+_app              beforeLoad: signed out -> redirect /; adds { me }; renders AppShell (header, nav, limits chip)
+  /app              home (placeholder page + HealthPanel)
+  /ask              ?run=&workspace=   workspace picker, schema panel, question box, RunView
+  /history          ?status=&q=&ordering=&offset=&workspace=   your runs; rows link to /ask?run= and the replay
+  /runs/$runId/replay   stored trace, one step at a time
+  /workspaces       the demo and your private workspaces; create, delete (typed name)
+  /workspaces/$id   ?tab=tables|relations|sql &table=   tables, columns, key, rows, relations, SQL console
+  /settings/keys    your provider keys
+  /workbench        staff only (beforeLoad: me.is_staff, else a 403 "Not available" page)
+    /runs, /runs/$runId        traces and one trace (proposed vs approved SQL)
+    /cases, /cases/$caseId     clusters, cases, the review form
+    /evals, /evals/$runId, /evals/compare?base=&other=
 /design           dev only (notFound in production; the page is not in the bundle)
 ```
 
@@ -81,3 +91,38 @@ Every request goes through `src/lib/api` (see "Data in a component").
 ## Evals (from backend step 2, used by step 6 and 9)
 
 - Eval runs are stored in the app database (`EvalRun`, `EvalResult`); step 6 exposes them through an API for the eval dashboard. No frontend change in step 2.
+
+## A question, end to end (the ask page)
+
+```
+AskBox  POST /agent/runs {question, workspace}      -> navigate ?run=<id>
+RunView(runId)
+  useQuery(runQuery)          GET /agent/runs/{id}  (run, steps so far, `pending`)
+  useRunStream(runId)         fetch GET /agent/runs/{id}/events  (SSE; cookies; Last-Event-ID)
+      step   -> steps in local state, shown at once
+      status -> the server closes the stream (paused or finished): fetch the stored run ONCE
+      drop / timeout / agent_stream_limit -> "Reconnect" button (user action only)
+  status awaiting_approval -> ApprovalCard(pending)
+      Approve | Edit SQL (400 guard_rejected: reason under the editor, run stays paused) | Cancel
+      success -> invalidate the run, reopen the stream (Last-Event-ID = last step seen)
+  status succeeded -> ResultTable (GET /result, runs the SQL again), Feedback, collapsed step list
+  failed / expired / cancelled -> the error_code in plain words (describeError)
+```
+
+The stream never reopens by itself. There is no timer, no backoff and no polling anywhere in
+`src/` (`no-retry.test.ts` fails the build if one appears). `API_ERRORS.md` suggests polling after
+`agent_stream_limit`; this app shows the message and a Reconnect button instead (owner's rule).
+
+## Staff
+
+`GET /api/me` returns `is_staff`. The nav entry and the `/workbench` guard use it; the API still
+answers 403 `staff_only`, which the error page shows as "Not available". The review loop is
+`Draft a batch -> cases (drafted) -> case page: edit question / SQL, preview rows ->
+Approve | Reject | Mark unanswerable`. A failed draft cannot be approved until the reviewer writes SQL.
+
+## Workspaces
+
+Every query that depends on a workspace puts its id in the key (`['schema', id]`,
+`['workspace', id, ...]`). After any change `invalidateWorkspace` marks its tables, rows, schema panel
+and the workspace list (sizes) stale once; nothing polls. The rows grid page size is the API's
+`max_rows_per_edit` from `GET /workspaces/limits`.
