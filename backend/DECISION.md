@@ -480,3 +480,5 @@ Backend only: the surface the analyst screen (step 9) needs, so the screen is on
 become one and the generated client gets the wrong type. Two did: `LimitsOut` (agent and workspaces) and `ResultOut` (agent and evals).
 The agent ones are now `AgentLimitsOut` and `RunResultOut`, and `common/tests/test_schema_names.py` fails when two schema classes share a name.
 `GET /api/me` also returns `is_staff` so the screens can show the workbench to staff only; the API still enforces it.
+
+**Colab quota cut the first run off (7.3.6).** The free GPU limit ended the 3B run at step 436 of 834. Checkpoints now save every 50 steps (three kept), only a checkpoint with `trainer_state.json` counts as resumable, and `run_name` keeps each model's checkpoints and adapter in its own Drive folder. Resuming with `epochs=1` from a late checkpoint finishes cleanly because the cosine schedule is rebuilt from the new total steps.
