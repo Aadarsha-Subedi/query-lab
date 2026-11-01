@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Icon, type IconSvgElement } from '@/components/ui/icon'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet'
 import type { User } from '@/features/auth/api'
+import { Logo } from '@/components/Logo'
 import { LimitsIndicator } from '@/features/limits/LimitsIndicator'
 import { UserMenu } from '@/features/auth/UserMenu'
 import { appName } from '@/lib/app-name'
@@ -81,7 +82,11 @@ export function AppShell({ user }: { user: User }) {
             setNavOpen(true)
           }}
         />
-        <Link to="/app" className="text-h3 font-semibold tracking-[var(--tracking-heading)]">
+        <Link
+          to="/app"
+          className="flex items-center gap-2 text-h3 font-semibold tracking-[var(--tracking-heading)]"
+        >
+          <Logo />
           {name}
         </Link>
         <div className="ml-auto flex items-center gap-2">
