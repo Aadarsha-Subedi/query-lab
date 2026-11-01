@@ -10,6 +10,19 @@ import { AskBox } from './AskBox'
 import { useDraftStore } from './draft-store'
 import { RunView } from './RunView'
 
+// These render without a router, so a link is just an anchor.
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-router')>()
+  return {
+    ...actual,
+    Link: ({ to, children, className }: { to: string; children: React.ReactNode; className?: string }) => (
+      <a href={to} className={className}>
+        {children}
+      </a>
+    ),
+  }
+})
+
 const envelope = (data: unknown, status = 200) =>
   new Response(JSON.stringify({ success: true, status_code: status, message: '', meta: {}, data }), {
     status,
@@ -251,5 +264,18 @@ describe('AskBox', () => {
     show(<AskBox disabled onStarted={vi.fn()} />)
     expect(screen.getByRole('button', { name: 'Ask' })).toBeDisabled()
     expect(screen.getByText('Finish or cancel your open run first.')).toBeVisible()
+  })
+
+  it('offers the keys page when the shared key is used up', async () => {
+    serve({
+      'POST /api/agent/runs': () => failure(429, 'default_key_limit', 'Daily limit.'),
+    })
+    show(<AskBox onStarted={vi.fn()} />)
+    await userEvent.type(screen.getByRole('textbox', { name: 'Your question' }), 'Anything')
+    await userEvent.click(screen.getByRole('button', { name: 'Ask' }))
+    expect(await screen.findByRole('link', { name: 'Add your own key' })).toHaveAttribute(
+      'href',
+      '/settings/keys',
+    )
   })
 })

@@ -17,6 +17,7 @@ import { Route as AppAskRouteImport } from './routes/_app/ask'
 import { Route as AppHistoryRouteImport } from './routes/_app/history'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
+import { Route as AppSettingsKeysRouteImport } from './routes/_app/settings.keys'
 import { Route as AppWorkspacesIndexRouteImport } from './routes/_app/workspaces.index'
 import { Route as AppWorkspacesIdRouteImport } from './routes/_app/workspaces.$id'
 import { Route as PublicAuthCallbackRouteImport } from './routes/_public/auth.callback'
@@ -60,6 +61,11 @@ const PublicLoginRoute = PublicLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => PublicRoute,
 } as any)
+const AppSettingsKeysRoute = AppSettingsKeysRouteImport.update({
+  id: '/settings/keys',
+  path: '/settings/keys',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppWorkspacesIndexRoute = AppWorkspacesIndexRouteImport.update({
   id: '/workspaces/',
   path: '/workspaces/',
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/ask': typeof AppAskRoute
   '/history': typeof AppHistoryRoute
   '/login': typeof PublicLoginRoute
+  '/settings/keys': typeof AppSettingsKeysRoute
   '/workspaces/$id': typeof AppWorkspacesIdRoute
   '/auth/callback': typeof PublicAuthCallbackRoute
   '/workspaces/': typeof AppWorkspacesIndexRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   '/ask': typeof AppAskRoute
   '/history': typeof AppHistoryRoute
   '/login': typeof PublicLoginRoute
+  '/settings/keys': typeof AppSettingsKeysRoute
   '/workspaces/$id': typeof AppWorkspacesIdRoute
   '/auth/callback': typeof PublicAuthCallbackRoute
   '/workspaces': typeof AppWorkspacesIndexRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/_app/history': typeof AppHistoryRoute
   '/_public/login': typeof PublicLoginRoute
   '/_public/': typeof PublicIndexRoute
+  '/_app/settings/keys': typeof AppSettingsKeysRoute
   '/_app/workspaces/$id': typeof AppWorkspacesIdRoute
   '/_public/auth/callback': typeof PublicAuthCallbackRoute
   '/_app/workspaces/': typeof AppWorkspacesIndexRoute
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
     | '/ask'
     | '/history'
     | '/login'
+    | '/settings/keys'
     | '/workspaces/$id'
     | '/auth/callback'
     | '/workspaces/'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/ask'
     | '/history'
     | '/login'
+    | '/settings/keys'
     | '/workspaces/$id'
     | '/auth/callback'
     | '/workspaces'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/_app/history'
     | '/_public/login'
     | '/_public/'
+    | '/_app/settings/keys'
     | '/_app/workspaces/$id'
     | '/_public/auth/callback'
     | '/_app/workspaces/'
@@ -225,6 +237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicLoginRouteImport
       parentRoute: typeof PublicRoute
     }
+    '/_app/settings/keys': {
+      id: '/_app/settings/keys'
+      path: '/settings/keys'
+      fullPath: '/settings/keys'
+      preLoaderRoute: typeof AppSettingsKeysRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/workspaces/': {
       id: '/_app/workspaces/'
       path: '/workspaces'
@@ -260,6 +279,7 @@ interface AppRouteChildren {
   AppAppRoute: typeof AppAppRoute
   AppAskRoute: typeof AppAskRoute
   AppHistoryRoute: typeof AppHistoryRoute
+  AppSettingsKeysRoute: typeof AppSettingsKeysRoute
   AppWorkspacesIdRoute: typeof AppWorkspacesIdRoute
   AppWorkspacesIndexRoute: typeof AppWorkspacesIndexRoute
   AppRunsRunIdReplayRoute: typeof AppRunsRunIdReplayRoute
@@ -269,6 +289,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAppRoute: AppAppRoute,
   AppAskRoute: AppAskRoute,
   AppHistoryRoute: AppHistoryRoute,
+  AppSettingsKeysRoute: AppSettingsKeysRoute,
   AppWorkspacesIdRoute: AppWorkspacesIdRoute,
   AppWorkspacesIndexRoute: AppWorkspacesIndexRoute,
   AppRunsRunIdReplayRoute: AppRunsRunIdReplayRoute,

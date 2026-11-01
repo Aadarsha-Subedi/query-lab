@@ -99,10 +99,10 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 9.7 LLM keys settings
 
-- [ ] **9.7.1** `features/llm-keys/api.ts`: `GET /llm-keys`, `PUT/DELETE /llm-keys/{provider}`.
-- [ ] **9.7.2** `_app/settings/keys` page: one card per provider the API lists, shows set / not set (never the key), a password-type input to set or replace, a Remove button with confirmation. The key is cleared from the form state right after submit.
-- [ ] **9.7.3** Explain on the page what a key changes (it moves the user from the shared default key's limits to their own; text from `FLOW.md`) and link to it from the limits indicator (9.2.6) and the `agent_run_limit` / missing-key errors.
-- [ ] **9.7.4** Tests: validation errors from the API, key never rendered, replace and remove flows.
+- [x] **9.7.1** `features/llm-keys/api.ts`: `GET /llm-keys`, `PUT/DELETE /llm-keys/{provider}`.
+- [x] **9.7.2** `_app/settings/keys` page: one card per provider the API lists, shows set / not set (never the key), a password-type input to set or replace, a Remove button with confirmation. The key is cleared from the form state right after submit.
+- [x] **9.7.3** Explain on the page what a key changes (it moves the user from the shared default key's limits to their own; text from `FLOW.md`) and link to it from the limits indicator (9.2.6) and the `agent_run_limit` / missing-key errors.
+- [x] **9.7.4** Tests: validation errors from the API, key never rendered, replace and remove flows.
 
 ## 9.8 Staff workbench: trace viewer
 

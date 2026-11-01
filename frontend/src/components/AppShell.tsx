@@ -1,6 +1,7 @@
 import {
   Clock01Icon,
   DatabaseIcon,
+  Key01Icon,
   Home01Icon,
   Menu01Icon,
   MessageQuestionIcon,
@@ -27,6 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/ask', label: 'Ask', icon: MessageQuestionIcon },
   { to: '/history', label: 'History', icon: Clock01Icon },
   { to: '/workspaces', label: 'Workspaces', icon: DatabaseIcon },
+  { to: '/settings/keys', label: 'API keys', icon: Key01Icon },
 ]
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {

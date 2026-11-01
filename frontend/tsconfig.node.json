@@ -29,6 +29,7 @@
     "api-errors.test.ts",
     "ws-contract.test.ts",
     "src/features/workspaces/contract.ts",
+    "src/features/llm-keys/providers.ts",
     "src/lib/api/errors.ts",
     "src/env.ts"
   ]

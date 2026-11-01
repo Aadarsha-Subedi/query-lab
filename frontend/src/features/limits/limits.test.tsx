@@ -8,6 +8,19 @@ import { mockFetch, TEST_BASE_URL } from '@/test/http'
 
 import { LimitsIndicator } from './LimitsIndicator'
 
+// These render without a router, so a link is just an anchor.
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-router')>()
+  return {
+    ...actual,
+    Link: ({ to, children, className }: { to: string; children: React.ReactNode; className?: string }) => (
+      <a href={to} className={className}>
+        {children}
+      </a>
+    ),
+  }
+})
+
 const limits = (over: Record<string, unknown> = {}) => ({
   status: 200,
   body: {

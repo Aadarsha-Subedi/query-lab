@@ -1,12 +1,23 @@
 import { SentIcon } from '@hugeicons/core-free-icons'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { useState, type SyntheticEvent, type KeyboardEvent } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 
+import { ApiError } from '@/lib/api'
+
 import { createRun } from './api'
 import { errorText } from '@/lib/api/error-text'
+
+/** Errors where a key of the user's own is the way out. */
+const KEY_CODES = new Set([
+  'default_key_limit',
+  'llm_invalid_key',
+  'llm_insufficient_quota',
+  'llm_rate_limited',
+])
 
 type AskBoxProps = {
   /** Fills the box on first render (the page remounts it with a new key to load an example). */
@@ -39,6 +50,7 @@ export function AskBox({ initialQuestion = '', workspace, disabled, onStarted }:
     if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) submit()
   }
   const failure = mutation.isError ? errorText(mutation.error) : null
+  const code = mutation.error instanceof ApiError ? mutation.error.code : ''
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-2">
@@ -56,6 +68,14 @@ export function AskBox({ initialQuestion = '', workspace, disabled, onStarted }:
       {failure && (
         <p id="ask-error" role="alert" className="text-small text-danger-foreground">
           {failure.message} {failure.hint}
+          {KEY_CODES.has(code) && (
+            <>
+              {' '}
+              <Link to="/settings/keys" className="underline underline-offset-4">
+                Add your own key
+              </Link>
+            </>
+          )}
         </p>
       )}
       <div className="flex items-center justify-between gap-3">

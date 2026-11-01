@@ -1,5 +1,6 @@
 import { RefreshIcon } from '@hugeicons/core-free-icons'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -82,6 +83,9 @@ export function LimitsIndicator({ workspace }: { workspace?: number }) {
       </PopoverTrigger>
       <PopoverContent align="end">
         <Details limits={query.data} />
+        <Link to="/settings/keys" className="mt-3 inline-block text-small underline underline-offset-4">
+          {has_own_key ? 'Manage your keys' : 'Use your own key'}
+        </Link>
       </PopoverContent>
     </Popover>
   )
