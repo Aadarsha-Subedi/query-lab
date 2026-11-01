@@ -33,7 +33,6 @@ _app              beforeLoad: signed out -> redirect /; adds { me }; renders App
   /runs/$runId/replay   stored trace, one step at a time
   /workspaces       the demo and your private workspaces; create, delete (typed name)
   /workspaces/$id   ?tab=tables|relations|sql &table=   tables, columns, key, rows, relations, SQL console
-  /settings/keys    your provider keys
   /workbench        staff only (beforeLoad: me.is_staff, else a 403 "Not available" page)
     /runs, /runs/$runId        traces and one trace (proposed vs approved SQL)
     /cases, /cases/$caseId     clusters, cases, the review form
