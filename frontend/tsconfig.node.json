@@ -27,6 +27,7 @@
     "env.test.ts",
     "build.test.ts",
     "api-errors.test.ts",
+    "no-retry.test.ts",
     "ws-contract.test.ts",
     "src/features/workspaces/contract.ts",
     "src/features/llm-keys/providers.ts",

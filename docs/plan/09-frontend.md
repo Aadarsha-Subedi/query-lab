@@ -125,7 +125,7 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 ## 9.10 Quality: states, accessibility, responsive
 
 - [ ] **9.10.1** Audit every fetching component against §13: loading skeleton, error with Try again, empty, success, same box size. A test per feature renders each of the four states.
-- [ ] **9.10.2** Grep-based test: no `retry`, `refetchOnWindowFocus`, `refetchInterval`, `setInterval`, `setTimeout`-driven refetch or `EventSource` auto-reconnect in `src/`; the one allowed manual reconnect is named in an allowlist. This enforces decision 4.
+- [x] **9.10.2** Grep-based test: no `retry`, `refetchOnWindowFocus`, `refetchInterval`, `setInterval`, `setTimeout`-driven refetch or `EventSource` auto-reconnect in `src/`; the one allowed manual reconnect is named in an allowlist. This enforces decision 4.
 - [ ] **9.10.3** Keyboard and screen-reader pass: focus order, dialog focus trap, live region for run status changes (`aria-live=polite`), approval buttons reachable, tables with headers and captions. `eslint-plugin-jsx-a11y` rules via the existing lint config only if it adds no peer conflicts; otherwise manual checklist in `DECISION.md`.
 - [ ] **9.10.4** Responsive pass at 375 px, 768 px, desktop for ask, history, workspaces, workbench; no horizontal page scroll (tables scroll inside their box).
 - [ ] **9.10.5** Dark and light check of every new screen; add each new composite component to `/design` where it is reusable (`ApprovalCard`, `ResultTable`, status badges).

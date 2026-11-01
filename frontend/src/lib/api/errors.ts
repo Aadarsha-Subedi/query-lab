@@ -2,7 +2,7 @@
  * What each API error code means for the user. Generated from backend/API_ERRORS.md
  * (the source of truth); errors.test.ts fails when the two drift. Screens branch on
  * `code`, never on the message. No entry here ever tells the user to wait for an
- * automatic retry: this app does not retry (DECISION.md).
+ * automatic retry, because this app does not retry (DECISION.md).
  */
 
 export type ErrorInfo = { message: string; hint: string }
