@@ -86,16 +86,16 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 9.6 Workspaces
 
-- [ ] **9.6.1** `features/workspaces/api.ts`: list, limits (`GET /workspaces/limits`), create, rename, delete. The demo is the default and read-only; `PATCH /workspaces/demo` handled only if the contract says what it does (check `openapi.json`; otherwise leave it out and note it in `DECISION.md`).
-- [ ] **9.6.2** Workspace switcher in the header and `/workspaces` page: cards for the demo and up to the cap; create dialog (name validation from API errors `invalid_name`, `workspace_limit_reached`); delete with `alert-dialog` and a typed-name confirmation. Active workspace id lives in the URL search param `workspace`, not Zustand, so every query key includes it.
-- [ ] **9.6.3** Workspace detail `/workspaces/$id`: tabs Tables, Relations, SQL console. Size and count usage bars from the limits endpoint.
-- [ ] **9.6.4** Tables tab: list, create table form (columns, types, descriptions) with react-hook-form + Zod, errors `table_name_taken`, `table_limit_reached`, `column_limit_reached`, `invalid_spec`, `invalid_name` mapped to fields.
-- [ ] **9.6.5** Table editor: rename, describe, add/drop/rename/retype a column, set primary key. Destructive actions use `alert-dialog`. `cast_failed` and `constraint_violation` show which row the server named.
-- [ ] **9.6.6** Relations tab: list, add, delete; `relation_invalid`, `relation_limit_reached`.
-- [ ] **9.6.7** Rows grid: paged rows by `_row_id`, add row form from column types, inline edit, delete; `row_invalid` errors addressed as `rows[i].col`; `workspace_full`. All-or-nothing batch insert up to `WORKSPACE_MAX_ROWS_PER_EDIT` (value in `.env`).
-- [ ] **9.6.8** SQL console: textarea, run, results in the same `ResultTable`; `sql_failed` shows SQLSTATE and message, `sql_busy`, `sql_invalid`, `query_timeout`, `workspace_full`. A short note says it runs as the workspace's own role.
-- [ ] **9.6.9** After any change the schema query for that workspace is invalidated once (a mutation's own `onSuccess`, not a poll).
-- [ ] **9.6.10** Tests for each tab with a mocked server, including every typed error above.
+- [x] **9.6.1** `features/workspaces/api.ts`: list, limits (`GET /workspaces/limits`), create, rename, delete. The demo is the default and read-only; `PATCH /workspaces/demo` handled only if the contract says what it does (check `openapi.json`; otherwise leave it out and note it in `DECISION.md`).
+- [x] **9.6.2** Workspace picker on the ask page (the header keeps only the shared-key chip) and `/workspaces` page: cards for the demo and up to the cap; create dialog (name validation from API errors `invalid_name`, `workspace_limit_reached`); delete with `alert-dialog` and a typed-name confirmation. Active workspace id lives in the URL search param `workspace`, not Zustand, so every query key includes it.
+- [x] **9.6.3** Workspace detail `/workspaces/$id`: tabs Tables, Relations, SQL console. Size and count usage bars from the limits endpoint.
+- [x] **9.6.4** Tables tab: list, create table form (columns, types, descriptions) with react-hook-form + Zod, errors `table_name_taken`, `table_limit_reached`, `column_limit_reached`, `invalid_spec`, `invalid_name` mapped to fields.
+- [x] **9.6.5** Table editor: rename, describe, add/drop/rename/retype a column, set primary key. Destructive actions use `alert-dialog`. `cast_failed` and `constraint_violation` show which row the server named.
+- [x] **9.6.6** Relations tab: list, add, delete; `relation_invalid`, `relation_limit_reached`.
+- [x] **9.6.7** Rows grid: paged rows by `_row_id`, add row form from column types, inline edit, delete; `row_invalid` errors addressed as `rows[i].col`; `workspace_full`. All-or-nothing batch insert up to `WORKSPACE_MAX_ROWS_PER_EDIT` (value in `.env`).
+- [x] **9.6.8** SQL console: textarea, run, results in the same `ResultTable`; `sql_failed` shows SQLSTATE and message, `sql_busy`, `sql_invalid`, `query_timeout`, `workspace_full`. A short note says it runs as the workspace's own role.
+- [x] **9.6.9** After any change the schema query for that workspace is invalidated once (a mutation's own `onSuccess`, not a poll).
+- [x] **9.6.10** Tests for each tab with a mocked server, including every typed error above.
 
 ## 9.7 LLM keys settings
 
