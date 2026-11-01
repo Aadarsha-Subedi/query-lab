@@ -13,6 +13,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as PublicRouteImport } from './routes/_public'
 import { Route as DesignRouteImport } from './routes/design'
 import { Route as AppAppRouteImport } from './routes/_app/app'
+import { Route as AppAskRouteImport } from './routes/_app/ask'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
 import { Route as PublicAuthCallbackRouteImport } from './routes/_public/auth.callback'
@@ -35,6 +36,11 @@ const AppAppRoute = AppAppRouteImport.update({
   path: '/app',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAskRoute = AppAskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
+  getParentRoute: () => AppRoute,
+} as any)
 const PublicIndexRoute = PublicIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -55,6 +61,7 @@ export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
   '/design': typeof DesignRoute
   '/app': typeof AppAppRoute
+  '/ask': typeof AppAskRoute
   '/login': typeof PublicLoginRoute
   '/auth/callback': typeof PublicAuthCallbackRoute
 }
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/design': typeof DesignRoute
   '/app': typeof AppAppRoute
+  '/ask': typeof AppAskRoute
   '/login': typeof PublicLoginRoute
   '/auth/callback': typeof PublicAuthCallbackRoute
 }
@@ -71,21 +79,23 @@ export interface FileRoutesById {
   '/_public': typeof PublicRouteWithChildren
   '/design': typeof DesignRoute
   '/_app/app': typeof AppAppRoute
+  '/_app/ask': typeof AppAskRoute
   '/_public/login': typeof PublicLoginRoute
   '/_public/': typeof PublicIndexRoute
   '/_public/auth/callback': typeof PublicAuthCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/design' | '/app' | '/login' | '/auth/callback'
+  fullPaths: '/' | '/design' | '/app' | '/ask' | '/login' | '/auth/callback'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/design' | '/app' | '/login' | '/auth/callback'
+  to: '/' | '/design' | '/app' | '/ask' | '/login' | '/auth/callback'
   id:
     | '__root__'
     | '/_app'
     | '/_public'
     | '/design'
     | '/_app/app'
+    | '/_app/ask'
     | '/_public/login'
     | '/_public/'
     | '/_public/auth/callback'
@@ -127,6 +137,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAppRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/ask': {
+      id: '/_app/ask'
+      path: '/ask'
+      fullPath: '/ask'
+      preLoaderRoute: typeof AppAskRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_public/': {
       id: '/_public/'
       path: '/'
@@ -153,10 +170,12 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAppRoute: typeof AppAppRoute
+  AppAskRoute: typeof AppAskRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAppRoute: AppAppRoute,
+  AppAskRoute: AppAskRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

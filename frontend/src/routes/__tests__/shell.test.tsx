@@ -115,3 +115,24 @@ describe('route status pages', () => {
     expect(await screen.findByRole('heading', { name: 'Page not found' })).toBeInTheDocument()
   })
 })
+
+describe('ask page', () => {
+  it('loads an example question into the box', async () => {
+    mockFetch({
+      '/api/me': signedIn,
+      '/api/agent/limits': () => ({
+        status: 500,
+        body: { success: false, message: 'x', code: 'internal_error' },
+      }),
+      '/api/schema': () => ({
+        status: 200,
+        body: { success: true, status_code: 200, message: '', meta: {}, data: { name: 'demo', tables: [] } },
+      }),
+    })
+    await openAt('/ask')
+    await userEvent.click(await screen.findByRole('button', { name: /late, by state/ }))
+    expect(screen.getByRole('textbox', { name: 'Your question' })).toHaveValue(
+      'How many orders were delivered late, by state?',
+    )
+  })
+})

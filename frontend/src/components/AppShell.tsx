@@ -1,4 +1,4 @@
-import { Home01Icon, Menu01Icon } from '@hugeicons/core-free-icons'
+import { Home01Icon, Menu01Icon, MessageQuestionIcon } from '@hugeicons/core-free-icons'
 import { Link, Outlet } from '@tanstack/react-router'
 import type { ComponentProps } from 'react'
 
@@ -16,7 +16,10 @@ import { useUiStore } from '@/stores/ui'
 type NavItem = { to: ComponentProps<typeof Link>['to']; label: string; icon: IconSvgElement }
 
 /** Each screen adds its entry here when its route lands. */
-const NAV_ITEMS: NavItem[] = [{ to: '/app', label: 'Home', icon: Home01Icon }]
+const NAV_ITEMS: NavItem[] = [
+  { to: '/app', label: 'Home', icon: Home01Icon },
+  { to: '/ask', label: 'Ask', icon: MessageQuestionIcon },
+]
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   return (

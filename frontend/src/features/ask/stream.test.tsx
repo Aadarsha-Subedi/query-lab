@@ -152,19 +152,17 @@ describe('useRunStream', () => {
     initApi(TEST_BASE_URL)
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn<typeof fetch>()
-        .mockResolvedValue(
-          new Response(
-            JSON.stringify({
-              success: false,
-              message: 'Busy',
-              code: 'agent_stream_limit',
-              retry_after_seconds: null,
-            }),
-            { status: 429, headers: { 'Content-Type': 'application/json' } },
-          ),
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            success: false,
+            message: 'Busy',
+            code: 'agent_stream_limit',
+            retry_after_seconds: null,
+          }),
+          { status: 429, headers: { 'Content-Type': 'application/json' } },
         ),
+      ),
     )
     const { result } = renderHook(() => useRunStream(5))
     await waitFor(() => {
