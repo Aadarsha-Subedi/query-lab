@@ -31,7 +31,7 @@ describe('route guards', () => {
     mockFetch({ '/api/me': signedIn, '/api/health': () => ({ status: 200, body: {} }) })
     const router = await openAt('/login')
     expect(router.state.location.pathname).toBe('/app')
-    expect(await screen.findByRole('heading', { name: 'Your workspaces' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Ask your data' })).toBeInTheDocument()
   })
 
   it('sends a signed-out visitor from the app to the landing page', async () => {

@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet } from '@tanstack/react-router'
 
 import { Heading } from '@/components/typography/Heading'
+import { HealthPanel } from '@/features/health/HealthPanel'
 import { ApiError } from '@/lib/api'
 
 /**
@@ -39,6 +40,7 @@ function WorkbenchLayout() {
         ))}
       </nav>
       <Outlet />
+      <HealthPanel />
     </main>
   )
 }
