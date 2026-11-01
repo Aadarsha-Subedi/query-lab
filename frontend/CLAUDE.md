@@ -57,6 +57,7 @@ Route groups are pathless layouts: `_public` (the plan's "(public)") and `_app`
 
 ## Conventions and rules
 
+- **Always use the impeccable skill when editing the frontend** (invoke `impeccable` before any UI change: new screens, component edits, styling, copy). Its detector (`impeccable detect --json src index.html`) must report nothing before a commit. The design system in this repo stays the source of truth where the two differ.
 - `main` is protected; work happens on branches; Conventional Commits. Claude commits locally only; Aadarsha reviews and pushes.
 - **No fallback env values.** Every variable is required and validated with Zod (`src/env.ts`, `env.config.ts`). A new variable goes into the schema and `.env.example` together; `env.test.ts` fails otherwise.
 - **No magic numbers.** Timeouts, limits and sizes go into `.env` (and the schema), never inline.
