@@ -2912,6 +2912,294 @@
               }
             }
           ]
+        },
+        {
+          "name": "List cases",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workbench/cases?limit=20&status=drafted&cluster=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workbench",
+                "cases"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "drafted",
+                  "disabled": true
+                },
+                {
+                  "key": "cluster",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List trace cases. Candidates are made by `make eval ARGS=build_trace_cases` (rules: edited SQL, thumbs down, failed, revised, declined, needs_look). Filter by `status` (repeat) and `cluster`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 403]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 403]));",
+                  "const b = pm.response.json(); if (pm.response.code === 200 && b.data.length) pm.environment.set('traceCaseId', b.data[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Queue a drafting batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workbench/cases/draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workbench",
+                "cases",
+                "draft"
+              ]
+            },
+            "description": "One LLM call per case, at most TRACES_DRAFT_MAX_PER_BATCH, counted on your daily default-key allowance. Needs the worker.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 403, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get a case with a rows preview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workbench/cases/{{traceCaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workbench",
+                "cases",
+                "{{traceCaseId}}"
+              ]
+            },
+            "description": "Runs the draft on the reader now and shows the first rows (never stored)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 403, 404, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 404, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Approve a case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workbench/cases/{{traceCaseId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workbench",
+                "cases",
+                "{{traceCaseId}}",
+                "approve"
+              ]
+            },
+            "description": "Send `sql`/`question` to edit, or `{}` to take the draft. The SQL is guarded and run again. 422 `draft_unusable` when the draft failed and no `sql` is sent; 409 `case_not_reviewable` unless `drafted`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"How many orders are there?\",\n  \"sql\": \"SELECT count(*) AS n FROM orders\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401, 403, 404, 409, 422, 429, 504]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404, 409, 422, 429, 504]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject a case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workbench/cases/{{traceCaseId}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workbench",
+                "cases",
+                "{{traceCaseId}}",
+                "reject"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"The question is unclear.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 403, 404, 409, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 404, 409, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mark a case unanswerable",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workbench/cases/{{traceCaseId}}/mark-unanswerable",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workbench",
+                "cases",
+                "{{traceCaseId}}",
+                "mark-unanswerable"
+              ]
+            },
+            "description": "The right answer is to decline: approved, no gold SQL.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"The data has no such column.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 403, 404, 409, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 404, 409, 429]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },

@@ -2,25 +2,38 @@
 `common.permissions.staff_only`, set once on the router."""
 
 from datetime import datetime
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, ClassVar, Literal, cast
 
 from django.conf import settings
 from django.http import HttpRequest
 from ninja import FilterLookup, FilterSchema, Query, Router, Schema
 from pydantic import Field
 
+from accounts.models import User
 from agent import schemas as agent_schemas
 from common.exception.domain import NotFoundException
 from common.order.domain import OrderingSchema
 from common.permissions import staff_only
 from common.response.domain import SuccessEnvelope, errors, success
-from evals import traces
-from evals.workbench_schemas import TraceDetailOut, trace_detail_dict
+from common.throttling.scoped import ResultThrottle
+from evals import review, tasks, traces
+from evals.models import TraceCase
+from evals.workbench_schemas import (
+    ApproveIn,
+    CaseDetailOut,
+    CaseOut,
+    DraftQueuedOut,
+    RejectIn,
+    TraceDetailOut,
+    UnanswerableIn,
+    case_dict,
+    trace_detail_dict,
+)
 
 router = Router(tags=["workbench"], auth=staff_only)
 
 
-class PageIn(Schema):
+class WorkbenchPageIn(Schema):
     limit: int | None = Field(None, ge=1)
     offset: int = Field(0, ge=0)
 
@@ -77,7 +90,7 @@ class TraceOrdering(OrderingSchema):
 )
 def list_trace_runs(
     request: HttpRequest,
-    page: Query[PageIn],
+    page: Query[WorkbenchPageIn],
     filters: Query[TraceFilter],
     ordering: Query[TraceOrdering],
 ) -> dict:
@@ -112,3 +125,102 @@ def get_trace_run(request: HttpRequest, run_id: int) -> dict:
     if run is None:
         raise NotFoundException("Run not found.")
     return success(trace_detail_dict(run))
+
+
+class CaseFilter(FilterSchema):
+    """`?status=drafted&status=candidate&cluster=failed/ab12cd34ef`"""
+
+    status: Annotated[
+        list[Literal["candidate", "drafted", "approved", "rejected"]] | None,
+        FilterLookup("status__in"),
+    ] = None
+    cluster: Annotated[str | None, FilterLookup("cluster_key")] = None
+
+
+def _staff(request: HttpRequest) -> User:
+    return cast(User, request.user)
+
+
+@router.get(
+    "/cases",
+    response={200: SuccessEnvelope[list[CaseOut]], **errors(401, 403, 422, 429)},
+)
+def list_cases(
+    request: HttpRequest, page: Query[WorkbenchPageIn], filters: Query[CaseFilter]
+) -> dict:
+    """Staff only. Trace cases, newest source run first, with the model's draft (or
+    why it failed), the reasons the run was picked and a link to its trace. Filter by
+    `status` (repeat it) and `cluster`. `meta.count` is the match count."""
+    limit = page.size()
+    cases = filters.filter(TraceCase.objects.all())
+    items = [case_dict(c) for c in cases[page.offset : page.offset + limit]]
+    return success(
+        items, meta={"count": cases.count(), "limit": limit, "offset": page.offset}
+    )
+
+
+@router.post(
+    "/cases/draft",
+    response={200: SuccessEnvelope[DraftQueuedOut], **errors(401, 403, 429)},
+)
+def draft_cases(request: HttpRequest) -> dict:
+    """Staff only. Queue a drafting batch (at most TRACES_DRAFT_MAX_PER_BATCH cases,
+    one LLM call each, counted on your daily default-key allowance). Drafts show up
+    on `GET /cases` as `drafted`."""
+    tasks.draft_batch(_staff(request).pk)
+    return success(DraftQueuedOut(queued=True).model_dump(), message="Batch queued.")
+
+
+@router.get(
+    "/cases/{case_id}",
+    response={
+        200: SuccessEnvelope[CaseDetailOut],
+        **errors(401, 403, 404, 429),
+    },
+    throttle=[ResultThrottle()],
+)
+def get_case(request: HttpRequest, case_id: int) -> dict:
+    """Staff only. One case with a preview of its rows: the draft is guarded and run
+    on the reader now (the rows are shown, never stored)."""
+    case = review.get_case(case_id)
+    return success({**case_dict(case), "preview": review.preview(case)})
+
+
+@router.post(
+    "/cases/{case_id}/approve",
+    response={
+        200: SuccessEnvelope[CaseOut],
+        **errors(400, 401, 403, 404, 409, 422, 429, 504),
+    },
+)
+def approve_case(request: HttpRequest, case_id: int, payload: ApproveIn) -> dict:
+    """Staff only. Make a drafted case gold. Send `sql` (and `question`) to correct
+    them; either way the SQL is guarded and run again first. A draft that failed its
+    checks needs `sql` (422 `draft_unusable`). 409 `case_not_reviewable` unless the
+    case is `drafted`."""
+    case = review.approve(
+        _staff(request), case_id, question=payload.question, sql=payload.sql
+    )
+    return success(case_dict(case))
+
+
+@router.post(
+    "/cases/{case_id}/reject",
+    response={200: SuccessEnvelope[CaseOut], **errors(401, 403, 404, 409, 429)},
+)
+def reject_case(request: HttpRequest, case_id: int, payload: RejectIn) -> dict:
+    """Staff only. Keep a drafted case out of the eval set, with a reason."""
+    return success(case_dict(review.reject(_staff(request), case_id, payload.reason)))
+
+
+@router.post(
+    "/cases/{case_id}/mark-unanswerable",
+    response={200: SuccessEnvelope[CaseOut], **errors(401, 403, 404, 409, 429)},
+)
+def mark_case_unanswerable(
+    request: HttpRequest, case_id: int, payload: UnanswerableIn
+) -> dict:
+    """Staff only. The right answer is to decline: approved with no gold SQL."""
+    return success(
+        case_dict(review.mark_unanswerable(_staff(request), case_id, payload.note))
+    )
