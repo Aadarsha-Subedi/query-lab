@@ -50,6 +50,7 @@ class Command(BaseCommand):
             q.question for q in spider.SpiderTarget().questions(EvalRun.SPLIT_HELD_OUT)
         ]
         benchmark += [item["question"] for item in olist.read_golden()]
+        examples, dropped = dataset.drop_benchmark_questions(examples, benchmark)
         try:
             dataset.assert_no_leakage(
                 examples, banned_dbs=held_out, banned_questions=benchmark
@@ -86,6 +87,7 @@ class Command(BaseCommand):
         manifest = {
             "seed": settings.FINETUNE_SEED,
             "base_model": settings.FINETUNE_BASE_MODEL,
+            "dropped_benchmark_questions": dropped,
             "sources": sorted({e.source for e in examples}),
             "train_examples": len(train_set),
             "validation_examples": len(validation),
@@ -95,5 +97,6 @@ class Command(BaseCommand):
         }
         (out / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
         self.stdout.write(
-            f"Wrote {len(train_set)} train and {len(validation)} validation examples to {out}."
+            f"Wrote {len(train_set)} train and {len(validation)} validation examples to {out} "
+            f"({dropped} dropped for sharing a question text with the benchmark)."
         )

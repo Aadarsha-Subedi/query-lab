@@ -93,6 +93,16 @@ def dedupe(examples: Iterable[Example]) -> list[Example]:
     return kept
 
 
+def drop_benchmark_questions(
+    examples: list[Example], banned_questions: Iterable[str]
+) -> tuple[list[Example], int]:
+    """Examples whose question text is also a benchmark question are dropped (Spider
+    repeats generic questions across databases); returns the rest and the count."""
+    banned = {normalize(q) for q in banned_questions}
+    kept = [e for e in examples if normalize(e.question) not in banned]
+    return kept, len(examples) - len(kept)
+
+
 def assert_no_leakage(
     examples: Iterable[Example],
     *,

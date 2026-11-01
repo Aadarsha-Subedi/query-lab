@@ -61,6 +61,16 @@ def test_leakage_by_database_and_by_question() -> None:
     dataset.assert_no_leakage(examples, banned_dbs={"x"}, banned_questions=["y"])
 
 
+def test_shared_question_text_is_dropped_not_fatal() -> None:
+    examples = dataset.examples_from_spider(
+        items(("a", "How many singers?", "SELECT 1"), ("a", "Other", "SELECT 2")),
+        source="spider-train",
+    )
+    kept, dropped = dataset.drop_benchmark_questions(examples, ["how many  SINGERS?"])
+    assert [e.question for e in kept] == ["Other"]
+    assert dropped == 1
+
+
 def test_validation_is_whole_databases_and_deterministic() -> None:
     examples = dataset.examples_from_spider(
         items(*[(f"db{i % 5}", f"q{i}", "SELECT 1") for i in range(20)]),
@@ -123,6 +133,14 @@ def test_command_writes_files_without_benchmark_data(finetune_env) -> None:
     first = (out / "train.jsonl").read_text()
     call_command("build_finetune_data")
     assert (out / "train.jsonl").read_text() == first
+
+
+def test_command_drops_a_question_shared_with_the_benchmark(finetune_env) -> None:
+    spider_dir, out = finetune_env
+    write_train(spider_dir, items(("shop", "List animals", "SELECT 1")))
+    call_command("build_finetune_data")  # "List animals" is a held-out question
+    manifest = json.loads((out / "manifest.json").read_text())
+    assert manifest["dropped_benchmark_questions"] == 1
 
 
 def test_command_refuses_a_held_out_database(finetune_env) -> None:
