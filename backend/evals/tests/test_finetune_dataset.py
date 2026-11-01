@@ -27,7 +27,8 @@ def test_record_round_trips_through_parse_reply() -> None:
         source="spider-train",
     )
     record = dataset.to_record(example, "table item(id)")
-    system, user, assistant = record["messages"]  # type: ignore[misc]
+    messages: list[dict[str, str]] = record["messages"]  # type: ignore[assignment]
+    system, user, assistant = messages
     assert system["content"] == prompt.system_prompt(prompt.DIALECT_SQLITE)
     assert user["content"] == prompt.build_prompt("How many items?", "table item(id)")
     parsed = prompt.parse_reply(assistant["content"])

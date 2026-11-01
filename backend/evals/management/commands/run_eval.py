@@ -1,7 +1,12 @@
+import time
+from pathlib import Path
+
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 
-from evals import gate, runner, scoring
+from ask import prompt
+from common.llm import LLMProvider
+from evals import gate, predictions, runner, scoring
 from evals.models import EvalRun
 from evals.targets import olist, spider, traces
 from evals.targets.base import EvalQuestion, Target
@@ -17,7 +22,14 @@ class Command(BaseCommand):
         parser.add_argument(
             "--target", choices=["olist", "spider", "traces"], required=True
         )
-        parser.add_argument("--model", required=True)
+        parser.add_argument(
+            "--model", help="The model to ask (not used with --predictions)."
+        )
+        parser.add_argument(
+            "--predictions",
+            help="Score answers from a JSONL file written elsewhere (step 7) instead "
+            "of calling a model. The run's model is the file's label.",
+        )
         parser.add_argument(
             "--runner",
             choices=[EvalRun.RUNNER_ASK, EvalRun.RUNNER_AGENT],
@@ -77,19 +89,35 @@ class Command(BaseCommand):
                 "The agent runner works on Olist and traces: it uses the Postgres guard and "
                 "reader. Spider stays on --runner ask."
             )
+        provider: LLMProvider
         try:
-            provider_name, provider = runner.build_provider(str(options["model"]))
+            if options["predictions"]:
+                file = predictions.load(Path(str(options["predictions"])))
+                provider_name = predictions.PROVIDER_NAME
+                provider = predictions.FilePredictionProvider(file)
+            elif options["model"]:
+                provider_name, provider = runner.build_provider(str(options["model"]))
+            else:
+                raise CommandError("Give --model or --predictions.")
             questions = runner.pick_questions(
                 target.questions(str(split)),
                 limit=options["limit"],  # type: ignore[arg-type]
                 seed=int(options["seed"]),  # type: ignore[call-overload]
             )
-        except (runner.EvalConfigError, spider.SpiderNotFound, ValueError) as error:
+        except (
+            runner.EvalConfigError,
+            predictions.PredictionsError,
+            spider.SpiderNotFound,
+            ValueError,
+        ) as error:
             raise CommandError(str(error)) from None
         if not questions:
             raise CommandError(
                 "No questions to ask (Olist: review the gold SQL first; traces: approve cases first)."
             )
+
+        if options["predictions"]:
+            self._check_coverage(target, questions, file)
 
         if options["baseline"] and not options["gate"]:
             raise CommandError("--baseline needs --gate.")
@@ -146,6 +174,7 @@ class Command(BaseCommand):
                 run=run,
                 runner_name=runner_name,
                 progress=progress,
+                sleep=(lambda _: None) if options["predictions"] else time.sleep,
             )
         except spider.SpiderNotFound as error:
             raise CommandError(str(error)) from None
@@ -155,6 +184,30 @@ class Command(BaseCommand):
             baseline = gate.latest_baseline(run)
         if options["gate"]:
             self._gate(run, baseline)
+
+    def _check_coverage(
+        self,
+        target: Target,
+        questions: list[EvalQuestion],
+        file: predictions.PredictionsFile,
+    ) -> None:
+        """Every question must have an answer in the file before anything is scored."""
+        missing = [
+            q.id
+            for q in questions
+            if predictions.prompt_hash(
+                predictions.user_prompt(
+                    prompt.clean_question(q.question), target.schema_text(q)
+                )
+            )
+            not in file.answers
+        ]
+        if missing:
+            raise CommandError(
+                f"{len(missing)} of {len(questions)} questions have no answer in the "
+                f"file (first: {', '.join(missing[:5])}). Export the benchmark again "
+                "and regenerate, or use --limit/--split to match the file."
+            )
 
     def _baseline(self, options: dict) -> EvalRun | None:
         """The run named by --baseline, checked before any LLM call. Without it the

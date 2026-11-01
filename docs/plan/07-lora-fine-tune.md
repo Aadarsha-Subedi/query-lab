@@ -59,17 +59,17 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 7.4 Predictions and merge (Colab)
 
-- [ ] **7.4.1** Export the benchmark questions from the repo: management command `export_benchmark` writes `bench.jsonl` with `id`, `target`, `db_id`, `question` and the **schema text only**, never gold SQL or rows, for Spider held-out and the Olist golden set.
+- [x] **7.4.1** Export the benchmark questions from the repo: management command `export_benchmark` writes `bench.jsonl` with `id`, `target`, `db_id`, `question` and the **schema text only**, never gold SQL or rows, for Spider held-out and the Olist golden set.
 - [ ] **7.4.2** Notebook `finetune/colab/predict.ipynb`: for the **base** model and the **tuned** model (base plus adapter, merged for speed), greedy decoding (temperature 0), same prompt, write `predictions-<label>.jsonl` with `id`, `sql`, `raw_reply`, token counts, and the model label.
 - [ ] **7.4.3** Add `train_config.json` plus the adapter hash to each predictions file header, so a score can always be traced to a training run.
 - [ ] **7.4.4** **(You)** Run both prediction passes in Colab and download the two files into `FINETUNE_OUTPUT_DIR`.
 
 ## 7.5 Score from file
 
-- [ ] **7.5.1** `evals/predictions.py`: load and validate a predictions file (every id exists in the target, no duplicates, header present, size bounded).
-- [ ] **7.5.2** `run_eval --predictions <file>`: a runner that reads each answer from the file instead of calling a provider, then goes through the existing guard, execution and comparison unchanged. The `model` field of the `EvalRun` is the file's label; cost is zero; the run records the file hash.
+- [x] **7.5.1** `evals/predictions.py`: load and validate a predictions file (header with a label, no duplicate prompts, size bounded). Answers are keyed by the SHA-256 of the exact user prompt, not by id, so a file can only answer the prompts it was generated for; `run_eval` checks coverage of every question before scoring.
+- [x] **7.5.2** `run_eval --predictions <file>`: a runner that reads each answer from the file instead of calling a provider, then goes through the existing guard, execution and comparison unchanged. The `model` field of the `EvalRun` is the file's label; cost is zero; the run records the file hash.
 - [ ] **7.5.3** Parity check: scoring a file built from a past Gemini run's stored predictions reproduces that run's accuracy exactly.
-- [ ] **7.5.4** Tests: a missing id or an unknown id is a typed error before any scoring; unguarded SQL in a file is rejected by the guard, not executed; no provider key is needed; resume and the compare API work on the resulting run.
+- [x] **7.5.4** Tests: a missing id or an unknown id is a typed error before any scoring; unguarded SQL in a file is rejected by the guard, not executed; no provider key is needed; resume and the compare API work on the resulting run.
 
 ## 7.6 Benchmark
 
