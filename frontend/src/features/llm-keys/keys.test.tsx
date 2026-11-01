@@ -41,11 +41,14 @@ describe('KeysPage', () => {
   it('hides the key table while QueryLab AI is chosen', async () => {
     serveApi(base('querylab'))
     show()
-    expect(await screen.findByRole('radio', { name: /QueryLab AI/ })).toBeChecked()
+    expect(await screen.findByRole('combobox', { name: 'AI for your questions' })).toHaveTextContent(
+      'QueryLab AI',
+    )
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Add new API key' })).not.toBeInTheDocument()
   })
 
-  it('switches to your own AI and saves the choice', async () => {
+  it('switches to a custom AI and saves the choice', async () => {
     let sent: unknown
     const calls = serveApi({
       ...base('querylab'),
@@ -55,23 +58,33 @@ describe('KeysPage', () => {
       },
     })
     show()
-    await userEvent.click(await screen.findByRole('radio', { name: /My own AI/ }))
+    await userEvent.click(await screen.findByRole('combobox', { name: 'AI for your questions' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Custom AI' }))
     await waitFor(() => {
       expect(calls).toContain('PUT /api/llm-settings')
     })
     expect(sent).toEqual({ source: 'own' })
   })
 
-  it('lists exactly one OpenAI and one Gemini row and never shows a key', async () => {
+  it('shows an empty state with one Add new API key button and no inline form', async () => {
+    serveApi(base('own', []))
+    show()
+    expect(await screen.findByText('No API keys yet')).toBeVisible()
+    expect(screen.getAllByRole('button', { name: 'Add new API key' })).toHaveLength(1)
+    expect(screen.queryByLabelText(/API key$/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+  })
+
+  it('lists only saved keys and never shows a key', async () => {
     serveApi(base('own', [key('openai', { is_active: true })]))
     show()
     const table = await screen.findByRole('table')
-    expect(within(table).getAllByRole('row')).toHaveLength(3)
+    expect(within(table).getAllByRole('row')).toHaveLength(2)
     expect(within(table).getByText('Key ends in wxyz')).toBeVisible()
-    expect(within(table).getByText('No key saved')).toBeVisible()
     expect(within(table).getByRole('radio', { name: 'Use the OpenAI key' })).toBeChecked()
-    expect(within(table).getByRole('radio', { name: 'Use the Google Gemini key' })).toBeDisabled()
-    expect(screen.getByLabelText('New OpenAI API key')).toHaveAttribute('type', 'password')
+    expect(within(table).queryByText('Google Gemini')).not.toBeInTheDocument()
+    // The other provider can still be added.
+    expect(screen.getByRole('button', { name: 'Add new API key' })).toBeVisible()
   })
 
   it('warns that questions are paused when no key is in use', async () => {
@@ -109,7 +122,7 @@ describe('KeysPage', () => {
     })
   })
 
-  it('saves a key, sends the model, and clears the field', async () => {
+  it('adds a key in a modal, sends the model, then closes it', async () => {
     let sent: unknown
     serveApi({
       ...base('own', []),
@@ -119,11 +132,13 @@ describe('KeysPage', () => {
       },
     })
     show()
-    const field = await screen.findByLabelText('OpenAI API key')
-    await userEvent.type(field, '  secret-key-1234  ')
-    await userEvent.click(screen.getByRole('button', { name: 'Save key' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Add new API key' }))
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.type(within(dialog).getByLabelText('OpenAI API key'), '  secret-key-1234  ')
+    expect(within(dialog).getByLabelText('OpenAI API key')).toHaveAttribute('type', 'password')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save key' }))
     await waitFor(() => {
-      expect(field).toHaveValue('')
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
     expect(sent).toEqual({ api_key: 'secret-key-1234', model: 'gpt-a' })
   })
@@ -134,11 +149,21 @@ describe('KeysPage', () => {
       'PUT /api/llm-keys/openai': () => fail(400, 'llm_invalid_key', 'The key was rejected.'),
     })
     show()
-    const field = await screen.findByLabelText('OpenAI API key')
+    await userEvent.click(await screen.findByRole('button', { name: 'Add new API key' }))
+    const dialog = await screen.findByRole('dialog')
+    const field = within(dialog).getByLabelText('OpenAI API key')
     await userEvent.type(field, 'bad-key-value')
-    await userEvent.click(screen.getByRole('button', { name: 'Save key' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('The provider rejected the key')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save key' }))
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('The provider rejected the key')
     expect(field).toHaveValue('bad-key-value')
+  })
+
+  it('replaces a saved key from its row', async () => {
+    serveApi(base('own', [key('gemini', { is_active: true })]))
+    show()
+    await userEvent.click(await screen.findByRole('button', { name: 'Replace the Google Gemini key' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('heading', { name: 'Replace the Google Gemini key' })).toBeVisible()
   })
 
   it('removes a key', async () => {

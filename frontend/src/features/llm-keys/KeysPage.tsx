@@ -1,16 +1,14 @@
-import { Delete02Icon, Key01Icon } from '@hugeicons/core-free-icons'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { Add01Icon, Delete02Icon, Key01Icon } from '@hugeicons/core-free-icons'
+import { useMutation, useQuery } from '@tanstack/react-query'
 
 import { QueryBoundary } from '@/components/QueryBoundary'
+import { Heading } from '@/components/typography/Heading'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { EmptyState } from '@/components/ui/data-state'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { errorText } from '@/lib/api/error-text'
-import { cn } from '@/lib/utils'
 
 import {
   activateKey,
@@ -18,79 +16,62 @@ import {
   keysQuery,
   modelsQuery,
   removeKey,
-  saveKey,
   setSource,
   settingsQuery,
   type AiSource,
   type SavedKey,
 } from './api'
+import { AddKeyDialog } from './AddKeyDialog'
 import { ProviderLogo } from './ProviderLogo'
 import { PROVIDER_LABEL, PROVIDER_ORDER, type ProviderName } from './providers'
+import { useRefresh } from './use-refresh'
 
-/** Everything that depends on the saved keys or the chosen source. */
-function useRefresh() {
-  const queryClient = useQueryClient()
-  return async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['llm-keys'] }),
-      queryClient.invalidateQueries({ queryKey: ['llm-settings'] }),
-      queryClient.invalidateQueries({ queryKey: ['agent-limits'] }),
-    ])
-  }
-}
+const SOURCE_LABEL: Record<AiSource, string> = { querylab: 'QueryLab AI', own: 'Custom AI' }
 
-const SOURCE_OPTIONS: { value: AiSource; title: string; text: string }[] = [
-  {
-    value: 'querylab',
-    title: 'QueryLab AI',
-    text: 'Nothing to set up. Uses our shared key, which has a daily limit for everyone.',
-  },
-  {
-    value: 'own',
-    title: 'My own AI',
-    text: 'Use your own OpenAI or Gemini key. Your questions no longer count against our daily limit.',
-  },
-]
-
-function SourceChoice({ source }: { source: AiSource }) {
+/** Title and description on the left, the choice on the right. */
+function SourceSetting({ source }: { source: AiSource }) {
   const refresh = useRefresh()
   const mutation = useMutation({ mutationFn: setSource, onSuccess: refresh })
   const failure = mutation.isError ? errorText(mutation.error) : null
   return (
-    <fieldset className="flex flex-col gap-3" disabled={mutation.isPending}>
-      <legend className="mb-3 text-body font-medium">Which AI answers your questions?</legend>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {SOURCE_OPTIONS.map((option) => (
-          <label
-            key={option.value}
-            className={cn(
-              'flex cursor-pointer items-start gap-3 rounded-lg border bg-surface p-4 transition-colors duration-fast has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-background',
-              source === option.value && 'border-primary bg-surface-muted',
-            )}
+    <section aria-labelledby="ai-source" className="flex flex-col gap-3">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="flex max-w-[var(--reading-max)] flex-col gap-1">
+          <Heading level={2} id="ai-source">
+            AI for your questions
+          </Heading>
+          <p className="text-body text-muted-foreground">
+            QueryLab AI needs no setup and uses our shared key, which has a daily limit for everyone. A custom
+            AI uses your own OpenAI or Gemini key, with no daily limit from us.
+          </p>
+        </div>
+        <div className="w-full sm:w-56 sm:shrink-0">
+          <Select
+            value={source}
+            disabled={mutation.isPending}
+            onValueChange={(next) => {
+              mutation.mutate(next as AiSource)
+            }}
           >
-            <input
-              type="radio"
-              name="ai-source"
-              value={option.value}
-              checked={source === option.value}
-              onChange={() => {
-                mutation.mutate(option.value)
-              }}
-              className="mt-1 size-4 accent-primary"
-            />
-            <span className="flex flex-col gap-1">
-              <span className="text-body font-medium">{option.title}</span>
-              <span className="text-small text-muted-foreground">{option.text}</span>
-            </span>
-          </label>
-        ))}
+            <SelectTrigger aria-labelledby="ai-source">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(SOURCE_LABEL) as AiSource[]).map((value) => (
+                <SelectItem key={value} value={value}>
+                  {SOURCE_LABEL[value]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       {failure && (
         <p role="alert" className="text-small text-danger-foreground">
           {failure.message} {failure.hint}
         </p>
       )}
-    </fieldset>
+    </section>
   )
 }
 
@@ -127,16 +108,9 @@ function ModelSelect({
   )
 }
 
-function KeyRow({
-  provider,
-  saved,
-  models,
-}: {
-  provider: ProviderName
-  saved: SavedKey | undefined
-  models: string[]
-}) {
+function KeyRow({ saved, models }: { saved: SavedKey; models: Record<ProviderName, string[]> }) {
   const refresh = useRefresh()
+  const provider = saved.provider as ProviderName
   const label = PROVIDER_LABEL[provider]
   const model = useMutation({ mutationFn: (next: string) => changeModel(provider, next), onSuccess: refresh })
   const activate = useMutation({ mutationFn: () => activateKey(provider), onSuccess: refresh })
@@ -152,9 +126,7 @@ function KeyRow({
             <ProviderLogo provider={provider} />
             <div className="flex flex-col">
               <span className="font-medium">{label}</span>
-              <span className="text-caption text-muted-foreground">
-                {saved ? `Key ends in ${saved.key_last4}` : 'No key saved'}
-              </span>
+              <span className="text-caption text-muted-foreground">Key ends in {saved.key_last4}</span>
             </div>
           </div>
         </TableCell>
@@ -163,8 +135,8 @@ function KeyRow({
             <input
               type="radio"
               name="active-key"
-              checked={saved?.is_active ?? false}
-              disabled={!saved || busy}
+              checked={saved.is_active}
+              disabled={busy}
               onChange={() => {
                 activate.mutate()
               }}
@@ -172,28 +144,38 @@ function KeyRow({
               className="size-4 accent-primary"
             />
             <span aria-hidden="true" className="hidden sm:inline">
-              {saved?.is_active ? 'In use' : 'Use this'}
+              {saved.is_active ? 'In use' : 'Use this'}
             </span>
           </label>
         </TableCell>
         <TableCell>
-          {saved ? (
-            <ModelSelect
-              provider={provider}
-              value={saved.model}
-              models={models}
-              label={`${label} model`}
-              disabled={busy}
-              onChange={(next) => {
-                model.mutate(next)
-              }}
-            />
-          ) : (
-            <span className="text-muted-foreground">Needs a key</span>
-          )}
+          <ModelSelect
+            provider={provider}
+            value={saved.model}
+            models={models[provider]}
+            label={`${label} model`}
+            disabled={busy}
+            onChange={(next) => {
+              model.mutate(next)
+            }}
+          />
         </TableCell>
-        <TableCell className="text-right">
-          {saved && (
+        <TableCell>
+          <div className="flex justify-end gap-1">
+            <AddKeyDialog
+              replacing
+              providers={[provider]}
+              models={models}
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  icon={Key01Icon}
+                  aria-label={`Replace the ${label} key`}
+                  disabled={busy}
+                />
+              }
+            />
             <Button
               variant="ghost"
               size="icon-sm"
@@ -205,7 +187,7 @@ function KeyRow({
                 remove.mutate()
               }}
             />
-          )}
+          </div>
         </TableCell>
       </TableRow>
       {failure && (
@@ -221,167 +203,83 @@ function KeyRow({
   )
 }
 
-function ProviderOption({ provider }: { provider: ProviderName }) {
-  return (
-    <span className="flex items-center gap-2">
-      <ProviderLogo provider={provider} />
-      {PROVIDER_LABEL[provider]}
-    </span>
-  )
-}
-
-function AddKeyForm({ saved, models }: { saved: SavedKey[]; models: Record<ProviderName, string[]> }) {
-  const refresh = useRefresh()
-  const [provider, setProvider] = useState<ProviderName>('openai')
-  const [apiKey, setApiKey] = useState('')
-  const [model, setModel] = useState('')
-  const list = models[provider]
-  const chosenModel = list.includes(model) ? model : (list[0] ?? '')
-  const replacing = saved.some((key) => key.provider === provider)
-  const save = useMutation({
-    mutationFn: () => saveKey(provider, apiKey.trim(), chosenModel),
-    onSuccess: async () => {
-      // The key is cleared as soon as the server has it; it is never shown again.
-      setApiKey('')
-      await refresh()
-    },
-  })
-  const failure = save.isError ? errorText(save.error) : null
-
-  return (
-    <form
-      className="grid gap-4 sm:grid-cols-[12rem_minmax(0,1fr)_12rem] sm:items-end"
-      onSubmit={(event) => {
-        event.preventDefault()
-        if (apiKey.trim()) save.mutate()
-      }}
-    >
-      <div className="grid gap-1.5">
-        <Label htmlFor="key-provider">Provider</Label>
-        <Select
-          value={provider}
-          onValueChange={(next) => {
-            setProvider(next as ProviderName)
-            setModel('')
-          }}
-        >
-          <SelectTrigger id="key-provider">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {PROVIDER_ORDER.map((name) => (
-              <SelectItem key={name} value={name}>
-                <ProviderOption provider={name} />
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor="key-value">
-          {replacing ? `New ${PROVIDER_LABEL[provider]} API key` : `${PROVIDER_LABEL[provider]} API key`}
-        </Label>
-        <Input
-          id="key-value"
-          type="password"
-          autoComplete="off"
-          value={apiKey}
-          onChange={(event) => {
-            setApiKey(event.target.value)
-          }}
-        />
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor="key-model">Model</Label>
-        <Select value={chosenModel} onValueChange={setModel}>
-          <SelectTrigger id="key-model">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {list.map((name) => (
-              <SelectItem key={name} value={name}>
-                {name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="sm:col-span-3">
-        <Button type="submit" icon={Key01Icon} loading={save.isPending} disabled={!apiKey.trim()}>
-          {replacing ? 'Replace key' : 'Save key'}
-        </Button>
-      </div>
-      {failure && (
-        <p role="alert" className="text-small text-danger-foreground sm:col-span-3">
-          {failure.message} {failure.hint}
-        </p>
-      )}
-    </form>
-  )
-}
-
-function OwnKeys() {
+function CustomKeys() {
   const keys = useQuery(keysQuery)
   const models = useQuery(modelsQuery)
   return (
     <QueryBoundary
       query={keys}
       errorTitle="Couldn't load your keys."
-      loading={<Skeleton className="h-64 w-full" />}
+      loading={<Skeleton className="h-48 w-full" />}
     >
       {(saved) => (
         <QueryBoundary
           query={models}
           errorTitle="Couldn't load the model list."
-          loading={<Skeleton className="h-64 w-full" />}
+          loading={<Skeleton className="h-48 w-full" />}
         >
           {(available) => {
             const list: Record<ProviderName, string[]> = {
               gemini: available.gemini,
               openai: available.openai,
             }
-            const hasActive = saved.some((key) => key.is_active)
+            const missing = PROVIDER_ORDER.filter((name) => !saved.some((key) => key.provider === name))
+            const rows = PROVIDER_ORDER.flatMap((name) => saved.filter((key) => key.provider === name))
+            const addTrigger = (
+              <Button icon={Add01Icon} variant={rows.length === 0 ? 'primary' : 'secondary'}>
+                Add new API key
+              </Button>
+            )
             return (
-              <div className="flex flex-col gap-6">
-                {!hasActive && (
-                  <p
-                    role="status"
-                    className="rounded-md bg-warning-subtle p-3 text-body text-warning-foreground"
-                  >
-                    Questions are paused until you save a key and mark it as in use. Or switch back to
-                    QueryLab AI.
-                  </p>
+              <section aria-labelledby="your-keys" className="flex flex-col gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <Heading level={2} id="your-keys">
+                    Your API keys
+                  </Heading>
+                  {rows.length > 0 && missing.length > 0 && (
+                    <AddKeyDialog trigger={addTrigger} providers={missing} models={list} />
+                  )}
+                </div>
+                {rows.length === 0 ? (
+                  <div className="rounded-lg border bg-surface">
+                    <EmptyState
+                      icon={Key01Icon}
+                      title="No API keys yet"
+                      description="Add an OpenAI or Gemini key. Questions are paused until you add one."
+                      action={<AddKeyDialog trigger={addTrigger} providers={missing} models={list} />}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    {!rows.some((key) => key.is_active) && (
+                      <p
+                        role="status"
+                        className="rounded-md bg-warning-subtle p-3 text-body text-warning-foreground"
+                      >
+                        Questions are paused until a key is marked as in use. Or switch back to QueryLab AI.
+                      </p>
+                    )}
+                    <Table>
+                      <caption className="sr-only">Your OpenAI and Gemini keys. One can be in use.</caption>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Provider</TableHead>
+                          <TableHead>In use</TableHead>
+                          <TableHead>Model</TableHead>
+                          <TableHead>
+                            <span className="sr-only">Actions</span>
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {rows.map((saved) => (
+                          <KeyRow key={saved.provider} saved={saved} models={list} />
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </>
                 )}
-                <Table>
-                  <caption className="sr-only">Your OpenAI and Gemini keys. One can be in use.</caption>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Provider</TableHead>
-                      <TableHead>In use</TableHead>
-                      <TableHead>Model</TableHead>
-                      <TableHead>
-                        <span className="sr-only">Remove</span>
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {PROVIDER_ORDER.map((provider) => (
-                      <KeyRow
-                        key={provider}
-                        provider={provider}
-                        saved={saved.find((key) => key.provider === provider)}
-                        models={list[provider]}
-                      />
-                    ))}
-                  </TableBody>
-                </Table>
-                <section aria-labelledby="add-key" className="flex flex-col gap-4">
-                  <h2 id="add-key" className="text-h3 font-semibold">
-                    Add or replace a key
-                  </h2>
-                  <AddKeyForm saved={saved} models={list} />
-                </section>
-              </div>
+              </section>
             )
           }}
         </QueryBoundary>
@@ -390,7 +288,7 @@ function OwnKeys() {
   )
 }
 
-/** Choose QueryLab's AI or your own. A saved key is checked with the provider, stored encrypted and never sent back. */
+/** Choose QueryLab's AI or a custom one. A saved key is checked with the provider, stored encrypted and never sent back. */
 export function KeysPage() {
   const settings = useQuery(settingsQuery)
   return (
@@ -398,12 +296,12 @@ export function KeysPage() {
       <QueryBoundary
         query={settings}
         errorTitle="Couldn't load your AI setting."
-        loading={<Skeleton className="h-28 w-full" />}
+        loading={<Skeleton className="h-24 w-full" />}
       >
         {({ source }) => (
           <>
-            <SourceChoice source={source} />
-            {source === 'own' && <OwnKeys />}
+            <SourceSetting source={source} />
+            {source === 'own' && <CustomKeys />}
           </>
         )}
       </QueryBoundary>

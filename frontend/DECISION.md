@@ -230,3 +230,9 @@ plus one add-or-replace form whose provider dropdown shows the logos. The choice
 With "own" and no key in use the page says questions are paused and the backend refuses them (`no_active_key`): no quiet
 fallback to QueryLab's key. The "In use" column sits before "Model" so the radio stays on screen on phones. The OpenAI logo
 is black on transparent, so it is inverted on the dark theme. Radix Select needs pointer-capture stubs in `test/setup.ts`.
+
+**AI settings layout revised (2026-11-01).** Owner's pattern: title and description on the left, the choice as a dropdown on
+the right (QueryLab AI or Custom AI). The key table appears only for Custom AI and lists saved keys only (no "No key" rows).
+With no keys it shows an empty state with one Add new API key button; adding and replacing a key happen in a modal
+(`AddKeyDialog`), never inline. Once a key exists, the same button sits beside the heading until both providers have one; each
+row has Replace and Remove. A modal is used here because the key is a secret that needs focused entry, at the owner's request.
