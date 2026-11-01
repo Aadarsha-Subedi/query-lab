@@ -16,6 +16,7 @@ export function initApi(baseUrl: string): ApiClient {
 export const api: ApiClient = {
   request: (...args) => current().request(...args),
   url: (...args) => current().url(...args),
+  openStream: (...args) => current().openStream(...args),
   get: (...args) => current().get(...args),
   post: (...args) => current().post(...args),
   put: (...args) => current().put(...args),

@@ -153,8 +153,60 @@ export function createApiClient(baseUrl: string) {
     throw errorFromBody(response.status, body, requestId)
   }
 
+  /**
+   * Opens a text/event-stream response (fetch, not EventSource, so cookies and
+   * Last-Event-ID work the same way as for every other call). A non-2xx answer
+   * is the usual JSON error and becomes an ApiError. Never reconnects: the
+   * caller decides, and only on a user action.
+   */
+  async function openStream(
+    path: string,
+    options: { lastEventId?: number | null; signal?: AbortSignal } = {},
+  ): Promise<ReadableStream<Uint8Array>> {
+    const headers: Record<string, string> = { Accept: 'text/event-stream' }
+    if (options.lastEventId !== undefined && options.lastEventId !== null) {
+      headers['Last-Event-ID'] = String(options.lastEventId)
+    }
+    let response: Response
+    try {
+      response = await fetch(new URL(path, baseUrl), {
+        headers,
+        credentials: 'include',
+        signal: options.signal,
+      })
+    } catch (cause) {
+      if (cause instanceof DOMException && cause.name === 'AbortError') throw cause
+      throw new ApiError({
+        status: NO_RESPONSE,
+        code: 'network_error',
+        message: "The server didn't answer. Check your connection.",
+      })
+    }
+    const requestId = response.headers.get(REQUEST_ID_HEADER)
+    if (!response.ok) {
+      let body: unknown = null
+      try {
+        body = JSON.parse(await response.text())
+      } catch {
+        // not JSON: errorFromBody reports a bad_response
+      }
+      if (response.status === TOO_MANY_REQUESTS) notifyThrottled(response)
+      throw errorFromBody(response.status, body, requestId)
+    }
+    if (!response.body) {
+      throw new ApiError({
+        status: response.status,
+        code: 'bad_response',
+        message: 'The server sent an unexpected answer.',
+        requestId,
+      })
+    }
+    return response.body
+  }
+
   return {
     request,
+    openStream,
     /** The absolute URL for a path (for forms the browser submits itself). */
     url: (path: string) => new URL(path, baseUrl).toString(),
     get: <T>(path: string, options?: Omit<RequestOptions, 'method' | 'body'>) =>
