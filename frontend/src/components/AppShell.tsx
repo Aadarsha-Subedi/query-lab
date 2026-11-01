@@ -44,7 +44,7 @@ function NavLinks({ onNavigate, staff }: { onNavigate?: () => void; staff: boole
           to={item.to}
           onClick={onNavigate}
           className={cn(
-            'flex h-9 items-center gap-2 rounded-md px-3 text-body font-medium text-muted-foreground transition-colors duration-fast outline-none hover:bg-surface-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring',
+            'flex h-9 items-center gap-2 rounded-md px-3 text-body font-medium text-muted-foreground transition-colors duration-fast outline-none hover:bg-surface-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:h-11',
           )}
           activeProps={{ className: 'bg-surface-muted text-foreground' }}
         >
