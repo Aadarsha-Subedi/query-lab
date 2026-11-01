@@ -140,7 +140,7 @@ const SCREENS: [string, string][] = [
   ['workspaces', '/workspaces'],
   ['workspace editor', '/workspaces/7?table=products'],
   ['sql console', '/workspaces/7?tab=sql'],
-  ['api keys', '/settings/keys'],
+  ['ai settings', '/settings'],
   ['traces', '/workbench/runs'],
   ['cases', '/workbench/cases'],
   ['evals', '/workbench/evals'],

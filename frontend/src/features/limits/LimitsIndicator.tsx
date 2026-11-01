@@ -89,7 +89,7 @@ export function LimitsIndicator({ workspace }: { workspace?: number }) {
       </PopoverTrigger>
       <PopoverContent align="end">
         <Details limits={query.data} />
-        <Link to="/settings/keys" className="mt-3 inline-block text-small underline underline-offset-4">
+        <Link to="/settings" className="mt-3 inline-block text-small underline underline-offset-4">
           {has_own_key ? 'Manage your keys' : 'Use your own key'}
         </Link>
       </PopoverContent>

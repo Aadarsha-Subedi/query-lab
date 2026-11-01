@@ -12,7 +12,7 @@ import { jsonResponse, STAFF, TEST_BASE_URL } from '@/test/http'
 const SCREENS = [
   '/history',
   '/workspaces',
-  '/settings/keys',
+  '/settings',
   '/ask?run=5',
   '/runs/5/replay',
   '/workspaces/7',

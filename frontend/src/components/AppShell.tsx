@@ -29,7 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/ask', label: 'Ask', icon: MessageQuestionIcon },
   { to: '/history', label: 'History', icon: Clock01Icon },
   { to: '/workspaces', label: 'Workspaces', icon: DatabaseIcon },
-  { to: '/settings/keys', label: 'AI settings', icon: Key01Icon },
+  { to: '/settings', label: 'AI settings', icon: Key01Icon },
 ]
 
 /** Only staff accounts see these; the API refuses everyone else anyway. */

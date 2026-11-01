@@ -71,7 +71,7 @@ export function AskBox({ initialQuestion = '', workspace, disabled, onStarted }:
           {KEY_CODES.has(code) && (
             <>
               {' '}
-              <Link to="/settings/keys" className="underline underline-offset-4">
+              <Link to="/settings" className="underline underline-offset-4">
                 Add your own key
               </Link>
             </>

@@ -97,10 +97,13 @@ describe('workspace list', () => {
       '1024',
     )
     expect(screen.getByText('1 of 3 private workspaces used.')).toBeVisible()
-    expect(screen.getAllByRole('link', { name: 'Ask' }).map((link) => link.getAttribute('href'))).toContain(
-      '/ask?workspace=7',
-    )
-    expect(screen.getAllByRole('button', { name: /^Delete/ })).toHaveLength(1)
+    // Ask, Edit tables and Delete live in one menu per card (the demo only offers Ask).
+    expect(screen.getAllByRole('button', { name: /^Actions for/ })).toHaveLength(2)
+    expect(screen.queryByRole('button', { name: /^Delete/ })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Actions for Shop' }))
+    expect(await screen.findByRole('menuitem', { name: 'Ask' })).toHaveAttribute('href', '/ask?workspace=7')
+    expect(screen.getByRole('menuitem', { name: 'Edit tables' })).toBeVisible()
+    expect(screen.getByRole('menuitem', { name: 'Delete workspace' })).toBeVisible()
   })
 
   it('creates a workspace and shows the server message under the field when the name is taken', async () => {
@@ -138,7 +141,8 @@ describe('workspace list', () => {
   it('needs the typed name before it deletes', async () => {
     const calls = base({ 'DELETE /api/workspaces/7': () => ok(null) })
     await openAt('/workspaces')
-    await userEvent.click(await screen.findByRole('button', { name: 'Delete Shop' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Actions for Shop' }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Delete workspace' }))
     const confirm = await screen.findByRole('button', { name: 'Delete workspace' })
     expect(confirm).toBeDisabled()
     await userEvent.type(screen.getByRole('textbox', { name: 'Type the workspace name' }), 'Shop')

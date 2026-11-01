@@ -15,10 +15,10 @@ import { Route as DesignRouteImport } from './routes/design'
 import { Route as AppAppRouteImport } from './routes/_app/app'
 import { Route as AppAskRouteImport } from './routes/_app/ask'
 import { Route as AppHistoryRouteImport } from './routes/_app/history'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppWorkbenchRouteImport } from './routes/_app/workbench'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
-import { Route as AppSettingsKeysRouteImport } from './routes/_app/settings.keys'
 import { Route as AppWorkbenchIndexRouteImport } from './routes/_app/workbench.index'
 import { Route as AppWorkspacesIndexRouteImport } from './routes/_app/workspaces.index'
 import { Route as AppWorkspacesIdRouteImport } from './routes/_app/workspaces.$id'
@@ -60,6 +60,11 @@ const AppHistoryRoute = AppHistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppWorkbenchRoute = AppWorkbenchRouteImport.update({
   id: '/workbench',
   path: '/workbench',
@@ -74,11 +79,6 @@ const PublicLoginRoute = PublicLoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => PublicRoute,
-} as any)
-const AppSettingsKeysRoute = AppSettingsKeysRouteImport.update({
-  id: '/settings/keys',
-  path: '/settings/keys',
-  getParentRoute: () => AppRoute,
 } as any)
 const AppWorkbenchIndexRoute = AppWorkbenchIndexRouteImport.update({
   id: '/',
@@ -148,9 +148,9 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppAppRoute
   '/ask': typeof AppAskRoute
   '/history': typeof AppHistoryRoute
+  '/settings': typeof AppSettingsRoute
   '/workbench': typeof AppWorkbenchRouteWithChildren
   '/login': typeof PublicLoginRoute
-  '/settings/keys': typeof AppSettingsKeysRoute
   '/workspaces/$id': typeof AppWorkspacesIdRoute
   '/auth/callback': typeof PublicAuthCallbackRoute
   '/workbench/': typeof AppWorkbenchIndexRoute
@@ -170,8 +170,8 @@ export interface FileRoutesByTo {
   '/app': typeof AppAppRoute
   '/ask': typeof AppAskRoute
   '/history': typeof AppHistoryRoute
+  '/settings': typeof AppSettingsRoute
   '/login': typeof PublicLoginRoute
-  '/settings/keys': typeof AppSettingsKeysRoute
   '/workspaces/$id': typeof AppWorkspacesIdRoute
   '/auth/callback': typeof PublicAuthCallbackRoute
   '/workbench': typeof AppWorkbenchIndexRoute
@@ -193,10 +193,10 @@ export interface FileRoutesById {
   '/_app/app': typeof AppAppRoute
   '/_app/ask': typeof AppAskRoute
   '/_app/history': typeof AppHistoryRoute
+  '/_app/settings': typeof AppSettingsRoute
   '/_app/workbench': typeof AppWorkbenchRouteWithChildren
   '/_public/login': typeof PublicLoginRoute
   '/_public/': typeof PublicIndexRoute
-  '/_app/settings/keys': typeof AppSettingsKeysRoute
   '/_app/workspaces/$id': typeof AppWorkspacesIdRoute
   '/_public/auth/callback': typeof PublicAuthCallbackRoute
   '/_app/workbench/': typeof AppWorkbenchIndexRoute
@@ -218,9 +218,9 @@ export interface FileRouteTypes {
     | '/app'
     | '/ask'
     | '/history'
+    | '/settings'
     | '/workbench'
     | '/login'
-    | '/settings/keys'
     | '/workspaces/$id'
     | '/auth/callback'
     | '/workbench/'
@@ -240,8 +240,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/ask'
     | '/history'
+    | '/settings'
     | '/login'
-    | '/settings/keys'
     | '/workspaces/$id'
     | '/auth/callback'
     | '/workbench'
@@ -262,10 +262,10 @@ export interface FileRouteTypes {
     | '/_app/app'
     | '/_app/ask'
     | '/_app/history'
+    | '/_app/settings'
     | '/_app/workbench'
     | '/_public/login'
     | '/_public/'
-    | '/_app/settings/keys'
     | '/_app/workspaces/$id'
     | '/_public/auth/callback'
     | '/_app/workbench/'
@@ -330,6 +330,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppHistoryRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/workbench': {
       id: '/_app/workbench'
       path: '/workbench'
@@ -350,13 +357,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/login'
       preLoaderRoute: typeof PublicLoginRouteImport
       parentRoute: typeof PublicRoute
-    }
-    '/_app/settings/keys': {
-      id: '/_app/settings/keys'
-      path: '/settings/keys'
-      fullPath: '/settings/keys'
-      preLoaderRoute: typeof AppSettingsKeysRouteImport
-      parentRoute: typeof AppRoute
     }
     '/_app/workbench/': {
       id: '/_app/workbench/'
@@ -475,8 +475,8 @@ interface AppRouteChildren {
   AppAppRoute: typeof AppAppRoute
   AppAskRoute: typeof AppAskRoute
   AppHistoryRoute: typeof AppHistoryRoute
+  AppSettingsRoute: typeof AppSettingsRoute
   AppWorkbenchRoute: typeof AppWorkbenchRouteWithChildren
-  AppSettingsKeysRoute: typeof AppSettingsKeysRoute
   AppWorkspacesIdRoute: typeof AppWorkspacesIdRoute
   AppWorkspacesIndexRoute: typeof AppWorkspacesIndexRoute
   AppRunsRunIdReplayRoute: typeof AppRunsRunIdReplayRoute
@@ -486,8 +486,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppAppRoute: AppAppRoute,
   AppAskRoute: AppAskRoute,
   AppHistoryRoute: AppHistoryRoute,
+  AppSettingsRoute: AppSettingsRoute,
   AppWorkbenchRoute: AppWorkbenchRouteWithChildren,
-  AppSettingsKeysRoute: AppSettingsKeysRoute,
   AppWorkspacesIdRoute: AppWorkspacesIdRoute,
   AppWorkspacesIndexRoute: AppWorkspacesIndexRoute,
   AppRunsRunIdReplayRoute: AppRunsRunIdReplayRoute,

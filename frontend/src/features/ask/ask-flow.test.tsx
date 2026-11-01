@@ -273,9 +273,6 @@ describe('AskBox', () => {
     show(<AskBox onStarted={vi.fn()} />)
     await userEvent.type(screen.getByRole('textbox', { name: 'Your question' }), 'Anything')
     await userEvent.click(screen.getByRole('button', { name: 'Ask' }))
-    expect(await screen.findByRole('link', { name: 'Add your own key' })).toHaveAttribute(
-      'href',
-      '/settings/keys',
-    )
+    expect(await screen.findByRole('link', { name: 'Add your own key' })).toHaveAttribute('href', '/settings')
   })
 })

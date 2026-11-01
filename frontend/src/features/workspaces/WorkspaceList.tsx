@@ -1,11 +1,25 @@
-import { MessageQuestionIcon, Settings02Icon } from '@hugeicons/core-free-icons'
+import {
+  Delete02Icon,
+  MessageQuestionIcon,
+  MoreVerticalIcon,
+  Settings02Icon,
+} from '@hugeicons/core-free-icons'
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
 
 import { QueryBoundary } from '@/components/QueryBoundary'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Icon } from '@/components/ui/icon'
 import { Meter } from '@/components/ui/meter'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatBytes, formatNumber } from '@/lib/format'
@@ -14,16 +28,65 @@ import { workspaceLimitsQuery, workspacesQuery, type WorkspaceInfo } from './api
 import { CreateWorkspaceDialog } from './CreateWorkspaceDialog'
 import { DeleteWorkspaceDialog } from './DeleteWorkspaceDialog'
 
-function WorkspaceCard({ workspace }: { workspace: WorkspaceInfo }) {
+/** Ask, edit tables and delete, in one menu. The demo can only be asked. */
+function WorkspaceActions({ workspace, onDelete }: { workspace: WorkspaceInfo; onDelete: () => void }) {
   const demo = workspace.kind === 'demo'
   return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          icon={MoreVerticalIcon}
+          aria-label={`Actions for ${workspace.name}`}
+        />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem asChild>
+          <Link to="/ask" search={demo ? {} : { workspace: workspace.id ?? undefined }}>
+            <Icon icon={MessageQuestionIcon} size="sm" />
+            Ask
+          </Link>
+        </DropdownMenuItem>
+        {!demo && workspace.id !== null && (
+          <>
+            <DropdownMenuItem asChild>
+              <Link to="/workspaces/$id" params={{ id: String(workspace.id) }}>
+                <Icon icon={Settings02Icon} size="sm" />
+                Edit tables
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+              <Icon icon={Delete02Icon} size="sm" />
+              Delete workspace
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function WorkspaceCard({ workspace }: { workspace: WorkspaceInfo }) {
+  const demo = workspace.kind === 'demo'
+  const [deleting, setDeleting] = useState(false)
+  return (
     <Card>
-      <CardHeader>
+      <CardHeader className="grid-cols-[1fr_auto]">
         <CardTitle className="flex items-center gap-2">
           {workspace.name}
           {demo && <Badge variant="info">Shared · read only</Badge>}
           {workspace.status !== 'ready' && <Badge variant="warning">{workspace.status}</Badge>}
         </CardTitle>
+        <div className="col-start-2 row-span-2 row-start-1 -mt-1 -mr-2">
+          <WorkspaceActions
+            workspace={workspace}
+            onDelete={() => {
+              setDeleting(true)
+            }}
+          />
+        </div>
         <CardDescription>
           {formatNumber(workspace.tables)} {workspace.tables === 1 ? 'table' : 'tables'}
           {workspace.bytes_allowed !== null && (
@@ -43,23 +106,9 @@ function WorkspaceCard({ workspace }: { workspace: WorkspaceInfo }) {
           />
         </CardContent>
       )}
-      <CardFooter className="flex flex-wrap gap-2">
-        <Button asChild icon={MessageQuestionIcon} size="sm">
-          <Link to="/ask" search={demo ? {} : { workspace: workspace.id ?? undefined }}>
-            Ask
-          </Link>
-        </Button>
-        {!demo && workspace.id !== null && (
-          <>
-            <Button asChild variant="secondary" icon={Settings02Icon} size="sm">
-              <Link to="/workspaces/$id" params={{ id: String(workspace.id) }}>
-                Edit tables
-              </Link>
-            </Button>
-            <DeleteWorkspaceDialog workspace={workspace} />
-          </>
-        )}
-      </CardFooter>
+      {!demo && workspace.id !== null && (
+        <DeleteWorkspaceDialog workspace={workspace} open={deleting} onOpenChange={setDeleting} />
+      )}
     </Card>
   )
 }

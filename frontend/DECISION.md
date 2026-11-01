@@ -236,3 +236,9 @@ the right (QueryLab AI or Custom AI). The key table appears only for Custom AI a
 With no keys it shows an empty state with one Add new API key button; adding and replacing a key happen in a modal
 (`AddKeyDialog`), never inline. Once a key exists, the same button sits beside the heading until both providers have one; each
 row has Replace and Remove. A modal is used here because the key is a secret that needs focused entry, at the owner's request.
+
+**No page headers on Workspaces and AI settings; route is /settings (2026-11-01).** The nav item already names the page, so the
+visible h1 is gone on these two. The h1 stays as `sr-only` text because it names the browser tab (see `Heading`) and gives screen
+readers a page heading. The keys route moved from `/settings/keys` to `/settings`. Workspace cards no longer carry buttons: Ask,
+Edit tables and Delete workspace sit in one actions menu per card (the demo only offers Ask), and Delete still needs the typed
+name; `DeleteWorkspaceDialog` is now opened by the menu instead of its own trigger.

@@ -10,7 +10,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,12 +20,17 @@ import { deleteWorkspace, type WorkspaceInfo } from './api'
 /** Deleting drops every table and row in the workspace for good, so the name must be typed. */
 export function DeleteWorkspaceDialog({
   workspace,
+  open,
+  onOpenChange,
   onDeleted,
 }: {
   workspace: WorkspaceInfo
+  /** Controlled by the actions menu that opens it. */
+  open: boolean
+  onOpenChange: (open: boolean) => void
   onDeleted?: () => void
 }) {
-  const [open, setOpen] = useState(false)
+  const setOpen = onOpenChange
   const [typed, setTyped] = useState('')
   const queryClient = useQueryClient()
   const id = workspace.id
@@ -54,11 +58,6 @@ export function DeleteWorkspaceDialog({
         }
       }}
     >
-      <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="sm" icon={Delete02Icon} aria-label={`Delete ${workspace.name}`}>
-          Delete
-        </Button>
-      </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete {workspace.name}?</AlertDialogTitle>
