@@ -30,13 +30,15 @@ function Detail({ table }: { table: TableInfo }) {
               <TableRow key={column.name}>
                 <TableCell className="font-mono">{column.name}</TableCell>
                 <TableCell className="font-mono text-muted-foreground">{column.type}</TableCell>
-                <TableCell className="flex flex-wrap gap-1">
-                  {table.primary_key.includes(column.name) && <Badge variant="primary">PK</Badge>}
-                  {reference && <Badge variant="info">FK to {reference.ref_table}</Badge>}
-                  {!column.nullable && <Badge>required</Badge>}
-                  {column.comment && (
-                    <span className="text-small text-muted-foreground">{column.comment}</span>
-                  )}
+                <TableCell className="whitespace-normal">
+                  <div className="flex flex-wrap items-center gap-1">
+                    {table.primary_key.includes(column.name) && <Badge variant="primary">PK</Badge>}
+                    {reference && <Badge variant="info">FK to {reference.ref_table}</Badge>}
+                    {!column.nullable && <Badge>required</Badge>}
+                    {column.comment && (
+                      <span className="text-small text-muted-foreground">{column.comment}</span>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             )

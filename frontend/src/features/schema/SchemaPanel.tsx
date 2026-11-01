@@ -11,10 +11,9 @@ import { QueryBoundary } from '@/components/QueryBoundary'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/data-state'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Icon } from '@/components/ui/icon'
 import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatNumber } from '@/lib/format'
 
@@ -87,7 +86,7 @@ function Tables({ schema, workspace }: { schema: DatabaseSchema; workspace?: num
       table.columns.some((c) => c.name.toLowerCase().includes(needle)),
   )
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
+    <div className="flex flex-col gap-4">
       <Input
         type="search"
         aria-label="Filter tables and columns"
@@ -100,28 +99,26 @@ function Tables({ schema, workspace }: { schema: DatabaseSchema; workspace?: num
       {shown.length === 0 ? (
         <EmptyState icon={DatabaseIcon} title="No match" description="No table or column has that name." />
       ) : (
-        <ScrollArea className="min-h-0 flex-1">
-          <ul className="flex flex-col gap-0.5 pr-3">
-            {shown.map((table) => (
-              <SchemaTable key={table.name} table={table} onDetails={setDetails} />
-            ))}
-          </ul>
-        </ScrollArea>
+        <ul className="grid items-start gap-x-8 gap-y-0.5 lg:grid-cols-2">
+          {shown.map((table) => (
+            <SchemaTable key={table.name} table={table} onDetails={setDetails} />
+          ))}
+        </ul>
       )}
-      <Sheet
+      <Dialog
         open={details !== null}
         onOpenChange={(open) => {
           if (!open) setDetails(null)
         }}
       >
-        <SheetContent className="overflow-y-auto sm:max-w-xl">
-          <SheetHeader>
-            <SheetTitle className="font-mono">{details}</SheetTitle>
-            <SheetDescription>Columns, keys and comments.</SheetDescription>
-          </SheetHeader>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-mono">{details}</DialogTitle>
+            <DialogDescription>Columns, keys and comments.</DialogDescription>
+          </DialogHeader>
           {details !== null && <TableDetail name={details} workspace={workspace} />}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -130,7 +127,7 @@ function Tables({ schema, workspace }: { schema: DatabaseSchema; workspace?: num
 export function SchemaPanel({ workspace }: { workspace?: number }) {
   const query = useQuery(schemaQuery(workspace))
   return (
-    <section aria-label="Schema" className="flex h-full min-h-0 flex-col gap-3">
+    <section aria-label="Schema" className="flex flex-col gap-3">
       <QueryBoundary
         query={query}
         errorTitle="Couldn't load the schema."

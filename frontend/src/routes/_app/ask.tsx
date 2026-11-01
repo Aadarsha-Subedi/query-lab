@@ -7,6 +7,7 @@ import { Heading } from '@/components/typography/Heading'
 import { SparklesIcon } from '@hugeicons/core-free-icons'
 
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DEMO_EXAMPLES } from '@/features/ask/examples'
 import { AskBox } from '@/features/ask/AskBox'
 import { RunView } from '@/features/ask/RunView'
@@ -19,6 +20,8 @@ const searchSchema = z.object({
   workspace: z.number().int().positive().optional(),
   /** Pre-fills the question box (Ask again). */
   question: z.string().optional(),
+  /** Ask (default) or the schema browser. */
+  tab: z.enum(['ask', 'schema']).optional(),
 })
 
 export const Route = createFileRoute('/_app/ask')({
@@ -27,7 +30,7 @@ export const Route = createFileRoute('/_app/ask')({
 })
 
 function AskPage() {
-  const { run, workspace, question } = Route.useSearch()
+  const { run, workspace, question, tab = 'ask' } = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const [example, setExample] = useState({ text: '', n: 0 })
   const limits = useQuery(limitsQuery(workspace))
@@ -36,58 +39,69 @@ function AskPage() {
     : false
 
   return (
-    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 px-4 py-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
-      <main id="main" tabIndex={-1} className="order-1 flex min-w-0 flex-col gap-6 lg:order-2">
+    <main id="main" tabIndex={-1} className="flex min-w-0 flex-col gap-6 px-4 py-6">
+      {/* The nav item names the page; the heading stays for screen readers and the tab title. */}
+      <Heading level={1} className="sr-only">
+        Ask
+      </Heading>
+      <Tabs
+        value={tab}
+        onValueChange={(next) => {
+          void navigate({
+            search: (previous) => ({ ...previous, tab: next === 'schema' ? 'schema' : undefined }),
+          })
+        }}
+        className="gap-6"
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Heading level={1}>Ask</Heading>
+          <TabsList variant="line">
+            <TabsTrigger value="ask">Ask</TabsTrigger>
+            <TabsTrigger value="schema">Schema</TabsTrigger>
+          </TabsList>
           <WorkspaceSelect
             workspace={workspace}
             onChange={(next) => {
-              void navigate({ search: { workspace: next } })
+              void navigate({ search: (previous) => ({ tab: previous.tab, workspace: next }) })
             }}
           />
         </div>
-        <AskBox
-          key={`${example.n}-${question ?? ''}`}
-          initialQuestion={example.text || question}
-          workspace={workspace}
-          disabled={runsFull}
-          onStarted={(id) => {
-            void navigate({ search: (previous) => ({ ...previous, run: id }) })
-          }}
-        />
-        {run === undefined && workspace === undefined && (
-          <section aria-label="Example questions" className="flex flex-col gap-2">
-            <p className="text-small text-muted-foreground">Try one of these on the demo data:</p>
-            <div className="flex flex-wrap gap-2">
-              {DEMO_EXAMPLES.map((text) => (
-                <Button
-                  key={text}
-                  variant="secondary"
-                  size="sm"
-                  icon={SparklesIcon}
-                  className="h-auto min-h-8 max-w-full py-1.5 text-left whitespace-normal"
-                  onClick={() => {
-                    setExample((previous) => ({ text, n: previous.n + 1 }))
-                  }}
-                >
-                  {text}
-                </Button>
-              ))}
-            </div>
-          </section>
-        )}
-        {run !== undefined && <RunView runId={run} />}
-      </main>
-      <aside
-        aria-label="Schema browser"
-        className="order-2 max-h-[70vh] lg:sticky lg:top-20 lg:order-1 lg:h-[calc(100vh-7rem)] lg:max-h-none"
-      >
-        <Heading level={2} className="mb-3">
-          Schema
-        </Heading>
-        <SchemaPanel workspace={workspace} />
-      </aside>
-    </div>
+        <TabsContent value="ask" className="flex max-w-[var(--content-max)] flex-col gap-6">
+          <AskBox
+            key={`${example.n}-${question ?? ''}`}
+            initialQuestion={example.text || question}
+            workspace={workspace}
+            disabled={runsFull}
+            onStarted={(id) => {
+              void navigate({ search: (previous) => ({ ...previous, run: id }) })
+            }}
+          />
+          {run === undefined && workspace === undefined && (
+            <section aria-label="Example questions" className="flex flex-col gap-2">
+              <p className="text-small text-muted-foreground">Try one of these on the demo data:</p>
+              <div className="flex flex-wrap gap-2">
+                {DEMO_EXAMPLES.map((text) => (
+                  <Button
+                    key={text}
+                    variant="secondary"
+                    size="sm"
+                    icon={SparklesIcon}
+                    className="h-auto min-h-8 max-w-full py-1.5 text-left whitespace-normal"
+                    onClick={() => {
+                      setExample((previous) => ({ text, n: previous.n + 1 }))
+                    }}
+                  >
+                    {text}
+                  </Button>
+                ))}
+              </div>
+            </section>
+          )}
+          {run !== undefined && <RunView runId={run} />}
+        </TabsContent>
+        <TabsContent value="schema">
+          <SchemaPanel workspace={workspace} />
+        </TabsContent>
+      </Tabs>
+    </main>
   )
 }

@@ -246,3 +246,11 @@ name; `DeleteWorkspaceDialog` is now opened by the menu instead of its own trigg
 **Model choice on QueryLab AI (2026-11-01).** With QueryLab AI selected, a second setting row (title and description left,
 dropdown right, like the AI source row) lets the user pick which Gemini model answers on the shared key. The list is the same
 `LLM_GEMINI_MODELS` allowlist served by `/llm-keys-models`. It is hidden for a custom AI, which has its own model per key.
+
+**Ask and Schema as sub-tabs, table details in a modal, field styling (2026-11-01).** The schema browser no longer sits in a
+narrow side column: `/ask` has two sub-tabs (`?tab=schema`; Ask is the default and leaves the URL clean) under one workspace
+picker, so each gets the whole width. The per-table info button opens a dialog instead of a slide-in sheet. The Querylab mark
+(`src/assets/logo.svg`) is the favicon and the topbar logo (it flips to a white tile on the dark theme). Form fields use the
+`surface` colour with `--input` at `n-450` (about 3.4:1), the lightest grey that still passes WCAG 1.4.11; the earlier `n-500`
+made every field look heavy next to the light cards. Rows of the shared demo tables are still not viewable (no endpoint); the
+structure, columns, keys and samples are, on the Schema tab.

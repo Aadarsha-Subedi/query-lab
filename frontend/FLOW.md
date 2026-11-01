@@ -27,7 +27,7 @@ _public           beforeLoad: signed in -> redirect /app
   /auth/callback    only seen when a sign-in did not finish (a finished one is moved on to /app by the guard)
 _app              beforeLoad: signed out -> redirect /; adds { me }; renders AppShell (header, nav, limits chip)
   /app              home: ask button, how it works, last 3 questions (RecentRuns); skip link targets every page's <main id="main">
-  /ask              ?run=&workspace=&question=   (question pre-fills the box: Ask again) workspace picker, schema panel, question box, RunView
+  /ask              ?tab=ask|schema&run=&workspace=&question=   workspace picker above two sub-tabs. Ask: question box, examples, RunView (question pre-fills the box: Ask again). Schema: full-width table browser (filter, expand columns, info button opens a modal with the table's columns, keys and comments)
   /settings         AI settings (no visible page header; the nav item names it): a row with title and description on the left and a QueryLab AI / Custom AI dropdown on the right (GET/PUT /llm-settings). With QueryLab AI chosen, a second row (same pattern) picks the Gemini model used on the shared key (`querylab_model`). Only for Custom AI: a table of saved keys (provider, in-use radio, model dropdown, replace, remove) or an empty state whose Add new API key button opens a modal (provider dropdown with logos from src/assets/providers, key, model)
   /history          ?status=&q=&ordering=&offset=&workspace=   your runs; rows link to /ask?run= and the replay
   /runs/$runId/replay   stored trace, one step at a time

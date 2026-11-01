@@ -135,6 +135,7 @@ const SCREENS: [string, string][] = [
   ['home', '/app'],
   ['ask', '/ask'],
   ['ask with a run', '/ask?run=5'],
+  ['ask schema tab', '/ask?tab=schema'],
   ['history', '/history'],
   ['replay', '/runs/5/replay'],
   ['workspaces', '/workspaces'],
