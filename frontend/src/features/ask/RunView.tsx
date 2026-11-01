@@ -112,6 +112,7 @@ export function RunView({ runId }: { runId: number }) {
     if (endedFor.current === key) return
     endedFor.current = key
     void queryClient.invalidateQueries({ queryKey: ['run', runId], exact: true })
+    void queryClient.invalidateQueries({ queryKey: ['agent-limits'] })
   }, [stream.phase, stream.status, stream.lastIndex, runId, queryClient])
 
   return (
