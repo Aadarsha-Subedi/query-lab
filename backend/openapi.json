@@ -2497,6 +2497,51 @@
         "title": "RunOut",
         "type": "object"
       },
+      "RunResultOut": {
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "row_count": {
+            "title": "Row Count",
+            "type": "integer"
+          },
+          "rows": {
+            "items": {
+              "items": {},
+              "type": "array"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "integer"
+          },
+          "sql": {
+            "title": "Sql",
+            "type": "string"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "run_id",
+          "sql",
+          "columns",
+          "rows",
+          "row_count",
+          "truncated"
+        ],
+        "title": "RunResultOut",
+        "type": "object"
+      },
       "SchemaOut": {
         "properties": {
           "name": {
@@ -3108,40 +3153,6 @@
         "title": "SuccessEnvelope[RelationOut]",
         "type": "object"
       },
-      "SuccessEnvelope_ResultOut_": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/ResultOut"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "meta": {
-            "additionalProperties": true,
-            "default": {},
-            "title": "Meta",
-            "type": "object"
-          },
-          "status_code": {
-            "title": "Status Code",
-            "type": "integer"
-          },
-          "success": {
-            "const": true,
-            "default": true,
-            "title": "Success",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "status_code",
-          "message",
-          "data"
-        ],
-        "title": "SuccessEnvelope[ResultOut]",
-        "type": "object"
-      },
       "SuccessEnvelope_RowOut_": {
         "properties": {
           "data": {
@@ -3344,6 +3355,40 @@
           "data"
         ],
         "title": "SuccessEnvelope[RunOut]",
+        "type": "object"
+      },
+      "SuccessEnvelope_RunResultOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RunResultOut"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Meta",
+            "type": "object"
+          },
+          "status_code": {
+            "title": "Status Code",
+            "type": "integer"
+          },
+          "success": {
+            "const": true,
+            "default": true,
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status_code",
+          "message",
+          "data"
+        ],
+        "title": "SuccessEnvelope[RunResultOut]",
         "type": "object"
       },
       "SuccessEnvelope_SchemaOut_": {
@@ -5677,7 +5722,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_ResultOut_"
+                  "$ref": "#/components/schemas/SuccessEnvelope_RunResultOut_"
                 }
               }
             },

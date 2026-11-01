@@ -135,7 +135,7 @@ class RunDetailOut(RunOut):
     steps: list[StepOut]
 
 
-class ResultOut(Schema):
+class RunResultOut(Schema):
     run_id: int
     # The SQL that ran this time (the stored SQL after the guard's rewrite).
     sql: str

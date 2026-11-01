@@ -15,7 +15,7 @@ from agent.schemas import (
     FeedbackIn,
     FeedbackOut,
     AgentLimitsOut,
-    ResultOut,
+    RunResultOut,
     RunDetailOut,
     RunIn,
     RunOut,
@@ -203,7 +203,7 @@ def replay_run(request: HttpRequest, run_id: int) -> dict:
 @router.get(
     "/runs/{run_id}/result",
     response={
-        200: SuccessEnvelope[ResultOut],
+        200: SuccessEnvelope[RunResultOut],
         **errors(400, 401, 404, 409, 422, 429, 504),
     },
     auth=django_auth,
