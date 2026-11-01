@@ -11,7 +11,7 @@ import { errorText } from '@/lib/api/error-text'
 import { formatNumber } from '@/lib/format'
 
 import { invalidateWorkspace, runSql, type SqlResult } from './api'
-import { cellText } from './cell'
+import { cellText } from '@/lib/cell'
 
 function Statement({ statement }: { statement: SqlResult['statements'][number] }) {
   return (

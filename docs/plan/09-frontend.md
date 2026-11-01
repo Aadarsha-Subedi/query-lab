@@ -106,21 +106,21 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 9.8 Staff workbench: trace viewer
 
-- [ ] **9.8.1** Staff route group `_app/workbench/*` guarded in its layout `beforeLoad` by the `/me` staff flag; a signed-in non-staff user lands on the 403 page. Test both users.
-- [ ] **9.8.2** `features/workbench/api.ts`: runs, run detail, clusters, cases, case detail, draft, approve, reject, mark-unanswerable. Errors `case_not_found`, `case_not_reviewable`, `draft_unusable`, `staff_only`.
-- [ ] **9.8.3** Runs list `/workbench/runs`: filters from the contract, table, link to detail. Run detail: steps, proposed vs approved SQL as a side-by-side diff (small hand-written line diff; no diff library unless it fails the budget), the user's feedback.
-- [ ] **9.8.4** Clusters view: label, size, representative question, counts per status; click filters the cases list.
-- [ ] **9.8.5** Cases list and case detail: status badge, drafted SQL, `draft_error`, a rows preview ("run now, never stored" note), a link to the source trace.
-- [ ] **9.8.6** Review actions: Approve (optionally edit question and SQL first), Reject, Mark unanswerable, Draft a batch. After approving, show the guarded-and-run result; `guard_rejected` on `sql` shown under the SQL field. A failed draft requires an edited SQL before Approve is enabled (matches the case-status rules).
-- [ ] **9.8.7** Tests: the whole review loop with a mocked server; non-reviewable status; unusable draft.
+- [x] **9.8.1** Staff route group `_app/workbench/*` guarded in its layout `beforeLoad` by the `/me` staff flag; a signed-in non-staff user lands on the 403 page. Test both users.
+- [x] **9.8.2** `features/workbench/api.ts`: runs, run detail, clusters, cases, case detail, draft, approve, reject, mark-unanswerable. Errors `case_not_found`, `case_not_reviewable`, `draft_unusable`, `staff_only`.
+- [x] **9.8.3** Runs list `/workbench/runs`: filters from the contract, table, link to detail. Run detail: steps, proposed vs approved SQL as an inline line diff (small hand-written line diff; no diff library unless it fails the budget), the user's feedback.
+- [x] **9.8.4** Clusters view: label, size, representative question, counts per status; click filters the cases list.
+- [x] **9.8.5** Cases list and case detail: status badge, drafted SQL, `draft_error`, a rows preview ("run now, never stored" note), a link to the source trace.
+- [x] **9.8.6** Review actions: Approve (optionally edit question and SQL first), Reject, Mark unanswerable, Draft a batch. After approving, show the guarded-and-run result; `guard_rejected` on `sql` shown under the SQL field. A failed draft requires an edited SQL before Approve is enabled (matches the case-status rules).
+- [x] **9.8.7** Tests: the whole review loop with a mocked server; non-reviewable status; unusable draft.
 
 ## 9.9 Staff workbench: eval dashboard
 
-- [ ] **9.9.1** Eval runs list `/workbench/evals`: filters (target, runner, model, prompt version), accuracy, cost per question, finished time.
-- [ ] **9.9.2** Eval run detail: per-case results (question, gold, predicted, outcome, reason, link to the trace) with outcome filter; `by_cluster` accuracy as a table with inline bars.
-- [ ] **9.9.3** Compare view `?base=&other=`: pick two runs; accuracy difference, flipped-to-wrong and flipped-to-correct lists, per-cluster difference; `eval_runs_not_comparable` as a clear message.
-- [ ] **9.9.4** Chart decision: tables with inline bars first. Add a chart library only if a tracked-over-time view proves necessary; record the choice and bundle impact in `DECISION.md`. Follow the `dataviz` guidance and token colours if one is added.
-- [ ] **9.9.5** Tests: filters, detail, compare with flips in both directions, not-comparable error.
+- [x] **9.9.1** Eval runs list `/workbench/evals`: filters (target, model; runner and prompt version are accepted in the URL), accuracy, cost per question, finished time.
+- [x] **9.9.2** Eval run detail: per-case results (question, gold, predicted, outcome, reason, link to the trace) with outcome filter; `by_cluster` accuracy as a table with inline bars.
+- [x] **9.9.3** Compare view `?base=&other=`: pick two runs; accuracy difference, flipped-to-wrong and flipped-to-correct lists, per-cluster difference; `eval_runs_not_comparable` as a clear message.
+- [x] **9.9.4** Chart decision: tables with inline bars first. Add a chart library only if a tracked-over-time view proves necessary; record the choice and bundle impact in `DECISION.md`. Follow the `dataviz` guidance and token colours if one is added.
+- [x] **9.9.5** Tests: filters, detail, compare with flips in both directions, not-comparable error.
 
 ## 9.10 Quality: states, accessibility, responsive
 

@@ -19,7 +19,7 @@ import { ApiError } from '@/lib/api'
 import { errorText } from '@/lib/api/error-text'
 
 import { insertRows, invalidateWorkspace, patchRow, type TableSpec } from './api'
-import { cellText } from './cell'
+import { cellText } from '@/lib/cell'
 
 const NULL = '__null__'
 

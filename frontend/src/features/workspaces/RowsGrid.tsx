@@ -25,7 +25,7 @@ import {
   type RowsPage,
   type TableSpec,
 } from './api'
-import { cellText } from './cell'
+import { cellText } from '@/lib/cell'
 import { RowDialog } from './RowDialog'
 
 const ROW_ID = '_row_id'

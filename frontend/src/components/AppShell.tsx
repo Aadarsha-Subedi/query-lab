@@ -2,6 +2,7 @@ import {
   Clock01Icon,
   DatabaseIcon,
   Key01Icon,
+  TestTube01Icon,
   Home01Icon,
   Menu01Icon,
   MessageQuestionIcon,
@@ -31,10 +32,13 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/settings/keys', label: 'API keys', icon: Key01Icon },
 ]
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+/** Only staff accounts see these; the API refuses everyone else anyway. */
+const STAFF_ITEMS: NavItem[] = [{ to: '/workbench', label: 'Workbench', icon: TestTube01Icon }]
+
+function NavLinks({ onNavigate, staff }: { onNavigate?: () => void; staff: boolean }) {
   return (
     <nav aria-label="Main" className="flex flex-col gap-1">
-      {NAV_ITEMS.map((item) => (
+      {[...NAV_ITEMS, ...(staff ? STAFF_ITEMS : [])].map((item) => (
         <Link
           key={item.label}
           to={item.to}
@@ -82,7 +86,7 @@ export function AppShell({ user }: { user: User }) {
       </header>
       <div className="flex flex-1">
         <aside className="hidden w-56 shrink-0 border-r p-3 md:block">
-          <NavLinks />
+          <NavLinks staff={user.is_staff} />
         </aside>
         <div className="min-w-0 flex-1">
           <Outlet />
@@ -93,6 +97,7 @@ export function AppShell({ user }: { user: User }) {
           <SheetTitle>{name}</SheetTitle>
           <SheetDescription className="sr-only">Main navigation</SheetDescription>
           <NavLinks
+            staff={user.is_staff}
             onNavigate={() => {
               setNavOpen(false)
             }}

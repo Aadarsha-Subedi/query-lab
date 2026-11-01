@@ -15,13 +15,22 @@ import { Route as DesignRouteImport } from './routes/design'
 import { Route as AppAppRouteImport } from './routes/_app/app'
 import { Route as AppAskRouteImport } from './routes/_app/ask'
 import { Route as AppHistoryRouteImport } from './routes/_app/history'
+import { Route as AppWorkbenchRouteImport } from './routes/_app/workbench'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
 import { Route as AppSettingsKeysRouteImport } from './routes/_app/settings.keys'
+import { Route as AppWorkbenchIndexRouteImport } from './routes/_app/workbench.index'
 import { Route as AppWorkspacesIndexRouteImport } from './routes/_app/workspaces.index'
 import { Route as AppWorkspacesIdRouteImport } from './routes/_app/workspaces.$id'
 import { Route as PublicAuthCallbackRouteImport } from './routes/_public/auth.callback'
 import { Route as AppRunsRunIdReplayRouteImport } from './routes/_app/runs.$runId.replay'
+import { Route as AppWorkbenchCasesIndexRouteImport } from './routes/_app/workbench.cases.index'
+import { Route as AppWorkbenchCasesCaseIdRouteImport } from './routes/_app/workbench.cases.$caseId'
+import { Route as AppWorkbenchEvalsIndexRouteImport } from './routes/_app/workbench.evals.index'
+import { Route as AppWorkbenchEvalsRunIdRouteImport } from './routes/_app/workbench.evals.$runId'
+import { Route as AppWorkbenchEvalsCompareRouteImport } from './routes/_app/workbench.evals.compare'
+import { Route as AppWorkbenchRunsIndexRouteImport } from './routes/_app/workbench.runs.index'
+import { Route as AppWorkbenchRunsRunIdRouteImport } from './routes/_app/workbench.runs.$runId'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -51,6 +60,11 @@ const AppHistoryRoute = AppHistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWorkbenchRoute = AppWorkbenchRouteImport.update({
+  id: '/workbench',
+  path: '/workbench',
+  getParentRoute: () => AppRoute,
+} as any)
 const PublicIndexRoute = PublicIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -65,6 +79,11 @@ const AppSettingsKeysRoute = AppSettingsKeysRouteImport.update({
   id: '/settings/keys',
   path: '/settings/keys',
   getParentRoute: () => AppRoute,
+} as any)
+const AppWorkbenchIndexRoute = AppWorkbenchIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppWorkbenchRoute,
 } as any)
 const AppWorkspacesIndexRoute = AppWorkspacesIndexRouteImport.update({
   id: '/workspaces/',
@@ -86,6 +105,42 @@ const AppRunsRunIdReplayRoute = AppRunsRunIdReplayRouteImport.update({
   path: '/runs/$runId/replay',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWorkbenchCasesIndexRoute = AppWorkbenchCasesIndexRouteImport.update({
+  id: '/cases/',
+  path: '/cases/',
+  getParentRoute: () => AppWorkbenchRoute,
+} as any)
+const AppWorkbenchCasesCaseIdRoute = AppWorkbenchCasesCaseIdRouteImport.update({
+  id: '/cases/$caseId',
+  path: '/cases/$caseId',
+  getParentRoute: () => AppWorkbenchRoute,
+} as any)
+const AppWorkbenchEvalsIndexRoute = AppWorkbenchEvalsIndexRouteImport.update({
+  id: '/evals/',
+  path: '/evals/',
+  getParentRoute: () => AppWorkbenchRoute,
+} as any)
+const AppWorkbenchEvalsRunIdRoute = AppWorkbenchEvalsRunIdRouteImport.update({
+  id: '/evals/$runId',
+  path: '/evals/$runId',
+  getParentRoute: () => AppWorkbenchRoute,
+} as any)
+const AppWorkbenchEvalsCompareRoute =
+  AppWorkbenchEvalsCompareRouteImport.update({
+    id: '/evals/compare',
+    path: '/evals/compare',
+    getParentRoute: () => AppWorkbenchRoute,
+  } as any)
+const AppWorkbenchRunsIndexRoute = AppWorkbenchRunsIndexRouteImport.update({
+  id: '/runs/',
+  path: '/runs/',
+  getParentRoute: () => AppWorkbenchRoute,
+} as any)
+const AppWorkbenchRunsRunIdRoute = AppWorkbenchRunsRunIdRouteImport.update({
+  id: '/runs/$runId',
+  path: '/runs/$runId',
+  getParentRoute: () => AppWorkbenchRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
@@ -93,12 +148,21 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppAppRoute
   '/ask': typeof AppAskRoute
   '/history': typeof AppHistoryRoute
+  '/workbench': typeof AppWorkbenchRouteWithChildren
   '/login': typeof PublicLoginRoute
   '/settings/keys': typeof AppSettingsKeysRoute
   '/workspaces/$id': typeof AppWorkspacesIdRoute
   '/auth/callback': typeof PublicAuthCallbackRoute
+  '/workbench/': typeof AppWorkbenchIndexRoute
   '/workspaces/': typeof AppWorkspacesIndexRoute
   '/runs/$runId/replay': typeof AppRunsRunIdReplayRoute
+  '/workbench/cases/$caseId': typeof AppWorkbenchCasesCaseIdRoute
+  '/workbench/evals/$runId': typeof AppWorkbenchEvalsRunIdRoute
+  '/workbench/evals/compare': typeof AppWorkbenchEvalsCompareRoute
+  '/workbench/runs/$runId': typeof AppWorkbenchRunsRunIdRoute
+  '/workbench/cases/': typeof AppWorkbenchCasesIndexRoute
+  '/workbench/evals/': typeof AppWorkbenchEvalsIndexRoute
+  '/workbench/runs/': typeof AppWorkbenchRunsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
@@ -110,8 +174,16 @@ export interface FileRoutesByTo {
   '/settings/keys': typeof AppSettingsKeysRoute
   '/workspaces/$id': typeof AppWorkspacesIdRoute
   '/auth/callback': typeof PublicAuthCallbackRoute
+  '/workbench': typeof AppWorkbenchIndexRoute
   '/workspaces': typeof AppWorkspacesIndexRoute
   '/runs/$runId/replay': typeof AppRunsRunIdReplayRoute
+  '/workbench/cases/$caseId': typeof AppWorkbenchCasesCaseIdRoute
+  '/workbench/evals/$runId': typeof AppWorkbenchEvalsRunIdRoute
+  '/workbench/evals/compare': typeof AppWorkbenchEvalsCompareRoute
+  '/workbench/runs/$runId': typeof AppWorkbenchRunsRunIdRoute
+  '/workbench/cases': typeof AppWorkbenchCasesIndexRoute
+  '/workbench/evals': typeof AppWorkbenchEvalsIndexRoute
+  '/workbench/runs': typeof AppWorkbenchRunsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -121,13 +193,22 @@ export interface FileRoutesById {
   '/_app/app': typeof AppAppRoute
   '/_app/ask': typeof AppAskRoute
   '/_app/history': typeof AppHistoryRoute
+  '/_app/workbench': typeof AppWorkbenchRouteWithChildren
   '/_public/login': typeof PublicLoginRoute
   '/_public/': typeof PublicIndexRoute
   '/_app/settings/keys': typeof AppSettingsKeysRoute
   '/_app/workspaces/$id': typeof AppWorkspacesIdRoute
   '/_public/auth/callback': typeof PublicAuthCallbackRoute
+  '/_app/workbench/': typeof AppWorkbenchIndexRoute
   '/_app/workspaces/': typeof AppWorkspacesIndexRoute
   '/_app/runs/$runId/replay': typeof AppRunsRunIdReplayRoute
+  '/_app/workbench/cases/$caseId': typeof AppWorkbenchCasesCaseIdRoute
+  '/_app/workbench/evals/$runId': typeof AppWorkbenchEvalsRunIdRoute
+  '/_app/workbench/evals/compare': typeof AppWorkbenchEvalsCompareRoute
+  '/_app/workbench/runs/$runId': typeof AppWorkbenchRunsRunIdRoute
+  '/_app/workbench/cases/': typeof AppWorkbenchCasesIndexRoute
+  '/_app/workbench/evals/': typeof AppWorkbenchEvalsIndexRoute
+  '/_app/workbench/runs/': typeof AppWorkbenchRunsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -137,12 +218,21 @@ export interface FileRouteTypes {
     | '/app'
     | '/ask'
     | '/history'
+    | '/workbench'
     | '/login'
     | '/settings/keys'
     | '/workspaces/$id'
     | '/auth/callback'
+    | '/workbench/'
     | '/workspaces/'
     | '/runs/$runId/replay'
+    | '/workbench/cases/$caseId'
+    | '/workbench/evals/$runId'
+    | '/workbench/evals/compare'
+    | '/workbench/runs/$runId'
+    | '/workbench/cases/'
+    | '/workbench/evals/'
+    | '/workbench/runs/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -154,8 +244,16 @@ export interface FileRouteTypes {
     | '/settings/keys'
     | '/workspaces/$id'
     | '/auth/callback'
+    | '/workbench'
     | '/workspaces'
     | '/runs/$runId/replay'
+    | '/workbench/cases/$caseId'
+    | '/workbench/evals/$runId'
+    | '/workbench/evals/compare'
+    | '/workbench/runs/$runId'
+    | '/workbench/cases'
+    | '/workbench/evals'
+    | '/workbench/runs'
   id:
     | '__root__'
     | '/_app'
@@ -164,13 +262,22 @@ export interface FileRouteTypes {
     | '/_app/app'
     | '/_app/ask'
     | '/_app/history'
+    | '/_app/workbench'
     | '/_public/login'
     | '/_public/'
     | '/_app/settings/keys'
     | '/_app/workspaces/$id'
     | '/_public/auth/callback'
+    | '/_app/workbench/'
     | '/_app/workspaces/'
     | '/_app/runs/$runId/replay'
+    | '/_app/workbench/cases/$caseId'
+    | '/_app/workbench/evals/$runId'
+    | '/_app/workbench/evals/compare'
+    | '/_app/workbench/runs/$runId'
+    | '/_app/workbench/cases/'
+    | '/_app/workbench/evals/'
+    | '/_app/workbench/runs/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -223,6 +330,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppHistoryRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/workbench': {
+      id: '/_app/workbench'
+      path: '/workbench'
+      fullPath: '/workbench'
+      preLoaderRoute: typeof AppWorkbenchRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_public/': {
       id: '/_public/'
       path: '/'
@@ -243,6 +357,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/keys'
       preLoaderRoute: typeof AppSettingsKeysRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/workbench/': {
+      id: '/_app/workbench/'
+      path: '/'
+      fullPath: '/workbench/'
+      preLoaderRoute: typeof AppWorkbenchIndexRouteImport
+      parentRoute: typeof AppWorkbenchRoute
     }
     '/_app/workspaces/': {
       id: '/_app/workspaces/'
@@ -272,13 +393,89 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRunsRunIdReplayRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/workbench/cases/': {
+      id: '/_app/workbench/cases/'
+      path: '/cases'
+      fullPath: '/workbench/cases/'
+      preLoaderRoute: typeof AppWorkbenchCasesIndexRouteImport
+      parentRoute: typeof AppWorkbenchRoute
+    }
+    '/_app/workbench/cases/$caseId': {
+      id: '/_app/workbench/cases/$caseId'
+      path: '/cases/$caseId'
+      fullPath: '/workbench/cases/$caseId'
+      preLoaderRoute: typeof AppWorkbenchCasesCaseIdRouteImport
+      parentRoute: typeof AppWorkbenchRoute
+    }
+    '/_app/workbench/evals/': {
+      id: '/_app/workbench/evals/'
+      path: '/evals'
+      fullPath: '/workbench/evals/'
+      preLoaderRoute: typeof AppWorkbenchEvalsIndexRouteImport
+      parentRoute: typeof AppWorkbenchRoute
+    }
+    '/_app/workbench/evals/$runId': {
+      id: '/_app/workbench/evals/$runId'
+      path: '/evals/$runId'
+      fullPath: '/workbench/evals/$runId'
+      preLoaderRoute: typeof AppWorkbenchEvalsRunIdRouteImport
+      parentRoute: typeof AppWorkbenchRoute
+    }
+    '/_app/workbench/evals/compare': {
+      id: '/_app/workbench/evals/compare'
+      path: '/evals/compare'
+      fullPath: '/workbench/evals/compare'
+      preLoaderRoute: typeof AppWorkbenchEvalsCompareRouteImport
+      parentRoute: typeof AppWorkbenchRoute
+    }
+    '/_app/workbench/runs/': {
+      id: '/_app/workbench/runs/'
+      path: '/runs'
+      fullPath: '/workbench/runs/'
+      preLoaderRoute: typeof AppWorkbenchRunsIndexRouteImport
+      parentRoute: typeof AppWorkbenchRoute
+    }
+    '/_app/workbench/runs/$runId': {
+      id: '/_app/workbench/runs/$runId'
+      path: '/runs/$runId'
+      fullPath: '/workbench/runs/$runId'
+      preLoaderRoute: typeof AppWorkbenchRunsRunIdRouteImport
+      parentRoute: typeof AppWorkbenchRoute
+    }
   }
 }
+
+interface AppWorkbenchRouteChildren {
+  AppWorkbenchIndexRoute: typeof AppWorkbenchIndexRoute
+  AppWorkbenchCasesCaseIdRoute: typeof AppWorkbenchCasesCaseIdRoute
+  AppWorkbenchEvalsRunIdRoute: typeof AppWorkbenchEvalsRunIdRoute
+  AppWorkbenchEvalsCompareRoute: typeof AppWorkbenchEvalsCompareRoute
+  AppWorkbenchRunsRunIdRoute: typeof AppWorkbenchRunsRunIdRoute
+  AppWorkbenchCasesIndexRoute: typeof AppWorkbenchCasesIndexRoute
+  AppWorkbenchEvalsIndexRoute: typeof AppWorkbenchEvalsIndexRoute
+  AppWorkbenchRunsIndexRoute: typeof AppWorkbenchRunsIndexRoute
+}
+
+const AppWorkbenchRouteChildren: AppWorkbenchRouteChildren = {
+  AppWorkbenchIndexRoute: AppWorkbenchIndexRoute,
+  AppWorkbenchCasesCaseIdRoute: AppWorkbenchCasesCaseIdRoute,
+  AppWorkbenchEvalsRunIdRoute: AppWorkbenchEvalsRunIdRoute,
+  AppWorkbenchEvalsCompareRoute: AppWorkbenchEvalsCompareRoute,
+  AppWorkbenchRunsRunIdRoute: AppWorkbenchRunsRunIdRoute,
+  AppWorkbenchCasesIndexRoute: AppWorkbenchCasesIndexRoute,
+  AppWorkbenchEvalsIndexRoute: AppWorkbenchEvalsIndexRoute,
+  AppWorkbenchRunsIndexRoute: AppWorkbenchRunsIndexRoute,
+}
+
+const AppWorkbenchRouteWithChildren = AppWorkbenchRoute._addFileChildren(
+  AppWorkbenchRouteChildren,
+)
 
 interface AppRouteChildren {
   AppAppRoute: typeof AppAppRoute
   AppAskRoute: typeof AppAskRoute
   AppHistoryRoute: typeof AppHistoryRoute
+  AppWorkbenchRoute: typeof AppWorkbenchRouteWithChildren
   AppSettingsKeysRoute: typeof AppSettingsKeysRoute
   AppWorkspacesIdRoute: typeof AppWorkspacesIdRoute
   AppWorkspacesIndexRoute: typeof AppWorkspacesIndexRoute
@@ -289,6 +486,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAppRoute: AppAppRoute,
   AppAskRoute: AppAskRoute,
   AppHistoryRoute: AppHistoryRoute,
+  AppWorkbenchRoute: AppWorkbenchRouteWithChildren,
   AppSettingsKeysRoute: AppSettingsKeysRoute,
   AppWorkspacesIdRoute: AppWorkspacesIdRoute,
   AppWorkspacesIndexRoute: AppWorkspacesIndexRoute,
