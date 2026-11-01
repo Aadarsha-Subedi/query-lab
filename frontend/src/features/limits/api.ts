@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 
 import { api } from '@/lib/api'
+import { withWorkspace } from '@/lib/api/query'
 import type { Schema } from '@/lib/api/types'
 
 export type AgentLimits = Schema<'AgentLimitsOut'>
@@ -9,11 +10,5 @@ export type AgentLimits = Schema<'AgentLimitsOut'>
 export const limitsQuery = (workspace?: number) =>
   queryOptions({
     queryKey: ['agent-limits', workspace ?? null],
-    queryFn: ({ signal }) =>
-      api.get<AgentLimits>(
-        workspace === undefined ? '/api/agent/limits' : `/api/agent/limits?workspace=${workspace}`,
-        {
-          signal,
-        },
-      ),
+    queryFn: ({ signal }) => api.get<AgentLimits>(withWorkspace('/api/agent/limits', workspace), { signal }),
   })

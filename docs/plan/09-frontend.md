@@ -57,10 +57,10 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 9.3 Schema panel
 
-- [ ] **9.3.1** `features/schema`: `schemaQuery(workspace?)` using `ETag`/`If-None-Match` through the browser cache; nothing custom. Types from the generated file.
-- [ ] **9.3.2** `SchemaPanel`: tables as a collapsible list with column name, type, key and relation badges, comments as tooltips, row estimates. Search box filters locally. Zustand holds which tables are open.
-- [ ] **9.3.3** Table detail from `GET /schema/tables/{name}` in a side sheet; `table_not_found` as an `ErrorState`.
-- [ ] **9.3.4** Tests: loading, error with Try again, empty (no tables), filter, collapsed state persisted per session.
+- [x] **9.3.1** `features/schema`: `schemaQuery(workspace?)` using `ETag`/`If-None-Match` through the browser cache; nothing custom. Types from the generated file.
+- [x] **9.3.2** `SchemaPanel`: tables as a collapsible list with column name, type, key and relation badges, comments as tooltips, row estimates. Search box filters locally. Zustand holds which tables are open.
+- [x] **9.3.3** Table detail from `GET /schema/tables/{name}` in a side sheet; `table_not_found` as an `ErrorState`.
+- [x] **9.3.4** Tests: loading, error with Try again, empty (no tables), filter, collapsed state persisted per session.
 
 ## 9.4 Analyst chat: ask, live run, approval
 
