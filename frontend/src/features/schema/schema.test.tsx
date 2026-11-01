@@ -54,7 +54,7 @@ describe('SchemaPanel', () => {
 
     await userEvent.type(screen.getByRole('searchbox', { name: 'Filter tables and columns' }), 'customers')
     expect(screen.queryByRole('button', { name: /^orders/ })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /customers/ })).toBeVisible()
+    expect(screen.getByRole('button', { name: /^customers/ })).toBeVisible()
   })
 
   it('opens the table detail from the info button', async () => {
