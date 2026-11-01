@@ -1047,6 +1047,53 @@
               }
             }
           ]
+        },
+        {
+          "name": "Read rows of one table",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schema/tables/orders/rows?limit=50&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schema",
+                "tables",
+                "orders",
+                "rows"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "A read-only page of one table's rows, in primary-key order when it has one. Page size is capped by PAGINATION_MAX_LIMIT; add `workspace` for one of your own. Unknown table: 404 `table_not_found`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 404]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 404]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },

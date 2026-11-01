@@ -495,3 +495,14 @@ as a provider.
 in `LLM_GEMINI_MODELS` for asks on QueryLab's shared key; `PUT /api/llm-settings` takes `source`, `querylab_model` or both. A
 saved model that later leaves the allowlist falls back to the default instead of failing. The daily limit still counts asks,
 not tokens, so a larger model costs QueryLab more per ask; trim `LLM_GEMINI_MODELS` if that matters.
+
+## Table row preview (2026-11-01)
+
+`GET /api/schema/tables/{name}/rows` returns a read-only page of one table, for the demo or one of your workspaces
+(`?workspace=`), so the UI can show a table's data next to its columns. It is a third place SQL runs outside the agent loop
+(after rules 12 and 14), so it is narrow: the table must exist in the cached schema (`table_not_found` otherwise), the only SQL
+is a `SELECT * ... ORDER BY <primary key> LIMIT n OFFSET m` built from catalog names (identifiers quoted, never from the request;
+`limit` and `offset` are integers), it runs through `runner.run` on the reader connection (read-only, statement timeout,
+row and size caps), behind `ResultThrottle`, and writes nothing. Page size follows `PAGINATION_DEFAULT_LIMIT` and
+`PAGINATION_MAX_LIMIT`, so no new setting. Tables without a primary key are read unordered, because sorting a million-row table
+only to page it is worse than an unstable order.

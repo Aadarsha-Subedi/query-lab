@@ -1,15 +1,17 @@
 """GET /api/schema and /api/schema/tables/{name}."""
 
 import pytest
+from django.conf import settings
 from django.test import Client, override_settings
 
 from accounts.models import User
+from ask import runner, schema_api
 from ask import schema as ask_schema
 from ask.schema import Column, ForeignKey, Schema, Table
 
 pytestmark = pytest.mark.django_db
 
-PATHS = ["/api/schema", "/api/schema/tables/orders"]
+PATHS = ["/api/schema", "/api/schema/tables/orders", "/api/schema/tables/orders/rows"]
 
 
 @pytest.fixture
@@ -170,3 +172,62 @@ def test_nothing_can_be_written_through_it(
 def test_reads_the_real_demo_schema(signed_in: Client) -> None:
     data = signed_in.get("/api/schema").json()["data"]
     assert "orders" in {t["name"] for t in data["tables"]}
+
+
+def test_rows_page_is_built_from_catalog_names_in_key_order(
+    signed_in: Client, fake_schema: list[bool], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: list[str] = []
+
+    def fake_run(sql: str, workspace: object = None) -> runner.QueryResult:
+        seen.append(sql)
+        rows = [[f"o{i}", f"c{i}", "new"] for i in range(3)]
+        return runner.QueryResult(
+            ["order_id", "customer_id", "order_status"], rows, 3, False
+        )
+
+    monkeypatch.setattr(schema_api.runner, "run", fake_run)
+    data = signed_in.get("/api/schema/tables/orders/rows?limit=2&offset=4").json()[
+        "data"
+    ]
+    assert seen == [
+        'SELECT * FROM "demo"."orders" ORDER BY "order_id" LIMIT 3 OFFSET 4'
+    ]
+    assert data["limit"] == 2 and data["offset"] == 4
+    assert len(data["rows"]) == 2 and data["has_more"] is True
+    assert data["row_estimate"] == 99441
+
+
+def test_rows_page_size_is_capped(
+    signed_in: Client, fake_schema: list[bool], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: list[str] = []
+
+    def fake_run(sql: str, workspace: object = None) -> runner.QueryResult:
+        seen.append(sql)
+        return runner.QueryResult([], [], 0, False)
+
+    monkeypatch.setattr(schema_api.runner, "run", fake_run)
+    signed_in.get("/api/schema/tables/orders/rows?limit=100000&offset=-5")
+    cap = settings.PAGINATION_MAX_LIMIT
+    assert f"LIMIT {cap + 1} OFFSET 0" in seen[0]
+
+
+def test_rows_of_an_unknown_table_are_a_404_and_no_sql_runs(
+    signed_in: Client, fake_schema: list[bool], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def boom(*args: object, **kwargs: object) -> None:
+        raise AssertionError("no SQL may run")
+
+    monkeypatch.setattr(schema_api.runner, "run", boom)
+    response = signed_in.get("/api/schema/tables/nope/rows")
+    assert response.status_code == 404
+    assert response.json()["code"] == "table_not_found"
+
+
+@pytest.mark.usefixtures("data_connections")
+def test_reads_real_demo_rows(signed_in: Client) -> None:
+    data = signed_in.get("/api/schema/tables/orders/rows?limit=3").json()["data"]
+    assert data["columns"]
+    assert len(data["rows"]) == 3
+    assert data["has_more"] is True
