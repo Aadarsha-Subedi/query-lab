@@ -36,6 +36,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Meter } from '@/components/ui/meter'
+import { RunTimeline } from '@/features/ask/RunTimeline'
+import { SqlDiff } from '@/features/workbench/SqlDiff'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -545,6 +548,50 @@ function MoreInputs() {
   )
 }
 
+function ProductPieces() {
+  return (
+    <Demo title="Product pieces" note="Pieces the screens share: usage meter, SQL diff, run timeline.">
+      <div className="flex max-w-xl flex-col gap-4">
+        <Meter value={42} max={100} label="Storage used" />
+        <Meter value={95} max={100} label="Storage nearly full" />
+        <SqlDiff before={'select a\nfrom t'} after={'select a\nfrom t\nlimit 5'} />
+        <RunTimeline
+          steps={[
+            {
+              index: 0,
+              kind: 'plan',
+              tool_name: '',
+              input: {},
+              output: 'Count the orders.',
+              status: 'ok',
+              error_code: '',
+              input_tokens: 0,
+              output_tokens: 0,
+              latency_ms: 800,
+              actor: 'agent',
+              created_at: '2026-11-01T00:00:00Z',
+            },
+            {
+              index: 1,
+              kind: 'tool',
+              tool_name: 'describe_table',
+              input: {},
+              output: 'No such table.',
+              status: 'error',
+              error_code: 'tool_error',
+              input_tokens: 0,
+              output_tokens: 0,
+              latency_ms: 40,
+              actor: 'agent',
+              created_at: '2026-11-01T00:00:00Z',
+            },
+          ]}
+        />
+      </div>
+    </Demo>
+  )
+}
+
 function MoreOverlays() {
   return (
     <Demo
@@ -617,6 +664,7 @@ export function ComponentSections() {
       <Overlays />
       <MoreInputs />
       <MoreOverlays />
+      <ProductPieces />
       <BadgesAndAvatars />
     </Section>
   )
