@@ -52,8 +52,8 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 - [x] **9.2.2** Sign-in page (`_public/signin`): Continue with Google / GitHub using the allauth headless provider redirect (FLOW.md "Auth flow"), error states for a denied or failed sign-in, link back to landing. The local dev sign-in page stays backend-only.
 - [x] **9.2.3** Logout: allauth session delete, then clear the query cache and go to `/`. Test the guard flow both ways.
 - [x] **9.2.4** Landing page (`_public/index`): what QueryLab is, a three-step "ask, approve, measure" explainer, the sign-in buttons, the demo dataset note (Olist, CC BY-NC-SA 4.0 credit). No marketing images that need hosting.
-- [ ] **9.2.5** 404 and 403 pages inside the shell; route `errorComponent` that never shows a stack trace.
-- [ ] **9.2.6** `Limits` indicator in the header from `GET /agent/limits` (used / allowed / remaining / resets_at, has_own_key). Its own loading/error box; no polling. Test the over-limit state.
+- [x] **9.2.5** 404 and 403 pages inside the shell; route `errorComponent` that never shows a stack trace.
+- [x] **9.2.6** `Limits` indicator in the header from `GET /agent/limits` (used / allowed / remaining / resets_at, has_own_key). Its own loading/error box; no polling. Test the over-limit state.
 
 ## 9.3 Schema panel
 

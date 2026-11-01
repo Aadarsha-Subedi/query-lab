@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Icon, type IconSvgElement } from '@/components/ui/icon'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet'
 import type { User } from '@/features/auth/api'
+import { LimitsIndicator } from '@/features/limits/LimitsIndicator'
 import { UserMenu } from '@/features/auth/UserMenu'
 import { appName } from '@/lib/app-name'
 import { cn } from '@/lib/utils'
@@ -61,6 +62,7 @@ export function AppShell({ user }: { user: User }) {
           {name}
         </Link>
         <div className="ml-auto flex items-center gap-2">
+          <LimitsIndicator />
           <ThemeToggle />
           <UserMenu user={user} />
         </div>

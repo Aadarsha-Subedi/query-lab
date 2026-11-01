@@ -72,6 +72,10 @@ describe('app shell', () => {
       const url = new URL(input instanceof Request ? input.url : input.toString())
       if (url.pathname === '/api/me') return Promise.resolve(jsonResponse(signedIn()))
       if (url.pathname === '/api/health') return Promise.resolve(jsonResponse({ status: 200, body: {} }))
+      if (url.pathname === '/api/agent/limits')
+        return Promise.resolve(
+          jsonResponse({ status: 500, body: { success: false, message: 'x', code: 'internal_error' } }),
+        )
       if (url.pathname === '/_allauth/browser/v1/auth/session' && init?.method === 'DELETE')
         return Promise.resolve(jsonResponse({ status: 401, body: { status: 401, data: { flows: [] } } }))
       return Promise.reject(new TypeError(`No mock for ${url.pathname}`))
@@ -88,11 +92,26 @@ describe('app shell', () => {
   })
 
   it('cycles the theme from the header', async () => {
-    mockFetch({ '/api/me': signedIn, '/api/health': () => ({ status: 200, body: {} }) })
+    mockFetch({
+      '/api/me': signedIn,
+      '/api/health': () => ({ status: 200, body: {} }),
+      '/api/agent/limits': () => ({
+        status: 500,
+        body: { success: false, message: 'x', code: 'internal_error' },
+      }),
+    })
     await openAt('/app')
     const toggle = await screen.findByRole('button', { name: /^Theme:/ })
     const before = toggle.getAttribute('aria-label')
     await userEvent.click(toggle)
     expect(screen.getByRole('button', { name: /^Theme:/ }).getAttribute('aria-label')).not.toBe(before)
+  })
+})
+
+describe('route status pages', () => {
+  it('shows a not-found page for an unknown address', async () => {
+    mockFetch({ '/api/me': signedOut })
+    await openAt('/nothing-here')
+    expect(await screen.findByRole('heading', { name: 'Page not found' })).toBeInTheDocument()
   })
 })
