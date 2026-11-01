@@ -1,15 +1,9 @@
 import { queryOptions } from '@tanstack/react-query'
 
 import { api, ApiError } from '@/lib/api'
+import type { Schema } from '@/lib/api/types'
 
-export type User = {
-  id: number
-  email: string
-  first_name: string
-  last_name: string
-  /** The provider this user signed in with: 'google' or 'github'. */
-  providers: string[]
-}
+export type User = Schema<'UserOut'>
 
 const UNAUTHORIZED = 401
 

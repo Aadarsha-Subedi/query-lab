@@ -2840,6 +2840,8 @@ export interface components {
             first_name: string;
             /** Id */
             id: number;
+            /** Is Staff */
+            is_staff: boolean;
             /** Last Name */
             last_name: string;
             /** Providers */
