@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Meter } from '@/components/ui/meter'
+import { Reasoning } from '@/features/ask/Reasoning'
 import { RunTimeline } from '@/features/ask/RunTimeline'
 import { SqlDiff } from '@/features/workbench/SqlDiff'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -555,6 +556,11 @@ function ProductPieces() {
         <Meter value={42} max={100} label="Storage used" />
         <Meter value={95} max={100} label="Storage nearly full" />
         <SqlDiff before={'select a\nfrom t'} after={'select a\nfrom t\nlimit 5'} />
+        <Reasoning
+          stages={['Planning the query', 'Reading the orders table']}
+          reasoning={['Count the rows of orders.', '8 columns.']}
+          sources={['orders']}
+        />
         <RunTimeline
           steps={[
             {

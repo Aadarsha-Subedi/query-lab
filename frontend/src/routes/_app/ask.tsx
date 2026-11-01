@@ -69,7 +69,7 @@ function AskPage() {
         </div>
         <TabsContent
           value="ask"
-          className="flex min-h-[calc(100dvh-12rem)] max-w-[var(--content-max)] flex-col gap-6"
+          className="mx-auto flex min-h-[calc(100dvh-12rem)] w-full max-w-[var(--chat-max)] flex-col gap-6"
         >
           <div className="flex flex-1 flex-col gap-6">
             {run !== undefined ? (

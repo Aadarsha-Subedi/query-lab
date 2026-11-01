@@ -91,6 +91,8 @@
   --row-comfortable: 44px;
   --content-max: 1280px;
   --reading-max: 720px;
+  /* The Ask conversation and its composer: one centred column, like a chat. */
+  --chat-max: 768px;
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
 }

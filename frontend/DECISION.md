@@ -261,3 +261,12 @@ the new `GET /api/schema/tables/{name}/rows` (demo and private workspaces alike;
 expand-in-list and the info-button modal (and the Zustand expand store). The chosen table is in the URL (`?table=`). The Ask tab is
 a chat: the conversation (or a short prompt before the first question) above, a sticky composer below with the example questions
 over it; the Ask button is gone, a send icon sits inside the text box, and Enter sends (Shift+Enter for a new line), as in an LLM chat.
+
+**Reasoning view and plain-language steps (2026-11-01).** While a run works, `Reasoning` shows what the agent is doing as a
+shimmering stage line with its notes fading in below and the tables it read as sources; it takes `stages`, `reasoning`, `sources`,
+`active` and `className`. The Animate UI style also has `stageMs`, `reasonMs` and `onDone` to pace the animation; they are left
+out on purpose because pacing needs timers, which are banned (`no-retry.test.ts`). The real step events pace it instead. The
+shimmer is a CSS animation (not a JS timer) and stands still under reduced motion. `step-text.ts` turns each step into a stage
+and a note in plain words (`describe_table` becomes "Reading the orders table", `reflect` becomes "Looks right. ..."), so raw
+JSON never reaches the screen: unknown JSON is dropped, plain text is kept. The same text feeds `RunTimeline` (finished runs,
+Replay and the staff trace view). The Ask column is `--chat-max` (768 px) and centred.

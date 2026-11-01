@@ -15,10 +15,25 @@ import { Feedback } from './Feedback'
 import { ResultTable } from './ResultTable'
 import { RunStatusBadge } from './RunStatusBadge'
 import { runStatusLabel } from './run-status'
+import { Reasoning } from './Reasoning'
 import { RunTimeline } from './RunTimeline'
+import { describeStep } from './step-text'
 import { mergeSteps } from './steps'
-import { isFinished, type RunDetail } from './types'
+import { isFinished, type RunDetail, type Step } from './types'
 import { useRunStream } from './useRunStream'
+
+/** The running agent, in its own words: built from the steps that have really arrived. */
+function LiveReasoning({ steps }: { steps: Step[] }) {
+  const texts = steps.map(describeStep)
+  const sources = [...new Set(texts.flatMap((text) => (text.source ? [text.source] : [])))]
+  return (
+    <Reasoning
+      stages={texts.length > 0 ? texts.map((text) => text.stage) : ['Getting started']}
+      reasoning={texts.flatMap((text) => (text.note ? [text.note] : []))}
+      sources={sources}
+    />
+  )
+}
 
 function Body({
   run,
@@ -45,7 +60,11 @@ function Body({
           {failure.message} {failure.hint}
         </p>
       )}
-      {run.status === 'succeeded' ? null : <RunTimeline steps={steps} />}
+      {run.status === 'running' ? (
+        <LiveReasoning steps={steps} />
+      ) : run.status === 'succeeded' ? null : (
+        <RunTimeline steps={steps} />
+      )}
       {stream.phase === 'dropped' && !isFinished(run.status) && run.status !== 'awaiting_approval' && (
         <div
           role="alert"
