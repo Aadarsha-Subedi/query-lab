@@ -13,12 +13,17 @@ def _schema_classes() -> dict[str, list[str]]:
     for path in BACKEND.glob("*/*schemas.py"):
         for node in ast.parse(path.read_text()).body:
             if isinstance(node, ast.ClassDef) and any(
-                isinstance(base, ast.Name) and base.id in SCHEMA_BASES for base in node.bases
+                isinstance(base, ast.Name) and base.id in SCHEMA_BASES
+                for base in node.bases
             ):
                 found[node.name].append(str(path.relative_to(BACKEND)))
     return found
 
 
 def test_no_two_api_schemas_share_a_class_name() -> None:
-    clashes = {name: files for name, files in _schema_classes().items() if len(files) > 1}
-    assert not clashes, f"rename one of each pair, or openapi.json merges them: {clashes}"
+    clashes = {
+        name: files for name, files in _schema_classes().items() if len(files) > 1
+    }
+    assert not clashes, (
+        f"rename one of each pair, or openapi.json merges them: {clashes}"
+    )
