@@ -33,20 +33,20 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 7.1 Preparation
 
-- [ ] **7.1.1** Run the image-size check on the branch and record the number in `DECISION.md`. If headroom is under 3 MB, stop and trim first.
-- [ ] **7.1.2** Branch `feat/step-7-lora-finetune` from `feat/step-6-trace-evals` (or from `main` once step 6 is merged). *(Done by Claude when drafting.)*
-- [ ] **7.1.3** **(You)** Download the official Spider archive once and unpack `train_spider.json`, `tables.json` and `database/` for train databases into `EVAL_SPIDER_DIR`. Claude documents the exact layout in `FLOW.md`.
+- [x] **7.1.1** Run the image-size check on the branch and record the number in `DECISION.md`. If headroom is under 3 MB, stop and trim first.
+- [x] **7.1.2** Branch `feat/step-7-lora-finetune` from `feat/step-6-trace-evals` (or from `main` once step 6 is merged). *(Done by Claude when drafting.)*
+- [ ] **7.1.3** **(You)** Put `train_spider.json` (from the Spider 1.0 download) next to `dev.json` in `infra/data/spider/`. `database/` already holds all 166 databases, train ones included, so nothing else is needed.
 - [ ] **7.1.4** **(You)** Create a free W&B account and a Colab secret `WANDB_API_KEY`; connect Google Drive in Colab.
-- [ ] **7.1.5** Settings in `.env.example`, `.env.test` and settings with no defaults, plus the `.env` sync test: `FINETUNE_BASE_MODEL`, `FINETUNE_OUTPUT_DIR`, `FINETUNE_VALIDATION_FRACTION`, `FINETUNE_SEED`, `FINETUNE_MAX_EXAMPLES`. Claude does not create or edit `.env`; the owner copies the new lines.
+- [x] **7.1.5** Settings in `.env.example`, `.env.test` and settings with no defaults, plus the `.env` sync test: `FINETUNE_BASE_MODEL`, `FINETUNE_OUTPUT_DIR`, `FINETUNE_VALIDATION_FRACTION`, `FINETUNE_SEED`, `FINETUNE_MAX_EXAMPLES`. Claude does not create or edit `.env`; the owner copies the new lines.
 
 ## 7.2 Dataset builder
 
-- [ ] **7.2.1** Check that Spider train and dev databases are disjoint (by `db_id`) and that none of the held-out `db_id`s from `spider_split.json` is in the train file; fail loudly otherwise.
-- [ ] **7.2.2** `finetune/dataset.py`: read `train_spider.json` and `tables.json`, build each schema text with the same `ask.schema` rendering used at eval time, and the training example as `(system, user, reply)` using `ask.prompt.system_prompt` and `build_prompt`; the reply is the gold SQL in the shape `parse_reply` parses. Pure functions, no model calls.
-- [ ] **7.2.3** Add the Spider `tune` half of dev as extra examples. Dedupe by normalized question + `db_id`. Deterministic shuffle by `FINETUNE_SEED`; split into train and validation **by database**, not by row.
-- [ ] **7.2.4** Optional source: approved `TraceCase` rows (off by default, flag `--include-traces`), reusing the reviewer-seen question only.
-- [ ] **7.2.5** Management command `build_finetune_data` writing `train.jsonl`, `validation.jsonl` and a `manifest.json` (counts, databases, seed, source flags, file hashes) to `FINETUNE_OUTPUT_DIR`. Never committed.
-- [ ] **7.2.6** Tests: output parses; every reply round-trips through `parse_reply`; the leakage test (no held-out `db_id`, no Olist golden question, no benchmark question text); same seed gives identical files; validation databases never appear in train.
+- [x] **7.2.1** Check that Spider train and dev databases are disjoint (by `db_id`) and that none of the held-out `db_id`s from `spider_split.json` is in the train file; fail loudly otherwise.
+- [x] **7.2.2** `finetune/dataset.py`: read `train_spider.json`, build each schema text (read from the SQLite file, so `tables.json` is not needed) with the same `ask.schema` rendering used at eval time, and the training example as `(system, user, reply)` using `ask.prompt.system_prompt` and `build_prompt`; the reply is the gold SQL in the shape `parse_reply` parses. Pure functions, no model calls.
+- [x] **7.2.3** Add the Spider `tune` half of dev as extra examples. Dedupe by normalized question + `db_id`. Deterministic shuffle by `FINETUNE_SEED`; split into train and validation **by database**, not by row.
+- [x] **7.2.4** Optional source: approved `TraceCase` rows (off by default, flag `--include-traces`), reusing the reviewer-seen question only.
+- [x] **7.2.5** Management command `build_finetune_data` writing `train.jsonl`, `validation.jsonl` and a `manifest.json` (counts, databases, seed, source flags, file hashes) to `FINETUNE_OUTPUT_DIR`. Never committed.
+- [x] **7.2.6** Tests: output parses; every reply round-trips through `parse_reply`; the leakage test (no held-out `db_id`, no Olist golden question, no benchmark question text); same seed gives identical files; validation databases never appear in train.
 
 ## 7.3 Training notebook (Colab)
 
