@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 
-from evals import runner, scoring
+from evals import gate, runner, scoring
 from evals.models import EvalRun
 from evals.targets import olist, spider, traces
 from evals.targets.base import EvalQuestion, Target
@@ -39,6 +39,18 @@ class Command(BaseCommand):
             help="With --resume: also ask again the questions that ended in llm_failed.",
         )
         parser.add_argument("--yes", action="store_true", help="Skip the cost guard.")
+        parser.add_argument(
+            "--gate",
+            action="store_true",
+            help="Compare this run with a baseline and exit 1 when accuracy drops by "
+            "more than EVAL_GATE_MAX_DROP_POINTS (or too few cases are shared).",
+        )
+        parser.add_argument(
+            "--baseline",
+            type=int,
+            help="With --gate: the run to compare with (default: the latest done run "
+            "of the same target, split, runner and prompt version).",
+        )
         parser.add_argument(
             "--include-unreviewed",
             action="store_true",
@@ -78,6 +90,10 @@ class Command(BaseCommand):
             raise CommandError(
                 "No questions to ask (Olist: review the gold SQL first; traces: approve cases first)."
             )
+
+        if options["baseline"] and not options["gate"]:
+            raise CommandError("--baseline needs --gate.")
+        baseline = self._baseline(options) if options["gate"] else None
 
         run = None
         if options["resume"]:
@@ -135,3 +151,34 @@ class Command(BaseCommand):
             raise CommandError(str(error)) from None
         self.stdout.write("")
         self.stdout.write(scoring.format_report(run))
+        if baseline is None and options["gate"]:
+            baseline = gate.latest_baseline(run)
+        if options["gate"]:
+            self._gate(run, baseline)
+
+    def _baseline(self, options: dict) -> EvalRun | None:
+        """The run named by --baseline, checked before any LLM call. Without it the
+        latest matching run is looked up after the run (its prompt version is only
+        known then)."""
+        if options["baseline"]:
+            try:
+                return EvalRun.objects.get(pk=int(options["baseline"]))
+            except EvalRun.DoesNotExist:
+                raise CommandError("No such baseline run.") from None
+        return None
+
+    def _gate(self, run: EvalRun, baseline: EvalRun | None) -> None:
+        if baseline is None:
+            raise CommandError(
+                "GATE FAILED: no earlier finished run of this target, split, runner "
+                "and prompt version to compare with. Run once without --gate to set "
+                "a baseline, or pass --baseline ID."
+            )
+        try:
+            verdict = gate.evaluate(run, baseline)
+        except gate.NotComparable as error:
+            raise CommandError(f"GATE FAILED: {error}") from None
+        self.stdout.write("")
+        self.stdout.write(gate.format_verdict(verdict, run, baseline))
+        if not verdict.passed:
+            raise CommandError("Gate failed.")

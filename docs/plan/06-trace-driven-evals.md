@@ -91,10 +91,10 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 6.8 Regression gate
 
-- [ ] **6.8.1** `evals/gate.py`: given a candidate run and a baseline run, fail when accuracy drops by more than `EVAL_GATE_MAX_DROP_POINTS`, or when fewer than `EVAL_GATE_MIN_CASES` cases are shared (too small to trust). It also reports flipped cases and per-cluster drops. Pure logic with tests.
-- [ ] **6.8.2** `run_eval --gate --baseline {id}` (and `--gate` alone, which uses the latest done run of the same target, split, runner and prompt version): prints the verdict, exits 0 or 1.
-- [ ] **6.8.3** `make eval-gate` documented in `FLOW.md`: it runs the Olist golden set and the trace set, because the live key is only in the dev environment. CI runs the gate logic with a fake LLM, not a live model.
-- [ ] **6.8.4** Tests: a drop at the threshold passes and one point beyond fails; a flip in both directions is listed; too few cases fail clearly; exit codes.
+- [x] **6.8.1** `evals/gate.py`: given a candidate run and a baseline run, fail when accuracy drops by more than `EVAL_GATE_MAX_DROP_POINTS`, or when fewer than `EVAL_GATE_MIN_CASES` cases are shared (too small to trust). It also reports flipped cases and per-cluster drops. Pure logic with tests.
+- [x] **6.8.2** `run_eval --gate --baseline {id}` (and `--gate` alone, which uses the latest done run of the same target, split, runner and prompt version): prints the verdict, exits 0 or 1.
+- [x] **6.8.3** `make eval-gate` documented in `FLOW.md`: it runs the Olist golden set and the trace set, because the live key is only in the dev environment. CI runs the gate logic with a fake LLM, not a live model.
+- [x] **6.8.4** Tests: a drop at the threshold passes and one point beyond fails; a flip in both directions is listed; too few cases fail clearly; exit codes.
 
 ## 6.9 Confidence follow-up and close-out
 

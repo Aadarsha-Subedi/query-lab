@@ -5,7 +5,7 @@ BACKEND := $(COMPOSE) exec backend
 FRONTEND := $(COMPOSE) exec frontend
 
 .PHONY: setup up down dev logs migrate bootstrap-db load-demo createsuperuser \
-        eval openapi test test-backend test-frontend lint lint-backend lint-frontend \
+        eval eval-gate openapi test test-backend test-frontend lint lint-backend lint-frontend \
         typecheck typecheck-backend typecheck-frontend format
 
 ## setup: install local dependencies (for editors) and create .env files from the examples
@@ -46,6 +46,17 @@ createsuperuser:
 ##   make eval ARGS="run_eval --target olist --model gemini-3.5-flash"
 eval:
 	$(BACKEND) python manage.py $(ARGS)
+
+## eval-gate: the regression gate on the Olist golden set and the approved trace cases.
+## Each run is compared with the latest earlier run of the same target, runner and prompt
+## version, and the command fails when accuracy drops by more than EVAL_GATE_MAX_DROP_POINTS.
+## Needs the live key, so it runs in the dev container only:
+##   make eval-gate MODEL=gemini-3.5-flash RUNNER=ask
+MODEL ?= gemini-3.5-flash
+RUNNER ?= ask
+eval-gate:
+	$(BACKEND) python manage.py run_eval --target olist --model $(MODEL) --runner $(RUNNER) --yes --gate
+	$(BACKEND) python manage.py run_eval --target traces --model $(MODEL) --runner $(RUNNER) --yes --gate
 
 ## openapi: write backend/openapi.json from the one NinjaAPI (sorted, so diffs are small).
 ## CI regenerates it and fails when it differs from the committed file.

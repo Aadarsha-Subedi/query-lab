@@ -193,6 +193,27 @@ approved `TraceCase` rows instead, and nothing else about the harness changes.
 The model never sees `gold_sql` or gold rows. `run_eval --target traces` serves only
 `approved` cases.
 
+## The regression gate (step 6)
+
+```
+run_eval --target olist|traces --model M --gate [--baseline ID]
+  -> score the questions as usual                      (run #N)
+  -> baseline = --baseline, else the latest done run of the same
+     target, split, runner and prompt version          (run #B)
+  -> evals/gate.py compares #N with #B on the cases both have
+       fail: accuracy dropped by more than EVAL_GATE_MAX_DROP_POINTS points
+       fail: fewer than EVAL_GATE_MIN_CASES shared cases (too small to trust)
+  -> prints GATE PASSED/FAILED, the flipped cases and the clusters that dropped
+  -> exit status 0 (passed) or 1 (failed, no baseline, other target)
+```
+
+`make eval-gate MODEL=<name> RUNNER=ask|agent` runs it for the Olist golden set and then
+the trace set. It needs the live key, which exists only in the dev environment, so CI does
+not run it: CI runs the gate logic (`evals/tests/test_gate.py`) with a scripted model. A
+first run has no baseline and fails the gate; run once without `--gate`, or pass
+`--baseline`. The read-only views of the same numbers are `GET /api/workbench/eval/runs`,
+`/eval/runs/{id}` and `/eval/compare`.
+
 ## Agent: a run with an approval checkpoint (step 3)
 
 `POST /api/agent/runs {question}` (signed in; `AgentThrottle`). The API validates the
