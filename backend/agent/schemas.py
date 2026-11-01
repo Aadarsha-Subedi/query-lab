@@ -103,7 +103,7 @@ class OpenStreamsOut(Schema):
     allowed: int
 
 
-class LimitsOut(Schema):
+class AgentLimitsOut(Schema):
     # The workspace asked about; null is the shared demo.
     workspace_id: int | None
     """Used against allowed, so the screen can warn before a 429. A user with

@@ -14,7 +14,7 @@ from agent.schemas import (
     EditIn,
     FeedbackIn,
     FeedbackOut,
-    LimitsOut,
+    AgentLimitsOut,
     ResultOut,
     RunDetailOut,
     RunIn,
@@ -66,7 +66,7 @@ def _user(request: HttpRequest) -> User:
 
 @router.get(
     "/limits",
-    response={200: SuccessEnvelope[LimitsOut], **errors(401, 404, 409, 429)},
+    response={200: SuccessEnvelope[AgentLimitsOut], **errors(401, 404, 409, 429)},
     auth=django_auth,
 )
 def get_limits(request: HttpRequest, workspace: int | None = None) -> dict:
@@ -76,7 +76,7 @@ def get_limits(request: HttpRequest, workspace: int | None = None) -> dict:
     one you may use (404 otherwise) and is echoed back. Read only."""
     ref = workspace_for(_user(request), workspace)
     data = limits.limits_for(_user(request))
-    return success(LimitsOut(workspace_id=ref.id, **data).model_dump(mode="json"))
+    return success(AgentLimitsOut(workspace_id=ref.id, **data).model_dump(mode="json"))
 
 
 @router.post(

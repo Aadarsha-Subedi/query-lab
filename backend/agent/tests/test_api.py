@@ -286,3 +286,10 @@ def test_routes_are_in_the_openapi_docs(client: Client) -> None:
         "/api/agent/runs/{run_id}/events",
     ):
         assert path in paths
+
+
+def test_agent_and_workspace_limits_have_their_own_openapi_schemas(client: Client) -> None:
+    """Two schemas both named LimitsOut once collapsed into one, giving the generated client the wrong type."""
+    schemas = client.get("/api/openapi.json").json()["components"]["schemas"]
+    assert "default_key" in schemas["AgentLimitsOut"]["properties"]
+    assert "bytes" in schemas["LimitsOut"]["properties"]

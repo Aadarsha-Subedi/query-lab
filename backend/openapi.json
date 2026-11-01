@@ -1,6 +1,43 @@
 {
   "components": {
     "schemas": {
+      "AgentLimitsOut": {
+        "properties": {
+          "default_key": {
+            "$ref": "#/components/schemas/DefaultKeyLimitOut"
+          },
+          "has_own_key": {
+            "title": "Has Own Key",
+            "type": "boolean"
+          },
+          "streams": {
+            "$ref": "#/components/schemas/OpenStreamsOut"
+          },
+          "unfinished_runs": {
+            "$ref": "#/components/schemas/CountLimitOut"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "default_key",
+          "has_own_key",
+          "unfinished_runs",
+          "streams"
+        ],
+        "title": "AgentLimitsOut",
+        "type": "object"
+      },
       "ApproveIn": {
         "properties": {
           "question": {
@@ -2662,6 +2699,40 @@
         "title": "StepOut",
         "type": "object"
       },
+      "SuccessEnvelope_AgentLimitsOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AgentLimitsOut"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Meta",
+            "type": "object"
+          },
+          "status_code": {
+            "title": "Status Code",
+            "type": "integer"
+          },
+          "success": {
+            "const": true,
+            "default": true,
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status_code",
+          "message",
+          "data"
+        ],
+        "title": "SuccessEnvelope[AgentLimitsOut]",
+        "type": "object"
+      },
       "SuccessEnvelope_AskOut_": {
         "properties": {
           "data": {
@@ -4591,7 +4662,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_LimitsOut_"
+                  "$ref": "#/components/schemas/SuccessEnvelope_AgentLimitsOut_"
                 }
               }
             },
