@@ -10,6 +10,7 @@ import agent.service  # noqa: F401
 import ask.errors
 import ask.schema_api  # noqa: F401
 import common.permissions  # noqa: F401
+import evals.errors  # noqa: F401
 import workspaces.errors  # noqa: F401
 from common.exception import domain, handler
 

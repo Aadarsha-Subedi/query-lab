@@ -11,6 +11,9 @@ Every error answers in the envelope `{success: false, status_code, message, code
 | `token_expired` | 401 | A token expired (not used by the browser flow). | Go to sign-in. |
 | `permission_denied` | 403 | Signed in but not allowed (also a failed CSRF check). | Reload to get a fresh CSRF cookie via `GET /api/me`, then retry once. |
 | `staff_only` | 403 | The workbench (`/api/workbench/...`) is for staff accounts only. | Hide the workbench; show "not available". |
+| `case_not_found` | 404 | No such trace case. | Reload the case list. |
+| `case_not_reviewable` | 409 | The case is not `drafted` (already approved, rejected or not drafted yet). | Reload the case. |
+| `draft_unusable` | 422 | The draft failed its checks and no corrected SQL was sent. | Ask the reviewer to edit the SQL. |
 | `not_found` | 404 | No such route or resource. | Show "not found". |
 | `method_not_allowed` | 405 | Wrong HTTP method for the route. | A bug in the client. |
 | `unsupported_media_type` | 415 | Body was not JSON. | A bug in the client. |
