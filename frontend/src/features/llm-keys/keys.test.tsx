@@ -27,7 +27,7 @@ const key = (provider: string, over: Record<string, unknown> = {}) => ({
   ...over,
 })
 const base = (source: 'querylab' | 'own', saved: unknown[] = []) => ({
-  'GET /api/llm-settings': () => ok({ source }),
+  'GET /api/llm-settings': () => ok({ source, querylab_model: 'gem-a' }),
   'GET /api/llm-keys': () => ok(saved),
   'GET /api/llm-keys-models': () => ok(MODELS),
   'GET /api/agent/limits': () => ok({}),
@@ -46,6 +46,32 @@ describe('KeysPage', () => {
     )
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Add new API key' })).not.toBeInTheDocument()
+  })
+
+  it('lets you pick the Gemini model used on QueryLab AI', async () => {
+    let sent: unknown
+    serveApi({
+      ...base('querylab'),
+      'PUT /api/llm-settings': (request) => {
+        sent = request.body
+        return ok({ source: 'querylab', querylab_model: 'gem-b' })
+      },
+    })
+    show()
+    const field = await screen.findByRole('combobox', { name: 'QueryLab AI model' })
+    expect(field).toHaveTextContent('gem-a')
+    await userEvent.click(field)
+    await userEvent.click(await screen.findByRole('option', { name: 'gem-b' }))
+    await waitFor(() => {
+      expect(sent).toEqual({ querylab_model: 'gem-b' })
+    })
+  })
+
+  it('hides the QueryLab model choice for a custom AI', async () => {
+    serveApi(base('own', []))
+    show()
+    await screen.findByText('No API keys yet')
+    expect(screen.queryByRole('combobox', { name: 'QueryLab AI model' })).not.toBeInTheDocument()
   })
 
   it('switches to a custom AI and saves the choice', async () => {

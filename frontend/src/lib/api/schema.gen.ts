@@ -388,7 +388,7 @@ export interface paths {
         get: operations["get_ai_setting"];
         /**
          * Set Ai Setting
-         * @description Choose QueryLab's AI or your own.
+         * @description Choose QueryLab's AI or your own, and the model used on QueryLab's key.
          */
         put: operations["set_ai_setting"];
         post?: never;
@@ -1075,8 +1075,20 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AISettingIn
+         * @description Send what changes: the source, the QueryLab model, or both.
+         */
+        AISettingIn: {
+            /** Querylab Model */
+            querylab_model?: string | null;
+            /** Source */
+            source?: ("querylab" | "own") | null;
+        };
         /** AISettingOut */
         AISettingOut: {
+            /** Querylab Model */
+            querylab_model: string;
             /**
              * Source
              * @enum {string}
@@ -4308,7 +4320,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AISettingOut"];
+                "application/json": components["schemas"]["AISettingIn"];
             };
         };
         responses: {

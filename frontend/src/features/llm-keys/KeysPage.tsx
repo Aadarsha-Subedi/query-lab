@@ -1,5 +1,6 @@
 import { Add01Icon, Delete02Icon, Key01Icon } from '@hugeicons/core-free-icons'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import type { ReactNode } from 'react'
 
 import { QueryBoundary } from '@/components/QueryBoundary'
 import { Heading } from '@/components/typography/Heading'
@@ -16,6 +17,7 @@ import {
   keysQuery,
   modelsQuery,
   removeKey,
+  setQuerylabModel,
   setSource,
   settingsQuery,
   type AiSource,
@@ -28,43 +30,30 @@ import { useRefresh } from './use-refresh'
 
 const SOURCE_LABEL: Record<AiSource, string> = { querylab: 'QueryLab AI', own: 'Custom AI' }
 
-/** Title and description on the left, the choice on the right. */
-function SourceSetting({ source }: { source: AiSource }) {
-  const refresh = useRefresh()
-  const mutation = useMutation({ mutationFn: setSource, onSuccess: refresh })
-  const failure = mutation.isError ? errorText(mutation.error) : null
+/** One setting: title and description on the left, the control on the right. */
+function SettingRow({
+  id,
+  title,
+  description,
+  failure,
+  children,
+}: {
+  id: string
+  title: string
+  description: string
+  failure: { message: string; hint: string } | null
+  children: ReactNode
+}) {
   return (
-    <section aria-labelledby="ai-source" className="flex flex-col gap-3">
+    <section aria-labelledby={id} className="flex flex-col gap-3">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex max-w-[var(--reading-max)] flex-col gap-1">
-          <Heading level={2} id="ai-source">
-            AI for your questions
+          <Heading level={2} id={id}>
+            {title}
           </Heading>
-          <p className="text-body text-muted-foreground">
-            QueryLab AI needs no setup and uses our shared key, which has a daily limit for everyone. A custom
-            AI uses your own OpenAI or Gemini key, with no daily limit from us.
-          </p>
+          <p className="text-body text-muted-foreground">{description}</p>
         </div>
-        <div className="w-full sm:w-56 sm:shrink-0">
-          <Select
-            value={source}
-            disabled={mutation.isPending}
-            onValueChange={(next) => {
-              mutation.mutate(next as AiSource)
-            }}
-          >
-            <SelectTrigger aria-labelledby="ai-source">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(Object.keys(SOURCE_LABEL) as AiSource[]).map((value) => (
-                <SelectItem key={value} value={value}>
-                  {SOURCE_LABEL[value]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <div className="w-full sm:w-56 sm:shrink-0">{children}</div>
       </div>
       {failure && (
         <p role="alert" className="text-small text-danger-foreground">
@@ -72,6 +61,72 @@ function SourceSetting({ source }: { source: AiSource }) {
         </p>
       )}
     </section>
+  )
+}
+
+function SourceSetting({ source }: { source: AiSource }) {
+  const refresh = useRefresh()
+  const mutation = useMutation({ mutationFn: setSource, onSuccess: refresh })
+  return (
+    <SettingRow
+      id="ai-source"
+      title="AI for your questions"
+      description="QueryLab AI needs no setup and uses our shared key, which has a daily limit for everyone. A custom AI uses your own OpenAI or Gemini key, with no daily limit from us."
+      failure={mutation.isError ? errorText(mutation.error) : null}
+    >
+      <Select
+        value={source}
+        disabled={mutation.isPending}
+        onValueChange={(next) => {
+          mutation.mutate(next as AiSource)
+        }}
+      >
+        <SelectTrigger aria-labelledby="ai-source">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {(Object.keys(SOURCE_LABEL) as AiSource[]).map((value) => (
+            <SelectItem key={value} value={value}>
+              {SOURCE_LABEL[value]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </SettingRow>
+  )
+}
+
+/** Which Gemini model answers on QueryLab's shared key. */
+function QuerylabModelSetting({ model }: { model: string }) {
+  const refresh = useRefresh()
+  const models = useQuery(modelsQuery)
+  const mutation = useMutation({ mutationFn: setQuerylabModel, onSuccess: refresh })
+  return (
+    <QueryBoundary
+      query={models}
+      errorTitle="Couldn't load the model list."
+      loading={<Skeleton className="h-16 w-full" />}
+    >
+      {(available) => (
+        <SettingRow
+          id="querylab-model"
+          title="QueryLab AI model"
+          description="The Gemini model that answers on our shared key. Larger models can be slower."
+          failure={mutation.isError ? errorText(mutation.error) : null}
+        >
+          <ModelSelect
+            provider="gemini"
+            value={model}
+            models={available.gemini}
+            label="QueryLab AI model"
+            disabled={mutation.isPending}
+            onChange={(next) => {
+              mutation.mutate(next)
+            }}
+          />
+        </SettingRow>
+      )}
+    </QueryBoundary>
   )
 }
 
@@ -298,9 +353,10 @@ export function KeysPage() {
         errorTitle="Couldn't load your AI setting."
         loading={<Skeleton className="h-24 w-full" />}
       >
-        {({ source }) => (
+        {({ source, querylab_model }) => (
           <>
             <SourceSetting source={source} />
+            {source === 'querylab' && <QuerylabModelSetting model={querylab_model} />}
             {source === 'own' && <CustomKeys />}
           </>
         )}

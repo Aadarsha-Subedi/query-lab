@@ -3,25 +3,25 @@
 ## The analyst screen's contract (step 4)
 
 Everything the analyst screen (step 9) calls, all under `/api` and signed in unless
-noted. Rows marked *new* are step 4; the rest exist. Since step 5, `schema`, `ask`,
+noted. Rows marked _new_ are step 4; the rest exist. Since step 5, `schema`, `ask`,
 `agent/runs` and `agent/limits` take an optional `workspace` (see "Workspaces").
 
-| The screen needs | Endpoint | State |
-|------------------|----------|-------|
-| Who am I, CSRF cookie | `GET /me` (401 when signed out) | exists |
-| Sign in / out | `/_allauth/browser/v1/...` | exists |
-| Schema panel (tables, columns, keys, comments) | `GET /schema`, `GET /schema/tables/{name}` | new (4.2) |
-| Does the user have their own key | `GET /llm-keys` (provider, last4, model, is_active, updated_at), `PUT/DELETE /llm-keys/{provider}`, `PUT /llm-keys/{provider}/model`, `PUT /llm-keys/{provider}/activate`, `GET /llm-keys-models`, `GET/PUT /llm-settings` (source: querylab or own) | exists |
-| What is left before a limit | `GET /agent/limits` | new (4.6) |
-| Ask a question | `POST /agent/runs {question}` | exists |
-| Live progress | `GET /agent/runs/{id}/events` (SSE) | exists; `status` event gains `pending` (4.4) |
-| Render the approval card without parsing steps | `pending` on `GET /agent/runs/{id}` | new (4.4) |
-| Approve / edit SQL / cancel | `POST /agent/runs/{id}/approve \| edit \| cancel` | exists; a guard refusal now says why (4.4) |
-| Full result table of a finished run | `GET /agent/runs/{id}/result` | new (4.3) |
-| History, filtered and ordered | `GET /agent/runs?status=&q=&created_after=&created_before=&ordering=` | extended (4.5) |
-| Replay a run | `GET /agent/runs/{id}/replay` | exists |
-| What every error code means, and what to do | `backend/API_ERRORS.md` | new (4.6) |
-| Generated client types | `backend/openapi.json` (`make openapi`) | new (4.7) |
+| The screen needs                               | Endpoint                                                                                                                                                                                                                                                                                                 | State                                        |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Who am I, CSRF cookie                          | `GET /me` (401 when signed out)                                                                                                                                                                                                                                                                          | exists                                       |
+| Sign in / out                                  | `/_allauth/browser/v1/...`                                                                                                                                                                                                                                                                               | exists                                       |
+| Schema panel (tables, columns, keys, comments) | `GET /schema`, `GET /schema/tables/{name}`                                                                                                                                                                                                                                                               | new (4.2)                                    |
+| Does the user have their own key               | `GET /llm-keys` (provider, last4, model, is_active, updated_at), `PUT/DELETE /llm-keys/{provider}`, `PUT /llm-keys/{provider}/model`, `PUT /llm-keys/{provider}/activate`, `GET /llm-keys-models`, `GET/PUT /llm-settings` (source: querylab or own; querylab_model: the Gemini model on QueryLab's key) | exists                                       |
+| What is left before a limit                    | `GET /agent/limits`                                                                                                                                                                                                                                                                                      | new (4.6)                                    |
+| Ask a question                                 | `POST /agent/runs {question}`                                                                                                                                                                                                                                                                            | exists                                       |
+| Live progress                                  | `GET /agent/runs/{id}/events` (SSE)                                                                                                                                                                                                                                                                      | exists; `status` event gains `pending` (4.4) |
+| Render the approval card without parsing steps | `pending` on `GET /agent/runs/{id}`                                                                                                                                                                                                                                                                      | new (4.4)                                    |
+| Approve / edit SQL / cancel                    | `POST /agent/runs/{id}/approve \| edit \| cancel`                                                                                                                                                                                                                                                        | exists; a guard refusal now says why (4.4)   |
+| Full result table of a finished run            | `GET /agent/runs/{id}/result`                                                                                                                                                                                                                                                                            | new (4.3)                                    |
+| History, filtered and ordered                  | `GET /agent/runs?status=&q=&created_after=&created_before=&ordering=`                                                                                                                                                                                                                                    | extended (4.5)                               |
+| Replay a run                                   | `GET /agent/runs/{id}/replay`                                                                                                                                                                                                                                                                            | exists                                       |
+| What every error code means, and what to do    | `backend/API_ERRORS.md`                                                                                                                                                                                                                                                                                  | new (4.6)                                    |
+| Generated client types                         | `backend/openapi.json` (`make openapi`)                                                                                                                                                                                                                                                                  | new (4.7)                                    |
 
 Not in this step: an auto-run toggle, deleting runs, CSV export. Workspaces came in step 5 (below).
 
@@ -179,16 +179,16 @@ query with its rows; only reviewed questions run unless `--include-unreviewed`.
 `OlistTarget` loads questions from `olist_golden.jsonl`; a `TraceTarget` loads them from
 approved `TraceCase` rows instead, and nothing else about the harness changes.
 
-| Member | What `OlistTarget` does | What `TraceTarget` must do |
-|--------|-------------------------|----------------------------|
-| `name` | `"olist"` (stored on `EvalRun.target`) | `"traces"` |
-| `dialect`, `compare_as_set` | Postgres, `False` | the same |
-| `questions(split)` | the reviewed golden items; only `all` | the `TraceCase` rows with `status=approved`; only `all`; `tags` = cluster key; `id` = case id |
-| `schema_text(q)` | `schema.render(get_schema(include_samples=True))` | the same demo schema text |
-| `check(q)` | `guard.check(sql, schema)` | the same |
-| `execute(q)` | `runner.run` on the reader, native values | the same |
-| `gold_rows(q)` | runs `gold_sql` on the reader | runs the approved `gold_sql` on the reader |
-| unanswerable | `answerable=False`: declining is correct | a case marked unanswerable: declining is correct |
+| Member                      | What `OlistTarget` does                           | What `TraceTarget` must do                                                                    |
+| --------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `name`                      | `"olist"` (stored on `EvalRun.target`)            | `"traces"`                                                                                    |
+| `dialect`, `compare_as_set` | Postgres, `False`                                 | the same                                                                                      |
+| `questions(split)`          | the reviewed golden items; only `all`             | the `TraceCase` rows with `status=approved`; only `all`; `tags` = cluster key; `id` = case id |
+| `schema_text(q)`            | `schema.render(get_schema(include_samples=True))` | the same demo schema text                                                                     |
+| `check(q)`                  | `guard.check(sql, schema)`                        | the same                                                                                      |
+| `execute(q)`                | `runner.run` on the reader, native values         | the same                                                                                      |
+| `gold_rows(q)`              | runs `gold_sql` on the reader                     | runs the approved `gold_sql` on the reader                                                    |
+| unanswerable                | `answerable=False`: declining is correct          | a case marked unanswerable: declining is correct                                              |
 
 The model never sees `gold_sql` or gold rows. `run_eval --target traces` serves only
 `approved` cases.
@@ -228,9 +228,9 @@ Errors the screens branch on: `staff_only`, `case_not_found`, `case_not_reviewab
 `draft_unusable` (422), `eval_run_not_found`, `eval_runs_not_comparable` (422),
 `run_not_finished` (409, feedback), plus `guard_rejected` with `errors[0].field = "sql"`.
 
-Postman, folder "9. Workbench (staff only)": run *List traces* and *List cases* first
-(they save `traceRunId` / `traceCaseId`), then *Get a case with a rows preview*,
-*Approve a case*. Sign in as a staff user (`createsuperuser`, or `is_staff` in the admin).
+Postman, folder "9. Workbench (staff only)": run _List traces_ and _List cases_ first
+(they save `traceRunId` / `traceCaseId`), then _Get a case with a rows preview_,
+_Approve a case_. Sign in as a staff user (`createsuperuser`, or `is_staff` in the admin).
 
 ## The regression gate (step 6)
 
@@ -320,7 +320,7 @@ runs carry `error_code`: `agent_steps_exceeded`, `agent_llm_calls_exceeded`,
 `query_timeout`, `llm_*`, `agent_internal_error`.
 
 What the agent's model sees: the question, the tool list, the plan, a trimmed history of
-tool results (schema text, sample values, error lines) and a result *summary* at reflect
+tool results (schema text, sample values, error lines) and a result _summary_ at reflect
 time. Never other users' data, and never more than `AGENT_RESULT_PREVIEW_ROWS` rows.
 
 ## Analyst API: the screen's calls (step 4)
@@ -381,7 +381,7 @@ sets `csrftoken`; (2) `fetch(url + "/api/agent/runs", {method: "POST", credentia
 headers: {"X-CSRFToken": <cookie>, "Content-Type": "application/json"}, body: ...})` returns 200;
 (3) `new EventSource(url + "/api/agent/runs/<id>/events", {withCredentials: true})` receives
 events. Note any `.env` change it needs (`CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`, cookie
-`SameSite`) and record it in DECISION.md. Result: *not run yet.*
+`SameSite`) and record it in DECISION.md. Result: _not run yet._
 
 ## Agent evals (step 3)
 
@@ -423,25 +423,25 @@ Any failure: `status: degraded`, HTTP 503.
 Read before step 5 changed anything. Each row was a change in task 5.4 (or the task
 named); all are done and tested.
 
-| Where | What is hard-coded | Change |
-|-------|--------------------|--------|
-| `core/datadb.DEMO_SCHEMA` | the constant, the default for the three below | stays; `workspaces.context.DEMO` wraps it (5.2.1) |
-| `ask/schema.read_schema` | schema name defaults to `demo`; always connects with the `data_reader` alias | takes a workspace; connects as that workspace's reader (5.4.1, 5.4.3) |
-| `ask/schema.get_schema` / `cache_key` / `clear_schema_cache` | default `demo`; key `ask:schema:<schema>:<samples>` has no version | key holds workspace id and a Redis schema version (5.4.1, 5.4.2) |
-| `ask/runner.run` | always the `data_reader` alias and `READER_STATEMENT_TIMEOUT_MS` | takes a workspace; user workspaces open `ws_<id>_ro` per request (5.4.3) |
-| `ask/guard._check_tables` | the schema comes from the `Schema` object, so any other qualifier is already refused; `SET`/`RESET` already in `FORBIDDEN_NODES` | add refusals for `pg_catalog` / `information_schema`, test quoted spellings (5.4.4) |
-| `ask/service._answer` | `schema.get_schema(include_samples=True)`, `execute=runner.run` | take the workspace (5.4.6) |
-| `ask/prompt.py` (`DIALECT_POSTGRES` naming text) | example `demo.orders` | uses the active schema name (5.4.6) |
-| `ask/schema_api._current` and both handlers | `get_schema(include_samples=...)` for the demo | `workspace` query parameter, one ownership dependency (5.4.6) |
-| `agent/prompts.py` (rules text) | `schema "demo"`, `demo.orders` | schema name filled in per run (5.4.6) |
-| `agent/loop._connect` | `schema.get_schema(include_samples=True)` | schema of `run.workspace_id` (5.4.7) |
-| `agent/loop._execute` | `runner.run(sql)` | `runner.run(sql, workspace)` (5.4.3) |
-| `agent/service.decide` (edit) | `guard.check(sql, get_schema(...))` | the run's workspace schema (5.4.6) |
-| `agent/result.py` | `guard.check(...)`, `runner.run(...)` for the run | the run's workspace; a deleted workspace gives a typed error (5.4.6) |
-| `agent/tools/*` | `ToolContext.schema` only; `describe_table.strip_schema` strips `<schema>.` | already workspace-neutral; the context is filled from the run, never from model output (5.4.7) |
-| `evals/targets/olist.py`, `review_golden` | `get_schema(include_samples=True)`, `runner.run` | keep working on the demo through defaults (5.4.9) |
-| `core/health.py` | `data_reader` alias | unchanged |
-| `infra/sql/001_roles.sql` / `020_reader_grants.sql` | `demo` through the `{schema}` placeholder | unchanged; `002_workspace_roles.sql` is new (5.2.3) |
+| Where                                                        | What is hard-coded                                                                                                               | Change                                                                                         |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `core/datadb.DEMO_SCHEMA`                                    | the constant, the default for the three below                                                                                    | stays; `workspaces.context.DEMO` wraps it (5.2.1)                                              |
+| `ask/schema.read_schema`                                     | schema name defaults to `demo`; always connects with the `data_reader` alias                                                     | takes a workspace; connects as that workspace's reader (5.4.1, 5.4.3)                          |
+| `ask/schema.get_schema` / `cache_key` / `clear_schema_cache` | default `demo`; key `ask:schema:<schema>:<samples>` has no version                                                               | key holds workspace id and a Redis schema version (5.4.1, 5.4.2)                               |
+| `ask/runner.run`                                             | always the `data_reader` alias and `READER_STATEMENT_TIMEOUT_MS`                                                                 | takes a workspace; user workspaces open `ws_<id>_ro` per request (5.4.3)                       |
+| `ask/guard._check_tables`                                    | the schema comes from the `Schema` object, so any other qualifier is already refused; `SET`/`RESET` already in `FORBIDDEN_NODES` | add refusals for `pg_catalog` / `information_schema`, test quoted spellings (5.4.4)            |
+| `ask/service._answer`                                        | `schema.get_schema(include_samples=True)`, `execute=runner.run`                                                                  | take the workspace (5.4.6)                                                                     |
+| `ask/prompt.py` (`DIALECT_POSTGRES` naming text)             | example `demo.orders`                                                                                                            | uses the active schema name (5.4.6)                                                            |
+| `ask/schema_api._current` and both handlers                  | `get_schema(include_samples=...)` for the demo                                                                                   | `workspace` query parameter, one ownership dependency (5.4.6)                                  |
+| `agent/prompts.py` (rules text)                              | `schema "demo"`, `demo.orders`                                                                                                   | schema name filled in per run (5.4.6)                                                          |
+| `agent/loop._connect`                                        | `schema.get_schema(include_samples=True)`                                                                                        | schema of `run.workspace_id` (5.4.7)                                                           |
+| `agent/loop._execute`                                        | `runner.run(sql)`                                                                                                                | `runner.run(sql, workspace)` (5.4.3)                                                           |
+| `agent/service.decide` (edit)                                | `guard.check(sql, get_schema(...))`                                                                                              | the run's workspace schema (5.4.6)                                                             |
+| `agent/result.py`                                            | `guard.check(...)`, `runner.run(...)` for the run                                                                                | the run's workspace; a deleted workspace gives a typed error (5.4.6)                           |
+| `agent/tools/*`                                              | `ToolContext.schema` only; `describe_table.strip_schema` strips `<schema>.`                                                      | already workspace-neutral; the context is filled from the run, never from model output (5.4.7) |
+| `evals/targets/olist.py`, `review_golden`                    | `get_schema(include_samples=True)`, `runner.run`                                                                                 | keep working on the demo through defaults (5.4.9)                                              |
+| `core/health.py`                                             | `data_reader` alias                                                                                                              | unchanged                                                                                      |
+| `infra/sql/001_roles.sql` / `020_reader_grants.sql`          | `demo` through the `{schema}` placeholder                                                                                        | unchanged; `002_workspace_roles.sql` is new (5.2.3)                                            |
 
 ## Workspaces: the lifecycle and a query's path (step 5)
 
@@ -474,13 +474,13 @@ A run remembers its workspace: `AgentRun.workspace_id` (null = demo), `excluded_
 
 ### Changing a workspace
 
-| Call | What happens | Errors you will see |
-|------|--------------|---------------------|
-| `POST /workspaces/{id}/tables` | `CREATE TABLE` with hidden `_row_id` identity key, `COMMENT ON` for descriptions | `table_name_taken`, `table_limit_reached`, `column_limit_reached`, `invalid_spec`, `invalid_name` |
-| `PATCH/DELETE .../tables/{t}`, `.../columns` | rename, describe, add, drop; retype = `ALTER ... TYPE ... USING` after a `pg_input_is_valid` check | `cast_failed` (names the row), `constraint_violation`, `column_name_taken` |
-| `PUT .../primary-key`, `POST/DELETE /relations` | real constraints; existing rows checked first | `constraint_violation` (names the row), `relation_invalid`, `relation_limit_reached` |
-| `GET/POST/PATCH/DELETE .../rows` | by `_row_id`, values coerced and bound, all or nothing, size guard | `row_invalid` (`rows[i].col`), `constraint_violation`, `workspace_full` |
-| `POST /workspaces/{id}/sql` | the user's own SQL as `_rw`, one transaction, watchdog deadline | `sql_failed` (SQLSTATE), `sql_invalid`, `sql_busy`, `query_timeout`, `workspace_full` |
+| Call                                            | What happens                                                                                       | Errors you will see                                                                               |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `POST /workspaces/{id}/tables`                  | `CREATE TABLE` with hidden `_row_id` identity key, `COMMENT ON` for descriptions                   | `table_name_taken`, `table_limit_reached`, `column_limit_reached`, `invalid_spec`, `invalid_name` |
+| `PATCH/DELETE .../tables/{t}`, `.../columns`    | rename, describe, add, drop; retype = `ALTER ... TYPE ... USING` after a `pg_input_is_valid` check | `cast_failed` (names the row), `constraint_violation`, `column_name_taken`                        |
+| `PUT .../primary-key`, `POST/DELETE /relations` | real constraints; existing rows checked first                                                      | `constraint_violation` (names the row), `relation_invalid`, `relation_limit_reached`              |
+| `GET/POST/PATCH/DELETE .../rows`                | by `_row_id`, values coerced and bound, all or nothing, size guard                                 | `row_invalid` (`rows[i].col`), `constraint_violation`, `workspace_full`                           |
+| `POST /workspaces/{id}/sql`                     | the user's own SQL as `_rw`, one transaction, watchdog deadline                                    | `sql_failed` (SQLSTATE), `sql_invalid`, `sql_busy`, `query_timeout`, `workspace_full`             |
 
 ### Filling a workspace
 
@@ -547,5 +547,5 @@ make load-demo      core/demo.py: TRUNCATE demo.*, then per CSV:
 ## Trying the API by hand
 
 `backend/postman/` holds a Postman collection for every endpoint and a local
-environment (see its README). Run *Get CSRF cookie and current user* first; the
+environment (see its README). Run _Get CSRF cookie and current user_ first; the
 collection then sends the CSRF token on every write.

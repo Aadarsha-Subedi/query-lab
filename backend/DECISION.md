@@ -270,13 +270,11 @@ threads absorb it. No Huey job until step 3's agent loop needs one.
 
 **AskLog:** one row per ask (question, final SQL, status, error code, attempts,
 provider, model, key source, tokens, latency, confidence, row count), success or
-failure, never the result rows. They are raw material for traces in steps 3 and
-6. A failed log write is logged and never fails the ask. No retention policy yet;
+failure, never the result rows. They are raw material for traces in steps 3 and 6. A failed log write is logged and never fails the ask. No retention policy yet;
 decide before real users arrive.
 
 **Repair retry:** at most `ASK_MAX_REPAIR_ATTEMPTS` (1). Timeouts are not
 retried (the same query would time out again).
-
 
 ## Eval harness (step 2)
 
@@ -319,11 +317,12 @@ baseline uses `EVAL_OPENAI_API_KEY`. Both live only in `.env`. `EVAL_MODEL_PRICE
 is an estimate for reports, not billing.
 
 **Baseline results (recorded 2026-10-31, prompt `v1`, Gemini 3.5 flash-lite).**
-- *Olist golden set* (run #7, 41 questions): **95.1%** (39/41), all 4 unanswerable questions declined. Misses: olist-26 (sorted by item count, not by score: a real error) and olist-18 (added `order_status = 'delivered'`, a defensible reading; wording to tighten later). An earlier run on `gemini-3.5-flash` (10 questions) scored 8/10 and is too small to compare.
-- *Spider held-out* (run #9, stopped at 430 of 443 questions; 12 calls failed on provider 429s, so 418 were scored): **86.6%** (362/418; 84.2% if the failures count as wrong). A 20-question smoke run (#8) scored 90%. The 25 unscored questions were not re-run.
-- *Reading the 50 misses by hand:* about 8 to 10 are real model errors (for example an AND of two directors written as IN, an area code taken from the phone number). The rest is Spider noise: gold SQL that answers a different question than the text (about 15), ties at `LIMIT 1` (about 9), inner versus left join (about 6) and an extra column in the model's answer (about 8). The headline number understates the model, and tuning the prompt against these would overfit.
-- *Confidence:* it does not separate right from wrong. On Olist every answer got 1.0 (the model always reports full self-confidence and the other factors are almost always clean). On Spider held-out the buckets were 86.1% (0.70 to 0.85) and 88.0% (0.85 to 1.00), rank correlation 0.09. **Follow-up for steps 3 and 6:** do not show this score as a probability. Candidates: drop the self-rating, add agreement between two samples, or score by features that did vary (row count, result shape, repair attempts).
-- *Not done:* a second model (the Claude and OpenAI baselines were dropped because paid API keys are billed separately), the Spider `tune` half, and the last 25 held-out questions.
+
+- _Olist golden set_ (run #7, 41 questions): **95.1%** (39/41), all 4 unanswerable questions declined. Misses: olist-26 (sorted by item count, not by score: a real error) and olist-18 (added `order_status = 'delivered'`, a defensible reading; wording to tighten later). An earlier run on `gemini-3.5-flash` (10 questions) scored 8/10 and is too small to compare.
+- _Spider held-out_ (run #9, stopped at 430 of 443 questions; 12 calls failed on provider 429s, so 418 were scored): **86.6%** (362/418; 84.2% if the failures count as wrong). A 20-question smoke run (#8) scored 90%. The 25 unscored questions were not re-run.
+- _Reading the 50 misses by hand:_ about 8 to 10 are real model errors (for example an AND of two directors written as IN, an area code taken from the phone number). The rest is Spider noise: gold SQL that answers a different question than the text (about 15), ties at `LIMIT 1` (about 9), inner versus left join (about 6) and an extra column in the model's answer (about 8). The headline number understates the model, and tuning the prompt against these would overfit.
+- _Confidence:_ it does not separate right from wrong. On Olist every answer got 1.0 (the model always reports full self-confidence and the other factors are almost always clean). On Spider held-out the buckets were 86.1% (0.70 to 0.85) and 88.0% (0.85 to 1.00), rank correlation 0.09. **Follow-up for steps 3 and 6:** do not show this score as a probability. Candidates: drop the self-rating, add agreement between two samples, or score by features that did vary (row count, result shape, repair attempts).
+- _Not done:_ a second model (the Claude and OpenAI baselines were dropped because paid API keys are billed separately), the Spider `tune` half, and the last 25 held-out questions.
 
 ## Agent (step 3)
 
@@ -341,7 +340,7 @@ is an estimate for reports, not billing.
 
 **Compact schema start.** The first prompt carries table names, comments and row estimates only; the agent fetches columns with `describe_table` and filter spellings with `sample_values`. This saves tokens but costs steps. `AGENT_FULL_SCHEMA_START=true` switches to the full schema text of step 1 without a code change; whether the compact start costs accuracy is judged by the Olist run in 3.10.3 (owner), and if it does, the fallback becomes the default and is recorded here.
 
-**Reflect.** A cheap rule check after execution (error, empty, truncated, one value) decides whether the model reads the result; a clean result goes straight to `finish` with no extra LLM call. `AGENT_REFLECT_ALWAYS=true` reviews every result (more accurate maybe, more calls): a knob for the 3.10.3 run. The reflect prompt names the three failure shapes seen in the step 2 baseline. The model sees a result *summary* only (columns, row count, first `AGENT_RESULT_PREVIEW_ROWS` rows), never the full table.
+**Reflect.** A cheap rule check after execution (error, empty, truncated, one value) decides whether the model reads the result; a clean result goes straight to `finish` with no extra LLM call. `AGENT_REFLECT_ALWAYS=true` reviews every result (more accurate maybe, more calls): a knob for the 3.10.3 run. The reflect prompt names the three failure shapes seen in the step 2 baseline. The model sees a result _summary_ only (columns, row count, first `AGENT_RESULT_PREVIEW_ROWS` rows), never the full table.
 
 **What is stored.** Result rows are never stored. An `execute` step keeps the columns, row count, a truncated flag and the preview rows, trimmed to `AGENT_STEP_OUTPUT_MAX_CHARS`, so a replay shows what the user saw without running any SQL. Consequence for step 4: the stored trace has the preview, not the full table; the analyst API will need a way to show full rows (re-running the approved SQL on demand through the guard and reader is the cheap option).
 
@@ -355,7 +354,7 @@ is an estimate for reports, not billing.
 
 **Image size.** No new runtime dependency (`pyproject.toml` and `uv.lock` are unchanged); the `agent` app adds about 4 MB with its bytecode. Measured 2026-10-31 with CI's method: **295 MB against the 300 MB budget** (291 MB after step 2). The headroom is now small; the next step that adds code should check it before anything else.
 
-**Results.** *Pending (owner):* the Olist agent run (3.10.3) and the confidence analysis (3.9.2) need the live Gemini key and have not been run. Fill in here: run id, accuracy against the 95.1% baseline, extra cost per question (steps, LLM calls, tokens, latency), and the confidence verdict.
+**Results.** _Pending (owner):_ the Olist agent run (3.10.3) and the confidence analysis (3.9.2) need the live Gemini key and have not been run. Fill in here: run id, accuracy against the 95.1% baseline, extra cost per question (steps, LLM calls, tokens, latency), and the confidence verdict.
 
 ## Analyst API (step 4)
 
@@ -389,8 +388,6 @@ Backend only: the surface the analyst screen (step 9) needs, so the screen is on
 
 **Image size, after step 4 (4.8.5).** Measured 2026-10-31 with CI's method: **295 MB against the 300 MB budget**, the same as before step 4 (the new modules and `openapi.json` are under 1 MB together; no dependency was added, `pyproject.toml` and `uv.lock` are unchanged). Headroom stays at about 5 MB.
 
-
-
 ## User workspaces (step 5)
 
 **Image size, before any code (5.1.1).** Measured 2026-10-31 on the step 5 branch with CI's method (`du -sxm /` in the prod image): **295 MB against the 300 MB budget**, 5 MB of headroom, above the plan's 3 MB stop line. Step 5 adds no dependency.
@@ -417,7 +414,6 @@ Backend only: the surface the analyst screen (step 9) needs, so the screen is on
 
 **Historical, from the dropped import (kept for the R2 follow-up):** the cost numbers below were measured before the import was removed. **Import cost, measured (5.7.11).** Dev image in a container limited to 1 GiB and 0.25 CPU (`docker run --memory 1g --cpus 0.25`), file at the cap: **100,000 rows x 8 columns, 10.3 MB: 14.4 s wall, 3.6 s CPU, process peak 111 MB** (the measuring script itself held the generated data, so the job adds well under that); **5,000 rows x 100 columns, 6.3 MB: 8.0 s wall, 2.0 s CPU, peak 133 MB (90 MB before the job)**. Both are far below the 60 s `IMPORT_STATEMENT_TIMEOUT_MS` and the 1 GiB limit, so `IMPORT_BATCH_ROWS=5000` and the caps (10 MB, 100,000 rows, 100 columns) stay. The run through the real Huey worker and SSE (curl, session cookie) went queued, running, succeeded for a 20,000-row file. The wall time is mostly the 0.25 vCPU: expect a cap-sized file to take 10 to 15 s on the deployed instance.
 
-
 **Editing is free after upload, and descriptions are comments (owner's answers, 5.5-5.6).** A user can add, rename, retype and drop columns, edit and delete rows, and write any SQL inside their own schema. Table and column descriptions are Postgres `COMMENT ON` text, so `ask.schema.get_schema` (and therefore the agent prompt and the schema panel) read them with no extra metadata; keys and relations are real constraints for the same reason. Retyping runs `ALTER ... TYPE ... USING` after a `pg_input_is_valid` pre-check (PostgreSQL 16 or newer; Neon offers 16 and 17), so a bad value is named by its row id and nothing changes. The workspace tables API shows `_row_id`; the agent and the schema panel never do. **Open question 2 answered as recommended:** the hidden key, not a key the user must pick.
 
 **Caps, in one place (5.8).** `MAX_WORKSPACES_PER_USER` 3 workspaces; per workspace `WORKSPACE_MAX_TABLES` 20, `WORKSPACE_MAX_RELATIONS` 30, `WORKSPACE_MAX_COLUMNS` 100 columns, `WORKSPACE_MAX_BYTES` 100 MB; per user `USER_MAX_BYTES` 250 MB; per request `WORKSPACE_MAX_ROWS_PER_EDIT` 500 rows, `WORKSPACE_SQL_MAX_*` for the console. Each cap has its own typed error (`workspace_full`, `user_storage_full`, `table_limit_reached`, ...), listed in `API_ERRORS.md`, and `GET /api/workspaces/limits` reports them. Size is `pg_total_relation_size`, cached for `QUOTA_CACHE_SECONDS` for listings and measured fresh inside a writer's transaction.
@@ -427,7 +423,6 @@ Backend only: the surface the analyst screen (step 9) needs, so the screen is on
 **Checklist for the real Neon project (owner task 5.9.7, collected from the notes above).** (1) `SHOW max_connections` on primary and replica, then check `users x workspaces x (WORKSPACE_RW_CONNECTION_LIMIT + WORKSPACE_RO_CONNECTION_LIMIT)` against it; (2) per-request connect time through the pooled endpoint (11 ms locally); (3) a non-superuser owner can create, administer (`GRANT role TO CURRENT_USER WITH INHERIT TRUE, SET TRUE`), terminate sessions of and drop the workspace roles, and there is no role-count limit that matters; (4) `REVOKE CONNECT ... FROM PUBLIC` on the database is allowed; (5) a cancel request still reaches a running statement through PgBouncer (the console's watchdog); (6) user B cannot see user A's data through the agent, and a freshly created workspace is queryable on the replica at once (replica lag); (7) decide whether other users reading table descriptions through `pg_description` is acceptable (see "What a workspace role can still see"); (8) `MASTER_WORKSPACE_SECRET` is set to a long random value in the deployed environment and kept.
 
 **Image size, after step 5 (5.9.5).** Measured 2026-10-31 with CI's method (`du -sxm /` in the prod image): **296 MB against the 300 MB budget** (295 before step 5). No dependency was added (`pyproject.toml` and `uv.lock` are unchanged); the `workspaces` app and the new `openapi.json` account for the 1 MB. Headroom is now about 4 MB, so the next step that adds code should check it first.
-
 
 **Step 5 without import (final).** What shipped: workspaces and their roles, isolation proof, workspace-aware schema/ask/agent, tables, columns, keys, relations, descriptions, row edits, the SQL console, quotas and the limits endpoint. `UPLOAD_TMP_DIR`, `IMPORT_*` settings, the upload middleware, the Huey import tasks, the compose upload volume, the `ImportJob` table (dropped by migration `0005`), the import endpoints and error codes are removed. Two settings that only had the import prefix were renamed: `IMPORT_MAX_COLUMNS` became `WORKSPACE_MAX_COLUMNS`, `IMPORT_STATEMENT_TIMEOUT_MS` became `WORKSPACE_DDL_TIMEOUT_MS` (retype timeout). **Image size, after dropping import:** 296 MB against 300 (measured 2026-10-31, CI method); the removed code was under 1 MB, so the figure did not move.
 
@@ -456,7 +451,6 @@ Backend only: the surface the analyst screen (step 9) needs, so the screen is on
 **Image size, after step 6 (6.9.5).** Measured 2026-11-01 with CI's method (`du -sxm /` in the prod image): **296 MB against the 300 MB budget**, unchanged from before step 6. No dependency was added (`pyproject.toml` and `uv.lock` are unchanged).
 
 **Left for the owner (6.9.2, 6.9.3).** Review the first drafted batch in Postman and run the Olist agent eval with the live key; then record here the confidence verdict, whether `TRACES_CLUSTER_SIMILARITY` and `EVAL_GATE_*` need changing, and the first trace-set baseline run id.
-
 
 ## LoRA fine-tune (step 7)
 
@@ -496,3 +490,8 @@ for existing users: anyone with a key gets source `own` and their most recently 
 is served by `GET /llm-keys-models` (from the settings allowlists); `PUT /llm-keys/{provider}/model` changes a model
 without sending the key again. The model-list route is `llm-keys-models`, not `llm-keys/models`, so it can never be read
 as a provider.
+
+**Model on QueryLab's key (2026-11-01).** `UserAISetting.querylab_model` (blank = `LLM_DEFAULT_MODEL`) lets a user pick any model
+in `LLM_GEMINI_MODELS` for asks on QueryLab's shared key; `PUT /api/llm-settings` takes `source`, `querylab_model` or both. A
+saved model that later leaves the allowlist falls back to the default instead of failing. The daily limit still counts asks,
+not tokens, so a larger model costs QueryLab more per ask; trim `LLM_GEMINI_MODELS` if that matters.

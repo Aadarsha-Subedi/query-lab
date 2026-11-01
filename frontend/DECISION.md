@@ -242,3 +242,7 @@ visible h1 is gone on these two. The h1 stays as `sr-only` text because it names
 readers a page heading. The keys route moved from `/settings/keys` to `/settings`. Workspace cards no longer carry buttons: Ask,
 Edit tables and Delete workspace sit in one actions menu per card (the demo only offers Ask), and Delete still needs the typed
 name; `DeleteWorkspaceDialog` is now opened by the menu instead of its own trigger.
+
+**Model choice on QueryLab AI (2026-11-01).** With QueryLab AI selected, a second setting row (title and description left,
+dropdown right, like the AI source row) lets the user pick which Gemini model answers on the shared key. The list is the same
+`LLM_GEMINI_MODELS` allowlist served by `/llm-keys-models`. It is hidden for a custom AI, which has its own model per key.

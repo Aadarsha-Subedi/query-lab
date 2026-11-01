@@ -28,7 +28,7 @@ _public           beforeLoad: signed in -> redirect /app
 _app              beforeLoad: signed out -> redirect /; adds { me }; renders AppShell (header, nav, limits chip)
   /app              home: ask button, how it works, last 3 questions (RecentRuns); skip link targets every page's <main id="main">
   /ask              ?run=&workspace=&question=   (question pre-fills the box: Ask again) workspace picker, schema panel, question box, RunView
-  /settings         AI settings (no visible page header; the nav item names it): a row with title and description on the left and a QueryLab AI / Custom AI dropdown on the right (GET/PUT /llm-settings). Only for Custom AI: a table of saved keys (provider, in-use radio, model dropdown, replace, remove) or an empty state whose Add new API key button opens a modal (provider dropdown with logos from src/assets/providers, key, model)
+  /settings         AI settings (no visible page header; the nav item names it): a row with title and description on the left and a QueryLab AI / Custom AI dropdown on the right (GET/PUT /llm-settings). With QueryLab AI chosen, a second row (same pattern) picks the Gemini model used on the shared key (`querylab_model`). Only for Custom AI: a table of saved keys (provider, in-use radio, model dropdown, replace, remove) or an empty state whose Add new API key button opens a modal (provider dropdown with logos from src/assets/providers, key, model)
   /history          ?status=&q=&ordering=&offset=&workspace=   your runs; rows link to /ask?run= and the replay
   /runs/$runId/replay   stored trace, one step at a time
   /workspaces       the demo and your private workspaces (no visible page header); create; per-card actions menu: Ask, Edit tables, Delete (typed name)
