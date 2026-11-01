@@ -34,7 +34,7 @@ function AskPage() {
     : false
 
   return (
-    <div className="grid gap-6 px-4 py-6 lg:grid-cols-[18rem_1fr]">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 px-4 py-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
       <aside
         aria-label="Schema browser"
         className="max-h-[70vh] lg:sticky lg:top-20 lg:h-[calc(100vh-7rem)] lg:max-h-none"
@@ -44,7 +44,7 @@ function AskPage() {
         </Heading>
         <SchemaPanel workspace={workspace} />
       </aside>
-      <main className="flex min-w-0 flex-col gap-6">
+      <main className="order-1 flex min-w-0 flex-col gap-6 lg:order-2">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Heading level={1}>Ask</Heading>
           <WorkspaceSelect
@@ -73,6 +73,7 @@ function AskPage() {
                   variant="secondary"
                   size="sm"
                   icon={SparklesIcon}
+                  className="h-auto min-h-8 max-w-full py-1.5 text-left whitespace-normal"
                   onClick={() => {
                     setExample((previous) => ({ text, n: previous.n + 1 }))
                   }}
