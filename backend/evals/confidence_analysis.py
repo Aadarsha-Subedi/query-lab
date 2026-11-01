@@ -9,14 +9,17 @@ CONFIDENCE_MIN_SEPARATION, or the API keeps `confidence` null.
 Plain Python on purpose: no stats library, so the production image is unchanged."""
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from django.conf import settings
 
+from agent.confidence import LABEL_CHECKED, LABEL_NEEDS_LOOK
 from agent.loop import has_text_filter
 from agent.models import AgentRun, AgentStep
-from evals import scoring
-from evals.models import EvalResult, EvalRun
+from ask import guard, runner, schema
+from evals import compare, scoring
+from evals.models import EvalResult, EvalRun, TraceCase
 
 FEATURES = (
     "no_revision",
@@ -174,5 +177,128 @@ def format_analysis(run: EvalRun, analysis: Analysis) -> str:
         if analysis.passes
         else "FAIL: leave CONFIDENCE_SHOW_SCORE=false. The API keeps confidence null and "
         "shows the checked / needs_look label.",
+    ]
+    return "\n".join(lines)
+
+
+@dataclass(frozen=True)
+class LabelRow:
+    label: str
+    n: int
+    right: int
+
+    @property
+    def accuracy(self) -> float | None:
+        return self.right / self.n if self.n else None
+
+
+@dataclass(frozen=True)
+class CaseAnalysis:
+    """The same question asked of reviewed trace cases: is the run's own answer
+    right (same rows as the approved gold SQL), by check label and by feature."""
+
+    answered: int
+    right: int
+    labels: list[LabelRow]
+    rows: list[FeatureRow]
+    # Spearman between the stored confidence and being right; None with too little data.
+    rank_correlation: float | None
+    # Features that held for some runs and failed for others (the ones that varied).
+    varied: list[str]
+
+
+RunSql = Callable[[str], list[list]]
+
+
+def _demo_rows(sql: str) -> list[list]:
+    known = schema.get_schema(include_samples=True)
+    return runner.run(guard.check(sql, known).sql, json_safe=False).rows
+
+
+def case_is_right(case: TraceCase, run: AgentRun, run_sql: RunSql) -> bool:
+    """Did the run's final SQL return what the approved gold SQL returns?"""
+    gold = run_sql(case.gold_sql)
+    predicted = run_sql(run.final_sql)
+    return compare.compare(
+        gold, predicted, ordered=compare.gold_is_ordered(case.gold_sql, "postgres")
+    ).match
+
+
+def analyse_cases(run_sql: RunSql = _demo_rows) -> CaseAnalysis:
+    """Uses approved, answerable cases whose source run still exists and succeeded.
+    These cases were picked because a run looked suspicious, so accuracy here is
+    lower than overall; read the label and feature gaps, not the absolute numbers."""
+    pairs: list[tuple[AgentRun, bool]] = []
+    cases = TraceCase.objects.filter(
+        status=TraceCase.STATUS_APPROVED, answerable=True
+    ).exclude(source_run_id=None)
+    for case in cases:
+        if case.source_run_id is None:
+            continue
+        run = AgentRun.objects.filter(
+            pk=case.source_run_id, status=AgentRun.STATUS_SUCCEEDED
+        ).first()
+        if run is None or not run.final_sql:
+            continue
+        try:
+            pairs.append((run, case_is_right(case, run, run_sql)))
+        except Exception:  # noqa: BLE001 - SQL that no longer runs counts as wrong
+            pairs.append((run, False))
+    per_run = [features_of(run) for run, _ in pairs]
+    right = [ok for _, ok in pairs]
+    labels = []
+    for name in (LABEL_CHECKED, LABEL_NEEDS_LOOK):
+        picked = [ok for (run, ok) in pairs if run.check_label == name]
+        labels.append(LabelRow(name, len(picked), sum(picked)))
+    rows = []
+    for name in FEATURES:
+        marked = [
+            (f[name], ok)
+            for f, ok in zip(per_run, right, strict=True)
+            if f[name] is not None
+        ]
+        holds = [ok for flag, ok in marked if flag]
+        fails = [ok for flag, ok in marked if not flag]
+        rows.append(FeatureRow(name, len(holds), sum(holds), len(fails), sum(fails)))
+    scored = [(run.confidence, ok) for run, ok in pairs if run.confidence is not None]
+    return CaseAnalysis(
+        answered=len(pairs),
+        right=sum(right),
+        labels=labels,
+        rows=rows,
+        rank_correlation=scoring.spearman(
+            [c for c, _ in scored], [1.0 if ok else 0.0 for _, ok in scored]
+        ),
+        varied=[r.name for r in rows if r.n_true and r.n_false],
+    )
+
+
+def format_case_analysis(analysis: CaseAnalysis) -> str:
+    lines = [
+        f"Reviewed trace cases: {analysis.answered} answered runs, {analysis.right} right",
+        "(these runs were picked because they looked suspicious: read the gaps, not the levels)",
+        "",
+        "Check label vs correctness:",
+    ]
+    lines.extend(
+        f"  {row.label:12}{row.right}/{row.n} right ({_pct(row.accuracy)})"
+        for row in analysis.labels
+    )
+    lines += [
+        "",
+        f"{'feature':20}{'holds: right/n':>16}{'fails: right/n':>16}  separates",
+    ]
+    for row in analysis.rows:
+        lines.append(
+            f"{row.name:20}"
+            f"{f'{row.right_true}/{row.n_true} ({_pct(row.acc_true)})':>16}"
+            f"{f'{row.right_false}/{row.n_false} ({_pct(row.acc_false)})':>16}"
+            f"  {'yes' if row.separates else 'no'}"
+        )
+    lines += [
+        "",
+        f"Features that varied: {', '.join(analysis.varied) or 'none'}",
+        f"Rank correlation, confidence vs right: {analysis.rank_correlation}",
+        "No new score is shipped from this report; it informs the CONFIDENCE_SHOW_SCORE decision.",
     ]
     return "\n".join(lines)

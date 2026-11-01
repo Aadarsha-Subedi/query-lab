@@ -12,11 +12,22 @@ class Command(BaseCommand):
     )
 
     def add_arguments(self, parser: CommandParser) -> None:
+        parser.add_argument("--run", type=int, help="An agent EvalRun id.")
         parser.add_argument(
-            "--run", type=int, required=True, help="An agent EvalRun id."
+            "--cases",
+            action="store_true",
+            help="Use the reviewed (approved) trace cases as labels instead of a run.",
         )
 
     def handle(self, *args: object, **options: object) -> None:
+        if bool(options["cases"]) == bool(options["run"]):
+            raise CommandError("Give exactly one of --run ID or --cases.")
+        if options["cases"]:
+            analysis_of_cases = confidence_analysis.analyse_cases()
+            self.stdout.write(
+                confidence_analysis.format_case_analysis(analysis_of_cases)
+            )
+            return
         try:
             run = EvalRun.objects.get(pk=int(options["run"]))  # type: ignore[call-overload]
         except EvalRun.DoesNotExist:

@@ -98,7 +98,7 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 6.9 Confidence follow-up and close-out
 
-- [ ] **6.9.1** Extend `confidence_analysis` to accept reviewed trace cases as labels and report check-label vs correctness, the features that varied, and rank correlation. No new score is shipped in this step.
+- [x] **6.9.1** Extend `confidence_analysis` to accept reviewed trace cases as labels and report check-label vs correctness, the features that varied, and rank correlation. No new score is shipped in this step.
 - [ ] **6.9.2** **(You)** Review the first batch of drafted cases in Postman (`FLOW.md` has the exact requests) and run the Olist agent eval from step 3 so the confidence report has real data. Needs the live Gemini key.
 - [ ] **6.9.3** Record the confidence verdict, the clustering settings chosen and the first trace-set baseline in `DECISION.md`.
 - [ ] **6.9.4** `backend/openapi.json` regenerated; `API_ERRORS.md` drift test and route-list test pass; `ruff`, `mypy` and the full test suite pass.
