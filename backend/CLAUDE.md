@@ -19,6 +19,8 @@ Run from the repo root (everything goes through Docker Compose):
 | Eval commands in the dev container (step 2) | `make eval ARGS="run_eval --target olist --model gemini-3.5-flash"` |
 | Agent eval (step 3, Olist only, up to AGENT_MAX_LLM_CALLS calls per question) | `make eval ARGS="run_eval --target olist --runner agent --model gemini-3.5-flash-lite --yes"` |
 | Does the confidence score separate right from wrong? | `make eval ARGS="confidence_report --run <id>"` |
+| Trace evals (step 6): build cases, draft SQL, score approved cases | `make eval ARGS="build_trace_cases"`, `make eval ARGS="draft_trace_cases"`, `make eval ARGS="run_eval --target traces --model gemini-3.5-flash --gate"` |
+| Regression gate on Olist and the trace set (dev container only) | `make eval-gate MODEL=gemini-3.5-flash RUNNER=ask` |
 | Rewrite `backend/openapi.json` after any endpoint change (CI and a test fail when it is stale) | `make openapi` |
 | Lint / format | `make lint-backend` / `make format` |
 | Types (on the host) | `make typecheck-backend` |
@@ -59,7 +61,13 @@ evals/             eval harness (step 2, agent runner step 3): compare.py (execu
                    agent_runner.py, confidence_analysis.py, scoring.py,
                    targets/{olist,spider}.py + olist_golden.jsonl + spider_split.json,
                    commands run_eval, eval_report, review_golden, check_spider, confidence_report,
-                   models EvalRun and EvalResult
+                   models EvalRun and EvalResult.
+                   Step 6 (trace-driven evals): traces.py (which runs the workbench may see), candidates.py
+                   (rules that pick runs), clustering.py (deterministic clusters), drafting.py + tasks.py
+                   (LLM drafts expected SQL, Huey), review.py (approve/reject by a person), run_compare.py +
+                   gate.py (flips and the regression gate), workbench_api.py + eval_api.py (staff-only
+                   `/api/workbench/...`), targets/traces.py, commands build_trace_cases and
+                   draft_trace_cases, models TraceCase (and cluster_key/trace_case on EvalResult)
 accounts/          User model (one per Google/GitHub account; email not unique), /api/me,
                    dev.py + templates/dev (dev-only OAuth test page, see FLOW.md)
 common/            shared building blocks (from resolve-ai / Pro-Goal, rewritten for ninja):
@@ -110,3 +118,4 @@ API_ERRORS.md      every error code, its HTTP status and what the screen should 
 17. **Identifiers are never concatenated.** Schema and role names come from the workspace id; table and column names are slugged by `workspaces/naming.py` and still passed through `psycopg.sql.Identifier`; names of existing tables and columns are looked up in the catalog before use; cell values are only bound parameters or COPY data; a request never carries a WHERE clause.
 18. **The workspace comes from the run (or the authenticated request), never from the model.** `AgentRun.workspace_id` is set at creation from a checked ownership; `agent/loop.py` resolves it with `workspaces.resolve`; tools get their schema from the loop. A deleted workspace is `workspace_gone`, never a fallback to the demo. A `workspace` request parameter goes through `workspaces.access.workspace_for` / `writable_workspace` once, and someone else's workspace is the same 404 as a missing one.
 19. **Workspace settings** (`WORKSPACE_*`, `USER_MAX_BYTES`, `QUOTA_CACHE_SECONDS`, `MASTER_WORKSPACE_SECRET`, `THROTTLE_WORKSPACE_*`) follow rule 2. `MASTER_WORKSPACE_SECRET` derives every workspace role password (HMAC) and is never stored or logged; rotating it needs a re-provision. Tests that create workspaces use ids from 900000 up (`conftest.TEST_WORKSPACE_ID_START`) and drop what they made, because workspaces are real schemas in the shared `querylab` database.
+20. **The trace workbench is staff only and demo only** (step 6). Every `/api/workbench/` route sits behind `common.permissions.staff_only`, set once on the router (a test calls every route signed out and as a plain user). Runs on user workspaces (`excluded_from_evals`) and the eval harness's own runs never become cases and are a 404 in the workbench. A `TraceCase` is not gold until a person approves it (`status=approved`, `gold_sql` set only then); the model's draft is untrusted: it passes `guard.check` and runs on the reader before a person sees it, again at approval (also for an edit), and again when an eval scores it. Prompts for drafting hold the question, the schema and the user's approved SQL, never result rows; no case or result stores rows. `TRACES_*`, `EVAL_GATE_*` and `FEEDBACK_NOTE_MAX_CHARS` follow rule 2. Evals and the gate run in the dev container only.

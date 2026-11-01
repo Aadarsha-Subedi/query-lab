@@ -101,6 +101,6 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 - [x] **6.9.1** Extend `confidence_analysis` to accept reviewed trace cases as labels and report check-label vs correctness, the features that varied, and rank correlation. No new score is shipped in this step.
 - [ ] **6.9.2** **(You)** Review the first batch of drafted cases in Postman (`FLOW.md` has the exact requests) and run the Olist agent eval from step 3 so the confidence report has real data. Needs the live Gemini key.
 - [ ] **6.9.3** Record the confidence verdict, the clustering settings chosen and the first trace-set baseline in `DECISION.md`.
-- [ ] **6.9.4** `backend/openapi.json` regenerated; `API_ERRORS.md` drift test and route-list test pass; `ruff`, `mypy` and the full test suite pass.
-- [ ] **6.9.5** Final image-size check with CI's method; record it in `DECISION.md`.
-- [ ] **6.9.6** Update `backend/CLAUDE.md`, `FLOW.md` ("The workbench contract" for step 9) and `DECISION.md`; tick step 6 in the root README, note what remains for you.
+- [x] **6.9.4** `backend/openapi.json` regenerated; `API_ERRORS.md` drift test and route-list test pass; `ruff`, `mypy` and the full test suite pass.
+- [x] **6.9.5** Final image-size check with CI's method; record it in `DECISION.md`.
+- [x] **6.9.6** Update `backend/CLAUDE.md`, `FLOW.md` ("The workbench contract" for step 9) and `DECISION.md`; tick step 6 in the root README, note what remains for you.

@@ -193,6 +193,45 @@ approved `TraceCase` rows instead, and nothing else about the harness changes.
 The model never sees `gold_sql` or gold rows. `run_eval --target traces` serves only
 `approved` cases.
 
+## The workbench contract (step 6, for the step 9 screens)
+
+All routes are under `/api/workbench/`, answer in the envelope, and need a signed-in
+staff user (401 signed out, 403 `staff_only` otherwise).
+
+```
+runs (AgentRun, demo only)            cases (TraceCase)                eval results
+GET /runs        list + filters        GET  /cases       list, filter      GET /eval/runs
+GET /runs/{id}   steps, proposed vs    GET  /cases/{id}  + rows preview    GET /eval/runs/{id}  + by_cluster
+                 approved SQL, diff    POST /cases/draft queue a batch     GET /eval/compare?base=&other=
+GET /clusters    label, size,          POST /cases/{id}/approve | reject | mark-unanswerable
+                 representative, counts per status
+```
+
+The review loop, end to end:
+
+```
+people use the agent (demo)           run.feedback 👍/👎 (PUT /api/agent/runs/{id}/feedback)
+  -> make eval ARGS="build_trace_cases"   rules: edited SQL, 👎, failed, revised, declined, needs_look
+       (one TraceCase per run, reasons recorded; user workspaces and eval-harness runs skipped)
+  -> clustering: key = outcome + tables + SQL shape, merged when questions overlap
+  -> POST /cases/draft  (or draft_trace_cases): ONE LLM call per cluster representative,
+       guard + run on the reader; failure stored in draft_error
+  -> GET /cases/{id}: staff sees the draft, a rows preview (run now, never stored) and the trace link
+  -> approve (optionally edit question/sql; guarded + run again) | reject | mark-unanswerable
+  -> make eval ARGS="run_eval --target traces --model M [--runner agent] [--gate]"
+  -> GET /eval/runs, /eval/runs/{id} (by_cluster), /eval/compare (flips)
+```
+
+Case status: `candidate` (picked) -> `drafted` (a draft or its error waits; a failed draft
+needs an edited `sql` to approve) -> `approved` (gold; only these are scored) | `rejected`.
+Errors the screens branch on: `staff_only`, `case_not_found`, `case_not_reviewable` (409),
+`draft_unusable` (422), `eval_run_not_found`, `eval_runs_not_comparable` (422),
+`run_not_finished` (409, feedback), plus `guard_rejected` with `errors[0].field = "sql"`.
+
+Postman, folder "9. Workbench (staff only)": run *List traces* and *List cases* first
+(they save `traceRunId` / `traceCaseId`), then *Get a case with a rows preview*,
+*Approve a case*. Sign in as a staff user (`createsuperuser`, or `is_staff` in the admin).
+
 ## The regression gate (step 6)
 
 ```
