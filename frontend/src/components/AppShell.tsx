@@ -3,7 +3,6 @@ import {
   DatabaseIcon,
   Key01Icon,
   TestTube01Icon,
-  Home01Icon,
   Menu01Icon,
   MessageQuestionIcon,
 } from '@hugeicons/core-free-icons'
@@ -26,7 +25,6 @@ type NavItem = { to: ComponentProps<typeof Link>['to']; label: string; icon: Ico
 
 /** Each screen adds its entry here when its route lands. */
 const NAV_ITEMS: NavItem[] = [
-  { to: '/app', label: 'Home', icon: Home01Icon },
   { to: '/ask', label: 'Ask', icon: MessageQuestionIcon },
   { to: '/history', label: 'History', icon: Clock01Icon },
   { to: '/workspaces', label: 'Workspaces', icon: DatabaseIcon },
@@ -83,7 +81,7 @@ export function AppShell({ user }: { user: User }) {
           }}
         />
         <Link
-          to="/app"
+          to="/ask"
           className="flex items-center gap-2 text-h3 font-semibold tracking-[var(--tracking-heading)]"
         >
           <Logo />

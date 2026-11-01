@@ -97,6 +97,9 @@ describe('workspace list', () => {
       '1024',
     )
     expect(screen.getByText('1 of 3 private workspaces used.')).toBeVisible()
+    // The card itself opens the workspace's schema.
+    expect(screen.getByRole('link', { name: 'Shop' })).toHaveAttribute('href', '/ask?tab=schema&workspace=7')
+    expect(screen.getByRole('link', { name: /Olist demo/ })).toHaveAttribute('href', '/ask?tab=schema')
     // Ask, Edit tables and Delete live in one menu per card (the demo only offers Ask).
     expect(screen.getAllByRole('button', { name: /^Actions for/ })).toHaveLength(2)
     expect(screen.queryByRole('button', { name: /^Delete/ })).not.toBeInTheDocument()

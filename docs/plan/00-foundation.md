@@ -5,6 +5,7 @@
 **Scope change (2026-10-30):** step 0's frontend part is only the project setup and the design system. Every step from 1 to 8 is backend-only; the screens are built in step 9 (Frontend), before deployment (step 10). The app structure and routing (0.10c) were already built and stay; the auth screens (0.10d) moved to step 9.
 
 **Done when:**
+
 - `make dev` starts everything in Docker (Postgres, Redis, the Django server, the background worker and the React dev server), with hot reload, all on one Docker network, `querylab-network`.
 - The backend refuses to start if any variable in `.env` is missing. No setting has a fallback value.
 - A visitor can sign in with Google or GitHub and log out **through the API** (proven by pytest and the Postman collection in `backend/postman/`). There are no email/password accounts and the backend sends no email (owner's choice, 2026-10-30).
@@ -33,17 +34,7 @@ Each atomic task is one small commit. **(You)** marks a task only you can do (ac
 
 ## 0.2 Environment variables (strict, no fallbacks)
 
-- [x] **0.2.1** Create `backend/.env.example` listing every variable with placeholder values only. Grouped as:
-      - Django: `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`, `DJANGO_SETTINGS_MODULE`, `CSRF_TRUSTED_ORIGINS`, `CORS_ALLOWED_ORIGINS`, `FRONTEND_URL`
-      - Databases: `APP_DATABASE_URL`, `DATA_PRIMARY_URL`, `DATA_READER_URL`
-      - Reader limits: `READER_STATEMENT_TIMEOUT_MS`
-      - Redis and Huey: `REDIS_URL`, `HUEY_WORKERS`, `HUEY_IMMEDIATE`
-      - Email *(removed 2026-10-30 with email sign-in)*: `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL`
-      - OAuth: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`
-      - Cache: `CACHE_URL`
-      - Rate limits (the `RATE_LIMIT_*` keys were removed 2026-10-30 with email sign-in): `RATE_LIMIT_LOGIN`, `RATE_LIMIT_LOGIN_FAILED`, `RATE_LIMIT_SIGNUP`, `RATE_LIMIT_CONFIRM_EMAIL`, `RATE_LIMIT_RESET_PASSWORD`, `RATE_LIMIT_CHANGE_PASSWORD`, `THROTTLE_ANON_RATE`, `THROTTLE_USER_RATE`, `THROTTLE_ASK_RATE`, `TRUSTED_PROXY_COUNT`
-      - Health: `HEALTH_CHECK_TIMEOUT_SECONDS`
-      - Workspaces: `MAX_WORKSPACES_PER_USER` (3; used from step 5)
+- [x] **0.2.1** Create `backend/.env.example` listing every variable with placeholder values only. Grouped as: - Django: `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`, `DJANGO_SETTINGS_MODULE`, `CSRF_TRUSTED_ORIGINS`, `CORS_ALLOWED_ORIGINS`, `FRONTEND_URL` - Databases: `APP_DATABASE_URL`, `DATA_PRIMARY_URL`, `DATA_READER_URL` - Reader limits: `READER_STATEMENT_TIMEOUT_MS` - Redis and Huey: `REDIS_URL`, `HUEY_WORKERS`, `HUEY_IMMEDIATE` - Email _(removed 2026-10-30 with email sign-in)_: `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL` - OAuth: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` - Cache: `CACHE_URL` - Rate limits (the `RATE_LIMIT_*` keys were removed 2026-10-30 with email sign-in): `RATE_LIMIT_LOGIN`, `RATE_LIMIT_LOGIN_FAILED`, `RATE_LIMIT_SIGNUP`, `RATE_LIMIT_CONFIRM_EMAIL`, `RATE_LIMIT_RESET_PASSWORD`, `RATE_LIMIT_CHANGE_PASSWORD`, `THROTTLE_ANON_RATE`, `THROTTLE_USER_RATE`, `THROTTLE_ASK_RATE`, `TRUSTED_PROXY_COUNT` - Health: `HEALTH_CHECK_TIMEOUT_SECONDS` - Workspaces: `MAX_WORKSPACES_PER_USER` (3; used from step 5)
 - [x] **0.2.2** Create `frontend/.env.example` with `VITE_API_BASE_URL` and `VITE_APP_NAME`.
 - [x] **0.2.3** In settings, read every value with `django-environ` and **no default**. A missing key raises `ImproperlyConfigured` at startup, so the server never runs half-configured.
 - [x] **0.2.4** Frontend: validate `import.meta.env` with a Zod schema at startup; a missing variable shows a hard error screen and stops the app.
@@ -52,12 +43,7 @@ Each atomic task is one small commit. **(You)** marks a task only you can do (ac
 
 ## 0.3 Local services (Docker)
 
-- [x] **0.3.1** `infra/docker-compose.yml` with services:
-      - `postgres` (16) with a named volume,
-      - `redis` (7),
-      - `backend` (Django dev server, built from `backend/Dockerfile` dev stage, code bind-mounted for hot reload),
-      - `worker` (background jobs, same image as `backend`),
-      - `frontend` (Vite dev server, `frontend/Dockerfile.dev`, code bind-mounted, `node_modules` in a volume).
+- [x] **0.3.1** `infra/docker-compose.yml` with services: - `postgres` (16) with a named volume, - `redis` (7), - `backend` (Django dev server, built from `backend/Dockerfile` dev stage, code bind-mounted for hot reload), - `worker` (background jobs, same image as `backend`), - `frontend` (Vite dev server, `frontend/Dockerfile.dev`, code bind-mounted, `node_modules` in a volume).
       Email isn't a container: local dev sends through your Gmail SMTP from `.env`.
 - [x] **0.3.1a** One Docker network, `querylab-network`, shared by every service. Services reach each other by service name (`postgres`, `redis`, `backend`, `frontend`).
 - [x] **0.3.1b** The Vite proxy targets `http://backend:<port>` (the service name on `querylab-network`), with the target from `.env`.
@@ -84,44 +70,35 @@ Each atomic task is one small commit. **(You)** marks a task only you can do (ac
 Both projects have a `backend/common` app. Querylab gets its own `common` app built from them. Rules when copying: anything tied to DRF is rewritten for django-ninja, every hard-coded number (for example `REQUEST_TIMEOUT_SECONDS = 60`, `DEFAULT_TIMEOUT = 300`) moves to `.env`, and each piece arrives with its tests.
 
 **Copy as-is, then move constants to `.env`:**
+
 - [x] **0.4.11** `logger/` (request ID, request logging middleware, JSON formatters, secret redaction) and `observability/timing.py`.
 - [x] **0.4.12** `exception/domain.py` (typed app exceptions with error codes). It has no DRF dependency.
 - [x] **0.4.13** `crypto.py` (Fernet encryption with key rotation). We'll use it to encrypt users' own LLM API keys at rest. Adds `ENCRYPTION_KEYS` to `.env`.
 - [x] **0.4.14** `cache/manager.py`, with its timeout from `.env` instead of the 300-second default.
 - [x] **0.4.15** `models/` (timestamps, soft delete, bulk helpers) and `validators/` (email, disposable email, password, date) from Pro-Goal.
-- [x] **0.4.16** *(Removed 2026-10-30 with email sign-in.)* `email/render.py` + `templates/email/base.html` from Pro-Goal: plain text in, branded HTML plus text out. This replaces the email layout in 0.8.3a, restyled to Querylab's design system and with Querylab's link-to-button labels.
+- [x] **0.4.16** _(Removed 2026-10-30 with email sign-in.)_ `email/render.py` + `templates/email/base.html` from Pro-Goal: plain text in, branded HTML plus text out. This replaces the email layout in 0.8.3a, restyled to Querylab's design system and with Querylab's link-to-button labels.
 - [x] **0.4.17** `llm/` from resolve-ai (provider interface, typed errors, OpenAI and Gemini providers, factory, fake provider for tests). It already builds a provider from a user's own key, which is exactly our bring-your-own-key model. Model lists and limits (timeout, max tokens, temperature) move to `.env`; the "app's own key" path is dropped unless we want one.
 
 **Rewrite for django-ninja (keep the idea, not the code):**
+
 - [x] **0.4.18** `exception/handler.py` → a ninja exception handler that returns the same error shape.
 - [x] **0.4.19** `response/domain.py` envelope (`success`, `message`, `data`) → ninja response schemas.
 - [x] **0.4.20** `pagination/`, `order/`, `filter/` → ninja `@paginate` with a custom paginator, and `FilterSchema`.
 - [x] **0.4.21** `throttling/scoped.py` → the ninja throttles in 0.8b.
 
 **Not now:**
+
 - `storage/` (local/memory/R2): later, if we store files. Local disk isn't an option on Cloudflare, so only the R2 and memory backends would come over.
 - `search/` (hybrid search) from resolve-ai: a strong starting point for step 8 (schema-RAG).
 - `documents/` (PDF/DOCX parsing), `serializers/`, `openapi.py`, `views.py`: DRF- or ResolveAI-specific, not needed.
 
 ## 0.5 Databases and the read-only boundary
 
-- [x] **0.5.1** Configure Django `DATABASES`:
-      - `default` → `querylab_app` (models, migrations, users, sessions),
-      - `data` → `querylab` as the owner role (setup and, later, imports),
-      - `data_reader` → `querylab` as `querylab_reader` (agent queries; points at the Neon replica once deployed).
+- [x] **0.5.1** Configure Django `DATABASES`: - `default` → `querylab_app` (models, migrations, users, sessions), - `data` → `querylab` as the owner role (setup and, later, imports), - `data_reader` → `querylab` as `querylab_reader` (agent queries; points at the Neon replica once deployed).
 - [x] **0.5.2** Database router: models only use `default`; `allow_migrate` is true only for `default`.
-- [x] **0.5.3** `infra/sql/001_roles.sql` (idempotent, run on `querylab`):
-      - create the `demo` schema,
-      - create login role `querylab_reader` with `USAGE` on `demo`, `SELECT` on its tables, and default privileges for future tables,
-      - `ALTER ROLE querylab_reader SET default_transaction_read_only = on`,
-      - `ALTER ROLE querylab_reader SET statement_timeout` to the value of `READER_STATEMENT_TIMEOUT_MS` (passed in by the bootstrap command, not hard-coded),
-      - revoke `CREATE` on schema `public` from `PUBLIC`.
+- [x] **0.5.3** `infra/sql/001_roles.sql` (idempotent, run on `querylab`): - create the `demo` schema, - create login role `querylab_reader` with `USAGE` on `demo`, `SELECT` on its tables, and default privileges for future tables, - `ALTER ROLE querylab_reader SET default_transaction_read_only = on`, - `ALTER ROLE querylab_reader SET statement_timeout` to the value of `READER_STATEMENT_TIMEOUT_MS` (passed in by the bootstrap command, not hard-coded), - revoke `CREATE` on schema `public` from `PUBLIC`.
 - [x] **0.5.4** Management command `bootstrap_data_db`: applies `infra/sql/*.sql` in order, fills in values from settings, and can be re-run safely.
-- [x] **0.5.5** Boundary tests as `querylab_reader`:
-      - `SELECT` from a `demo` table works,
-      - `INSERT`, `UPDATE`, `DELETE`, `CREATE TABLE` and `DROP` all fail,
-      - a query longer than the timeout is cancelled,
-      - connecting to `querylab_app` fails.
+- [x] **0.5.5** Boundary tests as `querylab_reader`: - `SELECT` from a `demo` table works, - `INSERT`, `UPDATE`, `DELETE`, `CREATE TABLE` and `DROP` all fail, - a query longer than the timeout is cancelled, - connecting to `querylab_app` fails.
 
 ## 0.6 Demo dataset: Olist
 
@@ -160,7 +137,7 @@ Both projects have a `backend/common` app. Querylab gets its own `common` app bu
 - [x] **0.8.4** Configure the Google and GitHub providers from env (`*_CLIENT_ID`, `*_CLIENT_SECRET`), with no database setup needed.
 - [ ] **0.8.5** (You) Create a Google OAuth client in Google Cloud Console with redirect URI `http://localhost:3000/accounts/google/login/callback/` (the frontend origin: the dev server proxies `/accounts` to Django and keeps the browser's host).
 - [ ] **0.8.6** (You) Create a GitHub OAuth App (Settings → Developer settings → OAuth Apps) with callback `http://localhost:3000/accounts/github/login/callback/` (the frontend origin, as above).
-- [x] **0.8.7** *(Reversed 2026-10-30: each provider account is its own user; nothing links by email.)* Social signup links accounts by verified email, so someone who signed up with email and later uses Google with the same address lands in one account.
+- [x] **0.8.7** _(Reversed 2026-10-30: each provider account is its own user; nothing links by email.)_ Social signup links accounts by verified email, so someone who signed up with email and later uses Google with the same address lands in one account.
 - [x] **0.8.8** `GET /api/me` (ninja) returns the current user or 401. The frontend uses it to decide which routes to allow.
 - [x] **0.8.9** Tests: email signup sends a verification email, login is blocked until verified, `/api/me` returns 401 when logged out and the user when logged in.
 
@@ -170,9 +147,7 @@ allauth only rate-limits **its own** endpoints (login, signup, password reset, e
 
 - [x] **0.8.10** Set Django's cache to Redis (`CACHE_URL` from `.env`). Both allauth and ninja store their counters there.
 - [x] **0.8.11** allauth limits via `ACCOUNT_RATE_LIMITS`, with every rate from `.env`: `RATE_LIMIT_LOGIN`, `RATE_LIMIT_LOGIN_FAILED`, `RATE_LIMIT_SIGNUP`, `RATE_LIMIT_CONFIRM_EMAIL`, `RATE_LIMIT_RESET_PASSWORD`, `RATE_LIMIT_CHANGE_PASSWORD`.
-- [x] **0.8.12** ninja throttles on the `NinjaAPI` as defaults:
-      - public endpoints (signed out, keyed by IP): `AnonRateThrottle` with `THROTTLE_ANON_RATE`,
-      - private endpoints (signed in, keyed by user): `AuthRateThrottle` with `THROTTLE_USER_RATE`.
+- [x] **0.8.12** ninja throttles on the `NinjaAPI` as defaults: - public endpoints (signed out, keyed by IP): `AnonRateThrottle` with `THROTTLE_ANON_RATE`, - private endpoints (signed in, keyed by user): `AuthRateThrottle` with `THROTTLE_USER_RATE`.
 - [x] **0.8.13** A stricter named throttle for expensive endpoints (from step 1, asking a question calls the LLM): `THROTTLE_ASK_RATE`, applied per route.
 - [x] **0.8.14** Real client IP: set allauth's trusted proxy settings and ninja's IP lookup from `.env` (`TRUSTED_PROXY_COUNT`), so limits key on the visitor and not the load balancer. This is 0 locally.
 - [x] **0.8.15** Throttled requests return HTTP 429 with a `Retry-After` header; the frontend shows a toast saying when to retry.
@@ -189,6 +164,7 @@ allauth only rate-limits **its own** endpoints (login, signup, password reset, e
 ### 0.10a Project and tooling
 
 Package manager: pnpm (owner's choice). Animate UI was dropped for plain shadcn/ui (owner's choice), so 0.10.2a and 0.10.2b ended with that decision.
+
 - [x] **0.10.1** Vite + React + TypeScript in `frontend/`, with `strict: true` and the `@/` path alias.
 - [x] **0.10.2** Tailwind CSS, then `shadcn/ui` init. This is only the base layer Animate UI needs: it reads `components.json` and builds on those primitives.
 - [x] **0.10.2a** Install Animate UI (`@animate-ui/react`, `motion`) and its CLI, and add Hugeicons (`@hugeicons/react` + the free icon set) as the only icon library.
@@ -234,12 +210,7 @@ The backend will deploy as one Cloudflare Container on the basic instance. Conta
 ## 0.11 One-command local run (Makefile)
 
 - [x] **0.11.1** Everything runs through Docker Compose (0.3), so no process runner is needed.
-- [x] **0.11.2** Root `Makefile` targets:
-      - `make setup`: install backend and frontend dependencies, copy `.env.example` files to `.env` if missing,
-      - `make up` / `make down`: start or stop the Docker services,
-      - `make dev`: `docker compose up` for every service in one terminal, with logs prefixed per service; Ctrl+C stops everything,
-      - `make migrate`, `make bootstrap-db`, `make load-demo`,
-      - `make test`, `make lint`, `make typecheck`.
+- [x] **0.11.2** Root `Makefile` targets: - `make setup`: install backend and frontend dependencies, copy `.env.example` files to `.env` if missing, - `make up` / `make down`: start or stop the Docker services, - `make dev`: `docker compose up` for every service in one terminal, with logs prefixed per service; Ctrl+C stops everything, - `make migrate`, `make bootstrap-db`, `make load-demo`, - `make test`, `make lint`, `make typecheck`.
 - [x] **0.11.3** Check that a fresh clone gets from zero to a working login with `make setup`, filling in `.env`, then `make dev`. Done on 2026-10-30 from a clean clone with fresh volumes: `make setup`, `make dev`, migrate, bootstrap, load-demo, health all ok, login and logout through the Postman collection (16/16). Signup needs real Gmail settings in `backend/.env`: with the example placeholders the confirmation email cannot be sent and signup answers 500.
 
 ## 0.12 Project documents
@@ -257,6 +228,7 @@ The backend will deploy as one Cloudflare Container on the basic instance. Conta
 ### What the workflow does
 
 Claude writes and commits `.github/workflows/ci.yml` locally. The workflow only runs once **you** push it.
+
 - [x] **0.13.1** Backend job (inside a `python:3.12-slim` container, so services answer as `postgres` and `redis`, the hosts the committed `backend/.env.test` uses; no CI `.env` needed): start Postgres and Redis as service containers, then `uv sync`, `ruff check`, `ruff format --check`, `mypy`, `migrate`, `bootstrap_data_db`, `pytest`.
 - [x] **0.13.2** Frontend job: `pnpm install --frozen-lockfile`, `lint`, `typecheck`, `test`, `build`.
 - [x] **0.13.3** Triggers on pull requests and pushes to `main`, with path filters per folder.
@@ -264,21 +236,12 @@ Claude writes and commits `.github/workflows/ci.yml` locally. The workflow only 
 CI uses its own throwaway values (fake OAuth IDs, a dummy secret key). It never needs your real Google, GitHub or Neon credentials, so **no GitHub secrets are needed for step 0**.
 
 ### What you need to do in GitHub (You)
+
 - [x] **0.13.4** Create the repo and link it to the local folder. Done: `Aadarsha-Subedi/query-lab`.
 - On the Actions tab, **don't pick any suggested workflow** (the Django or Python templates). Our own `.github/workflows/ci.yml` runs automatically once you push it.
 - [ ] **0.13.5** Check that Actions is allowed: **Settings → Actions → General → "Allow all actions"**. This is the default for new repos.
 - [ ] **0.13.6** **Order matters:** push the first commits to `main` **before** creating the ruleset. A ruleset that requires pull requests also blocks the very first push to an empty `main`.
-- [ ] **0.13.6a** Then **Settings → Rules → Rulesets → New branch ruleset**, enforcement **Active**, target the default branch, and set:
-      - Restrict deletions: on. Block force pushes: on.
-      - Require a pull request before merging: on.
-          - Required approvals: **0** (GitHub never lets you approve your own PR, so 1 would lock you out as a solo developer).
-          - Dismiss stale approvals, review from specific teams, review from Code Owners, approval of the most recent push, extra approval for Copilot PRs: **off**.
-          - Require conversation resolution: **on** (cheap, and stops review comments being forgotten).
-          - Allowed merge methods: **Squash only**, so each PR becomes one clean commit on `main`.
-      - Require status checks to pass: on.
-          - Require branches to be up to date: **on**.
-          - Do not require status checks on creation: **on**.
-          - Required checks: add `backend` and `frontend`. They only show up in the search box after the CI workflow has run once, so this part waits until after the first push.
+- [ ] **0.13.6a** Then **Settings → Rules → Rulesets → New branch ruleset**, enforcement **Active**, target the default branch, and set: - Restrict deletions: on. Block force pushes: on. - Require a pull request before merging: on. - Required approvals: **0** (GitHub never lets you approve your own PR, so 1 would lock you out as a solo developer). - Dismiss stale approvals, review from specific teams, review from Code Owners, approval of the most recent push, extra approval for Copilot PRs: **off**. - Require conversation resolution: **on** (cheap, and stops review comments being forgotten). - Allowed merge methods: **Squash only**, so each PR becomes one clean commit on `main`. - Require status checks to pass: on. - Require branches to be up to date: **on**. - Do not require status checks on creation: **on**. - Required checks: add `backend` and `frontend`. They only show up in the search box after the CI workflow has run once, so this part waits until after the first push.
 - [ ] **0.13.6b** Working pattern from then on: Claude commits locally on a branch (for example `feat/0.4-backend-scaffold`), you push the branch and open the PR, CI runs, you squash-merge.
 - [ ] **0.13.7** Optional: **Settings → Code security** → turn on Dependabot alerts and secret scanning (free for public repos).
 - [ ] **0.13.8** Later, in step 10 only: add deploy secrets (Neon URLs, OAuth secrets) under **Settings → Secrets and variables → Actions**.

@@ -3,6 +3,7 @@
 **Goal:** the whole product UI, built on the approved design system and against the backend contract (`backend/FLOW.md`: "The analyst screen's contract", "Workspaces", "The workbench contract"; `backend/API_ERRORS.md`; generated `backend/openapi.json`). A signed-in user asks a question in plain English, watches the agent work, approves or edits the SQL, reads the result, and reviews past runs. They can also manage their own workspaces and LLM key. Staff also get the trace viewer and the eval dashboard.
 
 **Done when:**
+
 - Types for every endpoint are generated from `backend/openapi.json`; CI fails when they are stale.
 - Sign-in page (Continue with Google / GitHub), logout, landing page, and the route guards work against the real backend.
 - Analyst chat: schema panel, ask, live progress, approval card (approve / edit / cancel), result table, feedback.
@@ -15,6 +16,7 @@
 - `frontend/CLAUDE.md`, `FLOW.md`, `DECISION.md` are updated and step 9 is ticked in the root README.
 
 **Decisions already made (owner, 2026-11-01):**
+
 1. Step 8 (schema-RAG, semantic cache) is skipped; nothing here depends on it.
 2. **No CSV upload.** CSV import was dropped in 5.7. Workspaces are filled through the rows API and the SQL console.
 3. **A dedicated LLM-keys settings page**, not a dialog.
@@ -25,6 +27,7 @@
 **Container budget:** the frontend is a static build served from Cloudflare, not in the 1 GiB backend container. The browser budget still matters: route-level code splitting (TanStack Router `autoCodeSplitting`) so the workbench and workspace editor load only when opened; a result table never renders more rows than the backend caps (`ASK_MAX_ROWS`); no charting library unless 9.12 shows a need (then a small one, decided in `DECISION.md`).
 
 **Trust model (frontend):**
+
 - The server decides what staff may see. The UI hides workbench links for non-staff, but a direct URL still shows the 403 `staff_only` as an `ErrorState`, never as a crash.
 - SQL from the agent and results are rendered as text, never as HTML. Free-text questions are escaped the same way.
 - No API keys, tokens or secrets in the bundle or in local storage. The user's LLM key is sent once to `PUT /llm-keys/{provider}`, never stored client side, and the page only shows whether a key is set.
@@ -134,7 +137,7 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 ## 9.11 Run it against the real backend
 
 - [x] **9.11.1** `make dev`, sign in with the local dev sign-in, and click through the whole path in the built-in browser: ask, approve, edit, result, history, replay, a workspace with a table and rows, keys page, workbench as staff. Fix what breaks; record findings in `DECISION.md`.
-- [ ] **9.11.2** **(You)** Click through the real Google and GitHub sign-in on `http://localhost:3000/login` (your OAuth apps are set up; I could not do this part, so the checks above used a test session cookie) and confirm you land on `/app`. Then ask one real question end to end.
+- [ ] **9.11.2** **(You)** Click through the real Google and GitHub sign-in on `http://localhost:3000/login` (your OAuth apps are set up; I could not do this part, so the checks above used a test session cookie) and confirm you land on `/ask`. Then ask one real question end to end.
 
 ## 9.12 Close-out
 

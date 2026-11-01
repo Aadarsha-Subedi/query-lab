@@ -81,7 +81,7 @@ describe('app shell', () => {
       return Promise.reject(new TypeError(`No mock for ${url.pathname}`))
     })
     vi.stubGlobal('fetch', fetchMock)
-    const router = await openAt('/app')
+    const router = await openAt('/ask')
     expect(await screen.findByRole('navigation', { name: 'Main' })).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Account menu' }))
@@ -100,7 +100,7 @@ describe('app shell', () => {
         body: { success: false, message: 'x', code: 'internal_error' },
       }),
     })
-    await openAt('/app')
+    await openAt('/ask')
     const toggle = await screen.findByRole('button', { name: /^Theme:/ })
     const before = toggle.getAttribute('aria-label')
     await userEvent.click(toggle)

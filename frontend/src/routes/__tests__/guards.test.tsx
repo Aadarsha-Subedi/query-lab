@@ -27,16 +27,16 @@ afterEach(() => {
 })
 
 describe('route guards', () => {
-  it('sends a signed-in user from a public page to /app', async () => {
+  it('sends a signed-in user from a public page to Ask', async () => {
     mockFetch({ '/api/me': signedIn, '/api/health': () => ({ status: 200, body: {} }) })
     const router = await openAt('/login')
-    expect(router.state.location.pathname).toBe('/app')
-    expect(await screen.findByRole('heading', { name: 'Ask your data' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/ask')
+    expect(await screen.findByRole('heading', { name: 'Ask' })).toBeInTheDocument()
   })
 
   it('sends a signed-out visitor from the app to the landing page', async () => {
     mockFetch({ '/api/me': signedOut })
-    const router = await openAt('/app')
+    const router = await openAt('/ask')
     expect(router.state.location.pathname).toBe('/')
   })
 

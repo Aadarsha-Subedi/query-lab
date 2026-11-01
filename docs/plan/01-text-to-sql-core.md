@@ -3,6 +3,7 @@
 **Goal:** `POST /api/ask` takes a plain-English question about the Olist `demo` schema and returns the SQL that ran, the result table and a confidence score. Backend only; every screen is step 9.
 
 **Done when:**
+
 - A signed-in user can `POST /api/ask {question}` and get `{sql, columns, rows, row_count, truncated, confidence, model, latency_ms}`.
 - The model's SQL is never run unchecked: a sqlglot guard validates it first, and it only ever runs on the read-only reader connection (see "Trust model").
 - A guard rejection or a Postgres error triggers at most `ASK_MAX_REPAIR_ATTEMPTS` repair retries; after that the API returns a typed error.
@@ -14,6 +15,7 @@
 **Scope:** only the shared read-only `demo` schema. User workspaces are step 5, the multi-step agent is step 3, and benchmark scoring is step 2. The confidence score is a heuristic; step 2's eval measures how well it tracks correctness.
 
 **Trust model.** The SQL the LLM returns is untrusted input (it can be wrong, or steered by a prompt injection in the question). Three independent layers, any one of which stops a write or an escape:
+
 1. **sqlglot guard** (before running): parses the SQL as Postgres and checks the syntax tree.
 2. **Reader role** (the real wall): `querylab_reader` can only SELECT from `demo`, runs read-only with a statement timeout, and cannot connect to `querylab_app` (proven in step 0.5.5).
 3. **Resource caps**: statement timeout, row and byte caps, and the ask throttle.

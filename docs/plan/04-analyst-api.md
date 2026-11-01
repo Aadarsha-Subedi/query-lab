@@ -3,6 +3,7 @@
 **Goal:** finish the backend surface the analyst screen (step 9) will need, so the frontend is only drawing. Steps 1 and 3 already give ask, runs, approve / edit / cancel, replay and SSE. What is missing: a schema browser, full result rows for a finished run, an approval payload the screen can render without parsing steps, a history that can be filtered, a typed error list, and a committed OpenAPI file the frontend generates its types from. Backend only; no screen.
 
 **Done when:**
+
 - `GET /api/schema` returns the demo schema (tables, columns, types, keys, comments, row estimates) for the schema panel.
 - `GET /api/agent/runs/{id}/result` returns the full (capped) rows of a succeeded run by re-running its final SQL through the guard on the reader connection.
 - A run that is `awaiting_approval` carries a `pending` block: the proposed SQL, the plan's assumptions and the guard report, so the screen needs no step parsing.
@@ -19,9 +20,10 @@
 **Out of scope:** any screen (step 9), workspaces and a `workspace` parameter (step 5; every endpoint here is demo-only and says so in its docs), trace clustering and the eval dashboard (step 6), an auto-run toggle (needs a decision, see the open questions), CSV export of results, deleting runs.
 
 **Open questions for the owner** (recommendation first; the plan below assumes the first answer):
-1. *Auto-run toggle:* not in this step. Every run pauses, as decided in step 3. Add later only if the screen feels slow.
-2. *Deleting a run from history:* not in this step. A delete would remove a human correction that step 6 wants as raw material; if you want it, the cheap shape is a `hidden_at` flag that hides a run from the user but keeps the trace.
-3. *Full rows by re-running the SQL* (4.2) rather than storing rows: recommended, because step 3 decided that result rows are never stored. The cost is one more query per result view, bounded by the same row cap and timeout.
+
+1. _Auto-run toggle:_ not in this step. Every run pauses, as decided in step 3. Add later only if the screen feels slow.
+2. _Deleting a run from history:_ not in this step. A delete would remove a human correction that step 6 wants as raw material; if you want it, the cheap shape is a `hidden_at` flag that hides a run from the user but keeps the trace.
+3. _Full rows by re-running the SQL_ (4.2) rather than storing rows: recommended, because step 3 decided that result rows are never stored. The cost is one more query per result view, bounded by the same row cap and timeout.
 
 **Container budget (1/4 vCPU, 1 GiB, image 295 of 300 MB):** no new dependencies. The schema endpoint reads the cached `ask.schema.get_schema`; the result endpoint reuses `ask.runner.run`. The image-size check runs first (4.1.1) and again at the end (4.8.5).
 
@@ -80,7 +82,7 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 - [x] **4.7.2** CI step: regenerate and fail if the file differs from the committed one (this is what keeps the frontend's generated types honest).
 - [x] **4.7.3** Check that every response model is named and every error response is declared (so the generated client has types for them); fix gaps.
 - [x] **4.7.4** Update `backend/postman/collection.json` for every new or changed endpoint.
-- [ ] **4.7.5** *(pending: owner task, see FLOW.md "Browser path check")* Cross-origin check with the real dev servers: from a page on the frontend origin, `fetch` with credentials to `/api/me`, a POST with the CSRF header, and an `EventSource` with credentials to `/runs/{id}/events`. Record the result and any `.env` change it needed (CORS, CSRF trusted origins, cookie `SameSite`). **(You)** run it once in a browser, since it needs the OAuth login.
+- [ ] **4.7.5** _(pending: owner task, see FLOW.md "Browser path check")_ Cross-origin check with the real dev servers: from a page on the frontend origin, `fetch` with credentials to `/api/me`, a POST with the CSRF header, and an `EventSource` with credentials to `/runs/{id}/events`. Record the result and any `.env` change it needed (CORS, CSRF trusted origins, cookie `SameSite`). **(You)** run it once in a browser, since it needs the OAuth login.
 - [x] **4.7.6** Test that CORS refuses an origin not in `CORS_ALLOWED_ORIGINS` and that credentials are allowed only for the listed ones.
 
 ## 4.8 Tests, docs and wrap-up

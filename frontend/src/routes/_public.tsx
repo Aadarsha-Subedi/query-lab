@@ -6,7 +6,7 @@ import { meQuery } from '@/features/auth/api'
 export const Route = createFileRoute('/_public')({
   beforeLoad: async ({ context }) => {
     const me = await context.queryClient.query({ ...meQuery, staleTime: 'static' })
-    if (me) throw redirect({ to: '/app' })
+    if (me) throw redirect({ to: '/ask' })
   },
   component: Outlet,
 })

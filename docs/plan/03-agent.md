@@ -3,6 +3,7 @@
 **Goal:** turn the one-shot `/ask` into a run: the agent plans, looks at the schema with typed tools, proposes SQL, **pauses for the user's approval**, runs it on the read-only replica, reflects on the result, and finishes. Every run streams its steps live (SSE) and is stored as a trace that can be replayed. We also replace the confidence score, which was about 1.0 on every answer. Backend only; the screen is step 4.
 
 **Done when:**
+
 - `POST /api/agent/runs` starts a run; `GET /api/agent/runs/{id}/events` streams its steps (SSE); `GET /api/agent/runs/{id}` returns the stored run and steps; `GET /api/agent/runs/{id}/replay` returns the trace in order without calling any LLM.
 - Every run pauses before any SQL executes. `POST .../approve`, `.../edit` (new SQL, guarded again) and `.../cancel` resume or end it.
 - Tools are typed (Pydantic), listed in one registry, and each call is logged as a step.
@@ -14,7 +15,7 @@
 
 **Decisions already made (2026-10-31):** progress over **SSE**; **always pause** before running SQL; fix **confidence in this step**; hand-rolled loop, no agent framework; Huey runs the loop.
 
-**What the approval is for.** Not safety: the guard, the reader role, the timeout and the caps already stop writes and runaway reads. The checkpoint catches *wrong-but-valid* SQL (a different reading of the question, an assumption the user did not ask for) and lets the user edit it. A user-edited SQL is kept in the trace as a human correction; those are raw material for step 6's expected-SQL set.
+**What the approval is for.** Not safety: the guard, the reader role, the timeout and the caps already stop writes and runaway reads. The checkpoint catches _wrong-but-valid_ SQL (a different reading of the question, an assumption the user did not ask for) and lets the user edit it. A user-edited SQL is kept in the trace as a human correction; those are raw material for step 6's expected-SQL set.
 
 **Out of scope:** any screen (step 4), user workspaces (step 5), clustering and the eval dashboard (step 6), schema-RAG and the semantic cache (step 8), auto-run without approval (a per-user toggle can come with step 4 if wanted).
 
@@ -22,7 +23,7 @@
 
 **Trust model:** the model still only returns JSON that we parse. It cannot execute anything itself: tools run in our code, `run_sql` goes through `guard.check` then `runner.run` on the reader alias, and only after approval. Edited SQL from the user goes through the same guard (the user is not trusted to bypass it). Tool inputs are validated; tool outputs fed back to the model are trimmed and never contain more than the row cap allows.
 
-**What goes to the LLM:** the question, the plan so far, tool results (schema text, sample values, a result *summary*: columns, row count, first few rows capped by `AGENT_RESULT_PREVIEW_ROWS`), and error lines. Same rule as step 1: sample values for the shared demo schema only.
+**What goes to the LLM:** the question, the plan so far, tool results (schema text, sample values, a result _summary_: columns, row count, first few rows capped by `AGENT_RESULT_PREVIEW_ROWS`), and error lines. Same rule as step 1: sample values for the shared demo schema only.
 
 Each atomic task is one small commit (Conventional Commits). **(You)** marks a task only you can do. Claude commits locally and never pushes.
 

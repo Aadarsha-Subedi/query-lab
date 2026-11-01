@@ -21,12 +21,11 @@ index.html            boot screen (plain HTML + tokens.css + boot.css), themed b
 
 ```
 __root            ThemeController, TooltipProvider, Toaster; not-found and error pages (RouteStatus)
-_public           beforeLoad: signed in -> redirect /app
+_public           beforeLoad: signed in -> redirect /ask
   /                 landing: what it is, ask / approve / measure, dataset licence
   /login            Continue with Google / GitHub (real form POSTs to allauth)
-  /auth/callback    only seen when a sign-in did not finish (a finished one is moved on to /app by the guard)
+  /auth/callback    only seen when a sign-in did not finish (a finished one is moved on to /ask by the guard)
 _app              beforeLoad: signed out -> redirect /; adds { me }; renders AppShell (header, nav, limits chip)
-  /app              home: ask button, how it works, last 3 questions (RecentRuns); skip link targets every page's <main id="main">
   /ask              ?tab=ask|schema&table=&run=&workspace=&question=   workspace picker above two sub-tabs. Ask is a chat: the run (or a short prompt) fills the page, and the composer sits at the bottom (example questions above it, send icon inside the box, Enter sends, Shift+Enter new line; question pre-fills the box: Ask again). Schema: table list on the left (a dropdown on phones); for the chosen table its name and description, then the data as a table whose headers carry the column's name, type and PK/FK badges plus an info button (popover: the column's notes, primary key, foreign key target); rows from GET /schema/tables/{name}/rows, manual Previous/Next
   /settings         AI settings (no visible page header; the nav item names it): a row with title and description on the left and a QueryLab AI / Custom AI dropdown on the right (GET/PUT /llm-settings). With QueryLab AI chosen, a second row (same pattern) picks the Gemini model used on the shared key (`querylab_model`). Only for Custom AI: a table of saved keys (provider, in-use radio, model dropdown, replace, remove) or an empty state whose Add new API key button opens a modal (provider dropdown with logos from src/assets/providers, key, model)
   /history          ?status=&q=&ordering=&offset=&workspace=   your runs; rows link to /ask?run= and the replay

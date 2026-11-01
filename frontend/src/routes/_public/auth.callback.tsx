@@ -5,7 +5,7 @@ import { Text } from '@/components/typography/Text'
 
 /**
  * The provider sends the browser back here after a full page load. If sign-in
- * worked, the _public guard has already moved a signed-in user on to /app, so
+ * worked, the _public guard has already moved a signed-in user on to /ask, so
  * seeing this page means it did not.
  */
 export const Route = createFileRoute('/_public/auth/callback')({

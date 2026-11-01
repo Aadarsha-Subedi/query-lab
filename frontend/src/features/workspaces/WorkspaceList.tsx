@@ -72,14 +72,21 @@ function WorkspaceCard({ workspace }: { workspace: WorkspaceInfo }) {
   const demo = workspace.kind === 'demo'
   const [deleting, setDeleting] = useState(false)
   return (
-    <Card>
+    <Card className="relative transition-colors duration-fast hover:bg-surface-muted">
       <CardHeader className="grid-cols-[1fr_auto]">
-        <CardTitle className="flex items-center gap-2">
-          {workspace.name}
+        <CardTitle className="flex flex-wrap items-center gap-2">
+          {/* The whole card is the link (the stretched ::after), and opens the workspace's schema. */}
+          <Link
+            to="/ask"
+            search={{ tab: 'schema', ...(demo ? {} : { workspace: workspace.id ?? undefined }) }}
+            className="rounded-sm outline-none after:absolute after:inset-0 after:rounded-lg focus-visible:after:ring-2 focus-visible:after:ring-ring"
+          >
+            {workspace.name}
+          </Link>
           {demo && <Badge variant="info">Shared · read only</Badge>}
           {workspace.status !== 'ready' && <Badge variant="warning">{workspace.status}</Badge>}
         </CardTitle>
-        <div className="col-start-2 row-span-2 row-start-1 -mt-1 -mr-2">
+        <div className="relative z-10 col-start-2 row-span-2 row-start-1 -mt-1 -mr-2">
           <WorkspaceActions
             workspace={workspace}
             onDelete={() => {

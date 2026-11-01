@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as PublicRouteImport } from './routes/_public'
 import { Route as DesignRouteImport } from './routes/design'
-import { Route as AppAppRouteImport } from './routes/_app/app'
 import { Route as AppAskRouteImport } from './routes/_app/ask'
 import { Route as AppHistoryRouteImport } from './routes/_app/history'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
@@ -44,11 +43,6 @@ const DesignRoute = DesignRouteImport.update({
   id: '/design',
   path: '/design',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AppAppRoute = AppAppRouteImport.update({
-  id: '/app',
-  path: '/app',
-  getParentRoute: () => AppRoute,
 } as any)
 const AppAskRoute = AppAskRouteImport.update({
   id: '/ask',
@@ -145,7 +139,6 @@ const AppWorkbenchRunsRunIdRoute = AppWorkbenchRunsRunIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
   '/design': typeof DesignRoute
-  '/app': typeof AppAppRoute
   '/ask': typeof AppAskRoute
   '/history': typeof AppHistoryRoute
   '/settings': typeof AppSettingsRoute
@@ -167,7 +160,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/design': typeof DesignRoute
-  '/app': typeof AppAppRoute
   '/ask': typeof AppAskRoute
   '/history': typeof AppHistoryRoute
   '/settings': typeof AppSettingsRoute
@@ -190,7 +182,6 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/_public': typeof PublicRouteWithChildren
   '/design': typeof DesignRoute
-  '/_app/app': typeof AppAppRoute
   '/_app/ask': typeof AppAskRoute
   '/_app/history': typeof AppHistoryRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -215,7 +206,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/design'
-    | '/app'
     | '/ask'
     | '/history'
     | '/settings'
@@ -237,7 +227,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/design'
-    | '/app'
     | '/ask'
     | '/history'
     | '/settings'
@@ -259,7 +248,6 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_public'
     | '/design'
-    | '/_app/app'
     | '/_app/ask'
     | '/_app/history'
     | '/_app/settings'
@@ -308,13 +296,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/design'
       preLoaderRoute: typeof DesignRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_app/app': {
-      id: '/_app/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AppAppRouteImport
-      parentRoute: typeof AppRoute
     }
     '/_app/ask': {
       id: '/_app/ask'
@@ -472,7 +453,6 @@ const AppWorkbenchRouteWithChildren = AppWorkbenchRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
-  AppAppRoute: typeof AppAppRoute
   AppAskRoute: typeof AppAskRoute
   AppHistoryRoute: typeof AppHistoryRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -483,7 +463,6 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppAppRoute: AppAppRoute,
   AppAskRoute: AppAskRoute,
   AppHistoryRoute: AppHistoryRoute,
   AppSettingsRoute: AppSettingsRoute,

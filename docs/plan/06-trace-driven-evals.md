@@ -3,6 +3,7 @@
 **Goal:** turn the agent's stored traces into a living eval set, and make a prompt or model change prove itself against it. The owner picks interesting traces, an LLM drafts the expected SQL, the owner reviews it by hand, and approved cases join the eval set. Results are readable per failure cluster, and a regression gate says whether a change made things worse. Backend only; tested through Postman. The workbench screens are step 9.
 
 **Done when:**
+
 - Staff-only trace endpoints list and filter `AgentRun` traces and show one in full. Runs on user workspaces (`excluded_from_evals`) never appear.
 - A user can mark their own run 👍 or 👎 (one vote per run, changeable).
 - `build_candidates` picks the runs worth reviewing by fixed rules, and `cluster_candidates` groups them (layer 1 exact keys, layer 2 question similarity) with a label, size and representative.
@@ -22,13 +23,15 @@
 **Out of scope:** any screen (step 9), editing the Olist golden set from here (it keeps its own review flow), embedding-based clustering (a later offline upgrade), training data export (step 7), running evals inside the production container, a public eval dashboard (step 10).
 
 **Open questions for the owner** (recommendation first; the plan assumes the first answer):
-1. *Who may use the workbench:* `is_staff` users only. The platform has no roles beyond that, and the traces hold other people's questions. Alternative: any signed-in user sees only their own runs, which defeats the purpose.
-2. *Question text in the eval set:* user questions are free text and may hold personal data. Recommendation: an approved case stores the question as the reviewer saw it, and the reviewer may edit it (6.4.4) to remove anything personal before approving. Alternative: store only reviewer-written paraphrases, which costs more review time.
-3. *Retention of traces:* none is defined yet (DECISION.md, step 1). Recommendation: decide before real users arrive; this step only reads traces and adds no deletion.
+
+1. _Who may use the workbench:_ `is_staff` users only. The platform has no roles beyond that, and the traces hold other people's questions. Alternative: any signed-in user sees only their own runs, which defeats the purpose.
+2. _Question text in the eval set:_ user questions are free text and may hold personal data. Recommendation: an approved case stores the question as the reviewer saw it, and the reviewer may edit it (6.4.4) to remove anything personal before approving. Alternative: store only reviewer-written paraphrases, which costs more review time.
+3. _Retention of traces:_ none is defined yet (DECISION.md, step 1). Recommendation: decide before real users arrive; this step only reads traces and adds no deletion.
 
 **Container budget (1/4 vCPU, 1 GiB, image 295 of 300 MB):** stdlib plus sqlglot (already installed) and the existing Huey, Redis and LLM client. Candidate building and clustering stream rows in batches, not the whole table in memory. Drafting is a Huey job, one LLM call per cluster representative, never one per run. Running an eval stays a dev-container command. The image-size check runs first (6.1.1) and last (6.9.5).
 
 **Trust model:**
+
 - Staff checks are enforced in one dependency, applied to every workbench route, and a test lists all routes and fails when one lacks it.
 - Drafted SQL is untrusted model output: it passes `guard.check` and runs on the reader connection (statement timeout, row cap) before a reviewer sees it, and the same again when an eval scores it. The reviewer's edit is guarded too.
 - The prompt for drafting gets the question, the schema text and, when present, the SQL the user approved or edited. It never gets result rows.

@@ -281,3 +281,9 @@ fill. `RunTimeline` remains for Replay and the staff trace view.
 "Column notes" list are gone: the column headers already show type and PK/FK badges, and each header has an info button whose
 popover holds that column's notes, primary key and foreign key target. A popover rather than a modal, because it explains one
 column in place; it uses `sticky="always"` so it stays on screen when the column is scrolled partly out of view.
+
+**No Home page; Ask is the default (2026-11-01).** The Home screen (ask button, how it works, recent questions) is gone: signing
+in lands on `/ask`, the brand link goes there, and the nav starts with Ask. History already lists recent questions. The skip
+link and `<main id="main">` convention stay. The Workspaces card is one big link (the workspace name, stretched over the card)
+that opens that workspace's Schema tab (`/ask?tab=schema&workspace=<id>`, no `workspace` for the demo); the actions menu stays
+clickable above it.

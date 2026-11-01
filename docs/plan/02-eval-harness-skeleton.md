@@ -3,6 +3,7 @@
 **Goal:** one command scores a model on a question set by comparing what its SQL returns with what the correct SQL returns, and stores the result. We get baseline execution-accuracy numbers on two targets (Olist and Spider) and learn whether the step 1 confidence score tracks correctness. Backend only, runs on your machine, nothing new ships in the container except two small tables.
 
 **Done when:**
+
 - `python manage.py run_eval --target olist|spider --model <name>` runs a question set and prints a summary (accuracy, errors by reason, mean latency, tokens).
 - Each run is stored as one `EvalRun` plus one `EvalResult` per question in the app database.
 - Execution accuracy is computed by running the gold SQL and the model's SQL on the same database and comparing rows (rules in 2.4).

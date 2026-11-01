@@ -3,6 +3,7 @@
 **Goal:** fine-tune a small open model on text-to-SQL with LoRA, then prove with the existing eval harness whether it beats its own base model. The result is reported honestly in `DECISION.md`, whichever way it goes. Backend only; nothing in this step runs in the production container.
 
 **Done when:**
+
 - A dataset builder writes instruction JSONL (train and validation) in the product's own prompt format, from Spider `train` plus the Spider `tune` half, with an optional reviewed-trace-case source. Held-out Spider databases and the Olist golden set never appear in it, and a test proves it.
 - A Colab notebook (committed as a plain `.py`-style `.ipynb` with no outputs) loads the base model in 4-bit, trains PEFT LoRA adapters with a fixed seed, checkpoints to Google Drive, resumes, logs to W&B, and writes the adapter plus a config file.
 - The same notebook merges the adapter and generates SQL for the benchmark questions (Spider held-out, Olist golden) for **both** the base model and the tuned model, into predictions JSONL files.
@@ -16,13 +17,15 @@
 **Out of scope:** serving the tuned model in the product, any new provider in the live `ask`/agent path, Spider-through-agent, schema-RAG (step 8), any screen (step 9), DPO or other preference tuning, hyperparameter sweeps beyond one planned retry.
 
 **Open questions for the owner** (recommendation first; the plan assumes the first answer):
-1. *Spider `train` data:* the repo only unpacks Spider dev. Recommendation: also unpack `train_spider.json` (7,000 questions, ~140 databases disjoint from dev) into `EVAL_SPIDER_DIR` for training only; the `tune` half of dev alone is about 500 questions, too few. Needs the official Spider download once (**You**, 7.1.3).
-2. *Trace cases as training data:* they hold other users' questions. Recommendation: include only `status=approved` cases whose question the reviewer saw, off by default, and not in the first run. First run is Spider only so the benchmark story is clean.
-3. *Prompt format:* train on the exact `ask.prompt` system and user prompt so the tuned model is a drop-in. Recommendation: yes, with the answer wrapped in the same reply format `parse_reply` reads.
+
+1. _Spider `train` data:_ the repo only unpacks Spider dev. Recommendation: also unpack `train_spider.json` (7,000 questions, ~140 databases disjoint from dev) into `EVAL_SPIDER_DIR` for training only; the `tune` half of dev alone is about 500 questions, too few. Needs the official Spider download once (**You**, 7.1.3).
+2. _Trace cases as training data:_ they hold other users' questions. Recommendation: include only `status=approved` cases whose question the reviewer saw, off by default, and not in the first run. First run is Spider only so the benchmark story is clean.
+3. _Prompt format:_ train on the exact `ask.prompt` system and user prompt so the tuned model is a drop-in. Recommendation: yes, with the answer wrapped in the same reply format `parse_reply` reads.
 
 **Container budget (1/4 vCPU, 1 GiB, image 296 of 300 MB):** the only production-visible changes are one management-command flag and one pure scoring path. `torch`, `transformers`, `peft`, `trl`, `bitsandbytes`, `wandb` go in the `offline` group in `pyproject.toml` and are never imported by the Django app (a test greps for that). The image-size check runs first (7.1.1) and last (7.8.4).
 
 **Trust model:**
+
 - A predictions file is untrusted model output: every SQL in it goes through the same guard and reader (Olist) or read-only SQLite wall (Spider) as any model's answer. The file carries question ids and SQL only, never gold SQL or rows.
 - The dataset builder reads gold SQL only to write training targets, and only from training sources; a leakage test fails if any held-out or golden question id or text is in the output.
 - Secrets (W&B key, Drive token) live in Colab secrets, never in the notebook, repo or any `.env`.
@@ -34,7 +37,7 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 ## 7.1 Preparation
 
 - [x] **7.1.1** Run the image-size check on the branch and record the number in `DECISION.md`. If headroom is under 3 MB, stop and trim first.
-- [x] **7.1.2** Branch `feat/step-7-lora-finetune` from `feat/step-6-trace-evals` (or from `main` once step 6 is merged). *(Done by Claude when drafting.)*
+- [x] **7.1.2** Branch `feat/step-7-lora-finetune` from `feat/step-6-trace-evals` (or from `main` once step 6 is merged). _(Done by Claude when drafting.)_
 - [x] **7.1.3** **(You)** Put `train_spider.json` (from the Spider 1.0 download) next to `dev.json` in `infra/data/spider/`. `database/` already holds all 166 databases, train ones included, so nothing else is needed.
 - [x] **7.1.4** **(You)** Create a free W&B account and a Colab secret `WANDB_API_KEY`; connect Google Drive in Colab.
 - [x] **7.1.5** Settings in `.env.example`, `.env.test` and settings with no defaults, plus the `.env` sync test: `FINETUNE_BASE_MODEL`, `FINETUNE_OUTPUT_DIR`, `FINETUNE_VALIDATION_FRACTION`, `FINETUNE_SEED`, `FINETUNE_MAX_EXAMPLES`. Claude does not create or edit `.env`; the owner copies the new lines.

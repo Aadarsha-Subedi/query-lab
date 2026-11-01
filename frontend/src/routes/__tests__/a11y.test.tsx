@@ -132,7 +132,6 @@ const ANSWERS: Record<string, () => Response> = {
 const SCREENS: [string, string][] = [
   ['landing', '/'],
   ['sign in', '/login'],
-  ['home', '/app'],
   ['ask', '/ask'],
   ['ask with a run', '/ask?run=5'],
   ['ask schema tab', '/ask?tab=schema'],

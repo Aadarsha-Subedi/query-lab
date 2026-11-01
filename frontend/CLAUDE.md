@@ -37,7 +37,7 @@ src/
   lib/api/error-text.ts, form-errors.ts  turn an ApiError into text / field errors
   lib/query-client.ts  TanStack Query defaults (no retries, no refetch on focus/reconnect)
   features/<name>/   per-feature queries (api.ts) and components: auth, health, limits, schema, ask,
-                     history, home, workspaces, llm-keys, workbench, design
+                     history, workspaces, llm-keys, workbench, design
   components/QueryBoundary.tsx  a component's loading / error / empty / success
   styles/boot.css    the boot screen (linked from index.html)
   styles/tokens.css  every design token (light + dark); the only place colours are defined
@@ -62,7 +62,7 @@ Route groups are pathless layouts: `_public` (the plan's "(public)") and `_app`
 - **No fallback env values.** Every variable is required and validated with Zod (`src/env.ts`, `env.config.ts`). A new variable goes into the schema and `.env.example` together; `env.test.ts` fails otherwise.
 - **No magic numbers.** Timeouts, limits and sizes go into `.env` (and the schema), never inline.
 - **State rule:** server data (user, health, later runs) lives in TanStack Query; UI-only state (theme, sidebar, modals) lives in Zustand. Never copy server data into Zustand.
-- **Route guard rule:** guards run in the layouts' `beforeLoad` (`_public.tsx`, `_app.tsx`) using the cached `meQuery`: signed in on a public route -> `/app`; signed out on an app route -> `/`.
+- **Route guard rule:** guards run in the layouts' `beforeLoad` (`_public.tsx`, `_app.tsx`) using the cached `meQuery`: signed in on a public route -> `/ask`; signed out on an app route -> `/`.
 - **Fetching data:** define a `queryOptions` in `features/<name>/api.ts` using `api` from `@/lib/api`, call `useQuery` in the component that shows it, and render through `<QueryBoundary>`. Never fetch in a route loader for component data, and never add `retry`.
 - **Use the design system, never ad-hoc styles.** Colours, spacing, radius, shadows and motion come from tokens; components come from `src/components/ui/`. No raw hex values or one-off pixel sizes in feature code.
 - Icons: Hugeicons only, always through `<Icon icon={...} size="sm|md|lg" />` from `components/ui/icon` (16/20/24 px, nothing else).
