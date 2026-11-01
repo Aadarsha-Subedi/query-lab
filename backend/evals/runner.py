@@ -230,6 +230,8 @@ def run_eval(
                 steps=outcome.steps,
                 llm_calls=outcome.llm_calls,
                 revisions=outcome.revisions,
+                trace_case_id=question.case_id,
+                cluster_key=question.cluster,
             )
             if progress:
                 progress(index, len(todo), question, outcome)

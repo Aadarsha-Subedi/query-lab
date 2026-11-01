@@ -77,10 +77,10 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 6.6 Eval on trace cases
 
-- [ ] **6.6.1** `evals/targets/traces.py`: a `Target` that serves approved `TraceCase` rows as `EvalQuestion`s (`tags` hold the cluster key), with the demo schema, guard and reader exactly like `OlistTarget`. `--target traces` in `run_eval` for both runners.
-- [ ] **6.6.2** `EvalResult` keeps its shape; store the `cluster_key` and `trace_case` id on the result (migration) so results group by cluster without joins on tags.
-- [ ] **6.6.3** The gold for an unanswerable case means "decline", handled as `OlistTarget` does.
-- [ ] **6.6.4** Tests: only approved cases are served; a rejected or drafted case never is; a run records its cluster per result; the run works with the fake LLM used in the step 2 tests.
+- [x] **6.6.1** `evals/targets/traces.py`: a `Target` that serves approved `TraceCase` rows as `EvalQuestion`s (`tags` hold the cluster key), with the demo schema, guard and reader exactly like `OlistTarget`. `--target traces` in `run_eval` for both runners.
+- [x] **6.6.2** `EvalResult` keeps its shape; store the `cluster_key` and `trace_case` id on the result (migration) so results group by cluster without joins on tags.
+- [x] **6.6.3** The gold for an unanswerable case means "decline", handled as `OlistTarget` does.
+- [x] **6.6.4** Tests: only approved cases are served; a rejected or drafted case never is; a run records its cluster per result; the run works with the fake LLM used in the step 2 tests.
 
 ## 6.7 Eval results API (read only)
 

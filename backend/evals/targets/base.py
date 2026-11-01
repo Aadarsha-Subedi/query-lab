@@ -17,6 +17,9 @@ class EvalQuestion:
     db_id: str = ""
     # False for a question the schema cannot answer: the right move is to decline.
     answerable: bool = True
+    # Trace cases only: the TraceCase and the cluster it belongs to.
+    case_id: int | None = None
+    cluster: str = ""
 
 
 class Target(Protocol):

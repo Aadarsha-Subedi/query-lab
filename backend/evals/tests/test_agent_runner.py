@@ -133,7 +133,7 @@ def test_confidence_analysis_reads_the_trace() -> None:
 
 
 def test_command_options(capsys: pytest.CaptureFixture[str]) -> None:
-    with pytest.raises(CommandError, match="Olist only"):
+    with pytest.raises(CommandError, match="Olist and traces"):
         call_command(
             "run_eval", target="spider", model="gemini-3.5-flash", runner="agent"
         )

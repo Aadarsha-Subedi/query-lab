@@ -10,6 +10,7 @@ class EvalRun(TimeStampModel):
 
     TARGET_OLIST = "olist"
     TARGET_SPIDER = "spider"
+    TARGET_TRACES = "traces"  # approved trace cases (step 6)
 
     RUNNER_ASK = "ask"  # the one-shot /api/ask path (step 1)
     RUNNER_AGENT = "agent"  # the agent loop (step 3), auto-approved
@@ -77,6 +78,16 @@ class EvalResult(TimeStampModel):
     steps = models.PositiveSmallIntegerField(default=0)
     llm_calls = models.PositiveSmallIntegerField(default=0)
     revisions = models.PositiveSmallIntegerField(default=0)
+    # Trace target only: the case this result scores and its cluster, so results
+    # group by cluster without parsing tags.
+    trace_case = models.ForeignKey(
+        "evals.TraceCase",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    cluster_key = models.CharField(max_length=60, blank=True)
 
     class Meta:
         ordering = ["id"]

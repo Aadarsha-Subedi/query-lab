@@ -3,8 +3,8 @@ from django.core.management.base import BaseCommand, CommandError, CommandParser
 
 from evals import runner, scoring
 from evals.models import EvalRun
-from evals.targets import olist, spider
-from evals.targets.base import EvalQuestion
+from evals.targets import olist, spider, traces
+from evals.targets.base import EvalQuestion, Target
 
 
 class Command(BaseCommand):
@@ -14,14 +14,16 @@ class Command(BaseCommand):
     )
 
     def add_arguments(self, parser: CommandParser) -> None:
-        parser.add_argument("--target", choices=["olist", "spider"], required=True)
+        parser.add_argument(
+            "--target", choices=["olist", "spider", "traces"], required=True
+        )
         parser.add_argument("--model", required=True)
         parser.add_argument(
             "--runner",
             choices=[EvalRun.RUNNER_ASK, EvalRun.RUNNER_AGENT],
             default=EvalRun.RUNNER_ASK,
             help="ask: the one-shot /api/ask path. agent: the step 3 agent, with every "
-            "pause approved by the harness (Olist only).",
+            "pause approved by the harness (Olist and traces).",
         )
         parser.add_argument(
             "--split",
@@ -48,17 +50,19 @@ class Command(BaseCommand):
         split = options["split"] or (
             EvalRun.SPLIT_HELD_OUT if target_name == "spider" else EvalRun.SPLIT_ALL
         )
-        target = (
-            spider.SpiderTarget()
-            if target_name == "spider"
-            else olist.OlistTarget(
+        target: Target
+        if target_name == "spider":
+            target = spider.SpiderTarget()
+        elif target_name == "traces":
+            target = traces.TraceTarget()
+        else:
+            target = olist.OlistTarget(
                 include_unreviewed=bool(options["include_unreviewed"])
             )
-        )
         runner_name = str(options["runner"])
-        if runner_name == EvalRun.RUNNER_AGENT and target_name != "olist":
+        if runner_name == EvalRun.RUNNER_AGENT and target_name == "spider":
             raise CommandError(
-                "The agent runner works on Olist only: it uses the Postgres guard and "
+                "The agent runner works on Olist and traces: it uses the Postgres guard and "
                 "reader. Spider stays on --runner ask."
             )
         try:
@@ -72,7 +76,7 @@ class Command(BaseCommand):
             raise CommandError(str(error)) from None
         if not questions:
             raise CommandError(
-                "No questions to ask (for Olist: review the gold SQL first)."
+                "No questions to ask (Olist: review the gold SQL first; traces: approve cases first)."
             )
 
         run = None
