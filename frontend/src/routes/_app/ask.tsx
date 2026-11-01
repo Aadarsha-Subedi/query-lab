@@ -35,7 +35,10 @@ function AskPage() {
 
   return (
     <div className="grid gap-6 px-4 py-6 lg:grid-cols-[18rem_1fr]">
-      <aside className="max-h-[70vh] lg:sticky lg:top-20 lg:h-[calc(100vh-7rem)] lg:max-h-none">
+      <aside
+        aria-label="Schema browser"
+        className="max-h-[70vh] lg:sticky lg:top-20 lg:h-[calc(100vh-7rem)] lg:max-h-none"
+      >
         <Heading level={3} className="mb-3">
           Schema
         </Heading>

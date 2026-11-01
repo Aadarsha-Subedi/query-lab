@@ -24,7 +24,7 @@ const LINKS = [
 
 function WorkbenchLayout() {
   return (
-    <div className="flex flex-col gap-4 px-4 py-6">
+    <main className="flex flex-col gap-4 px-4 py-6">
       <Heading level={1}>Workbench</Heading>
       <nav aria-label="Workbench" className="flex gap-1 border-b">
         {LINKS.map((link) => (
@@ -39,6 +39,6 @@ function WorkbenchLayout() {
         ))}
       </nav>
       <Outlet />
-    </div>
+    </main>
   )
 }

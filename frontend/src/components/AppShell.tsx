@@ -85,7 +85,7 @@ export function AppShell({ user }: { user: User }) {
         </div>
       </header>
       <div className="flex flex-1">
-        <aside className="hidden w-56 shrink-0 border-r p-3 md:block">
+        <aside aria-label="Sidebar" className="hidden w-56 shrink-0 border-r p-3 md:block">
           <NavLinks staff={user.is_staff} />
         </aside>
         <div className="min-w-0 flex-1">
