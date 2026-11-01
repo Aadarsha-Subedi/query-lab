@@ -35,8 +35,8 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 - [x] **7.1.1** Run the image-size check on the branch and record the number in `DECISION.md`. If headroom is under 3 MB, stop and trim first.
 - [x] **7.1.2** Branch `feat/step-7-lora-finetune` from `feat/step-6-trace-evals` (or from `main` once step 6 is merged). *(Done by Claude when drafting.)*
-- [ ] **7.1.3** **(You)** Put `train_spider.json` (from the Spider 1.0 download) next to `dev.json` in `infra/data/spider/`. `database/` already holds all 166 databases, train ones included, so nothing else is needed.
-- [ ] **7.1.4** **(You)** Create a free W&B account and a Colab secret `WANDB_API_KEY`; connect Google Drive in Colab.
+- [x] **7.1.3** **(You)** Put `train_spider.json` (from the Spider 1.0 download) next to `dev.json` in `infra/data/spider/`. `database/` already holds all 166 databases, train ones included, so nothing else is needed.
+- [x] **7.1.4** **(You)** Create a free W&B account and a Colab secret `WANDB_API_KEY`; connect Google Drive in Colab.
 - [x] **7.1.5** Settings in `.env.example`, `.env.test` and settings with no defaults, plus the `.env` sync test: `FINETUNE_BASE_MODEL`, `FINETUNE_OUTPUT_DIR`, `FINETUNE_VALIDATION_FRACTION`, `FINETUNE_SEED`, `FINETUNE_MAX_EXAMPLES`. Claude does not create or edit `.env`; the owner copies the new lines.
 
 ## 7.2 Dataset builder
