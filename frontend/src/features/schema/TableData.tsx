@@ -1,4 +1,9 @@
-import { ArrowLeft01Icon, ArrowRight01Icon, Table02Icon } from '@hugeicons/core-free-icons'
+import {
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  InformationCircleIcon,
+  Table02Icon,
+} from '@hugeicons/core-free-icons'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 
@@ -6,6 +11,7 @@ import { QueryBoundary } from '@/components/QueryBoundary'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/data-state'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatNumber } from '@/lib/format'
@@ -18,19 +24,77 @@ function cell(value: unknown): string {
   return JSON.stringify(value)
 }
 
-/** The header of one column: its name, its type, and whether it is a key. */
+/** The info button of one column: its notes, whether it is a key, and what it points to. */
+function ColumnInfo({ table, name }: { table: TableInfo; name: string }) {
+  const column = table.columns.find((candidate) => candidate.name === name)
+  const references = table.foreign_keys.filter((fk) => fk.columns.includes(name))
+  const primary = table.primary_key.includes(name)
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          icon={InformationCircleIcon}
+          aria-label={`About the ${name} column`}
+          className="-my-1.5"
+        />
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        collisionPadding={16}
+        sticky="always"
+        className="flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-3"
+      >
+        <div className="flex flex-col gap-0.5">
+          <span className="font-mono text-body font-medium">{name}</span>
+          <span className="font-mono text-small text-muted-foreground">
+            {column?.type}
+            {column && !column.nullable && ', required'}
+          </span>
+        </div>
+        <p className="text-small text-muted-foreground">{column?.comment || 'No notes for this column.'}</p>
+        {(primary || references.length > 0) && (
+          <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1 text-small">
+            {primary && (
+              <>
+                <dt className="text-muted-foreground">Primary key</dt>
+                <dd>{table.primary_key.length > 1 ? `Part of (${table.primary_key.join(', ')})` : 'Yes'}</dd>
+              </>
+            )}
+            {references.map((fk) => (
+              <div key={fk.ref_table + fk.columns.join()} className="col-span-2 grid grid-cols-subgrid">
+                <dt className="text-muted-foreground">Foreign key</dt>
+                <dd className="font-mono">
+                  {fk.ref_table}({fk.ref_columns.join(', ')})
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+/** The header of one column: its name, its type, PK/FK badges and the info button. */
 function ColumnHead({ table, name }: { table: TableInfo; name: string }) {
   const column = table.columns.find((candidate) => candidate.name === name)
-  const reference = table.foreign_keys.find((fk) => fk.columns.includes(name))
+  const isForeign = table.foreign_keys.some((fk) => fk.columns.includes(name))
   return (
-    <TableHead title={column?.comment || undefined}>
-      <div className="flex flex-col gap-1 py-1">
-        <span className="flex items-center gap-1.5 font-mono text-foreground">
-          {name}
-          {table.primary_key.includes(name) && <Badge variant="primary">PK</Badge>}
-          {reference && <Badge variant="info">FK</Badge>}
-        </span>
-        <span className="font-mono text-caption font-normal text-muted-foreground">{column?.type ?? ''}</span>
+    <TableHead>
+      <div className="flex items-start justify-between gap-2 py-1">
+        <div className="flex flex-col gap-1">
+          <span className="flex items-center gap-1.5 font-mono text-foreground">
+            {name}
+            {table.primary_key.includes(name) && <Badge variant="primary">PK</Badge>}
+            {isForeign && <Badge variant="info">FK</Badge>}
+          </span>
+          <span className="font-mono text-caption font-normal text-muted-foreground">
+            {column?.type ?? ''}
+          </span>
+        </div>
+        <ColumnInfo table={table} name={name} />
       </div>
     </TableHead>
   )

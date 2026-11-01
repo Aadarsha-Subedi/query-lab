@@ -276,3 +276,8 @@ Replay and the staff trace view). The Ask column is `--chat-max` (768 px) and ce
 agent did" list and the Ask again / New question buttons are gone from the Ask page: History already has the replay and an Ask
 again link. The thumbs are plain icons with no background; the chosen one is darker and bolder, so the state does not rely on a
 fill. `RunTimeline` remains for Replay and the staff trace view.
+
+**Schema table view trimmed (2026-11-01).** The table's size and column count, the Primary key / Foreign key text and the
+"Column notes" list are gone: the column headers already show type and PK/FK badges, and each header has an info button whose
+popover holds that column's notes, primary key and foreign key target. A popover rather than a modal, because it explains one
+column in place; it uses `sticky="always"` so it stays on screen when the column is scrolled partly out of view.

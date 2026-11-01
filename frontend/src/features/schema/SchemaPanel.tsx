@@ -14,56 +14,15 @@ import { cn } from '@/lib/utils'
 import { schemaQuery, type DatabaseSchema, type TableInfo } from './api'
 import { TableData } from './TableData'
 
-/** What the table is: its description, size and keys. The columns themselves head the data below. */
+/** What the table is. The columns, keys and sizes are in the table below. */
 function TableMeta({ table }: { table: TableInfo }) {
-  const commented = table.columns.filter((column) => column.comment)
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <Heading level={2} className="font-mono">
-          {table.name}
-        </Heading>
-        <span className="text-small text-muted-foreground">
-          {table.row_estimate !== null && <>About {formatNumber(table.row_estimate)} rows, </>}
-          {formatNumber(table.columns.length)} columns
-        </span>
-      </div>
+    <div className="flex flex-col gap-2">
+      <Heading level={2} className="font-mono">
+        {table.name}
+      </Heading>
       {table.comment && (
         <p className="max-w-[var(--reading-max)] text-body text-muted-foreground">{table.comment}</p>
-      )}
-      {(table.primary_key.length > 0 || table.foreign_keys.length > 0) && (
-        <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-1 text-small">
-          {table.primary_key.length > 0 && (
-            <>
-              <dt className="text-muted-foreground">Primary key</dt>
-              <dd className="font-mono">{table.primary_key.join(', ')}</dd>
-            </>
-          )}
-          {table.foreign_keys.map((fk) => (
-            <div key={fk.columns.join()} className="col-span-2 grid grid-cols-subgrid">
-              <dt className="text-muted-foreground">Foreign key</dt>
-              <dd className="font-mono">
-                {fk.columns.join(', ')} <span className="font-sans text-muted-foreground">to</span>{' '}
-                {fk.ref_table}({fk.ref_columns.join(', ')})
-              </dd>
-            </div>
-          ))}
-        </dl>
-      )}
-      {commented.length > 0 && (
-        <details className="max-w-[var(--reading-max)] text-small">
-          <summary className="cursor-pointer font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            Column notes ({commented.length})
-          </summary>
-          <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-            {commented.map((column) => (
-              <div key={column.name} className="col-span-2 grid grid-cols-subgrid">
-                <dt className="font-mono">{column.name}</dt>
-                <dd className="text-muted-foreground">{column.comment}</dd>
-              </div>
-            ))}
-          </dl>
-        </details>
       )}
     </div>
   )

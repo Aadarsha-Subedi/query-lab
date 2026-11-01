@@ -60,8 +60,10 @@ describe('SchemaPanel', () => {
     show()
     const section = await screen.findByRole('region', { name: 'Table orders' })
     expect(within(section).getByText('One row per order')).toBeVisible()
-    expect(within(section).getByText('Primary key')).toBeVisible()
-    expect(section).toHaveTextContent('customer_id to customers(customer_id)')
+    // Keys and sizes are not repeated in text: the columns carry them.
+    expect(section).not.toHaveTextContent('Primary key')
+    expect(section).not.toHaveTextContent('Column notes')
+    expect(section).not.toHaveTextContent('About 99,441 rows')
     const table = await within(section).findByRole('table')
     expect(within(table).getAllByRole('columnheader')).toHaveLength(2)
     expect(within(table).getByText('PK')).toBeVisible()
@@ -69,6 +71,22 @@ describe('SchemaPanel', () => {
     expect(within(table).getByText('o1')).toBeVisible()
     expect(within(table).getByText('null')).toBeVisible()
     expect(within(section).getByText(/of about 99,441/)).toBeVisible()
+  })
+
+  it('explains a column from its info button: notes, primary key and foreign key', async () => {
+    mockFetch({
+      '/api/schema': () => envelope({ name: 'demo', tables: [ORDERS] }),
+      '/api/schema/tables/orders/rows': () => envelope(ROWS),
+    })
+    show()
+    await userEvent.click(await screen.findByRole('button', { name: 'About the customer_id column' }))
+    const popup = await screen.findByText('Who ordered')
+    expect(popup).toBeVisible()
+    expect(screen.getByText('customers(customer_id)')).toBeVisible()
+    await userEvent.keyboard('{Escape}')
+    await userEvent.click(screen.getByRole('button', { name: 'About the order_id column' }))
+    expect(await screen.findByText('Primary key')).toBeVisible()
+    expect(screen.getByText('No notes for this column.')).toBeVisible()
   })
 
   it('shows the table you pick in the list, and filters the list', async () => {
