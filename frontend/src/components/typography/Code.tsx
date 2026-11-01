@@ -70,7 +70,7 @@ export function CodeBlock({ code, language = 'sql', className }: CodeBlockProps)
         onClick={copy}
         aria-label={copied ? 'Copied' : 'Copy code'}
       />
-      <pre className="overflow-x-auto p-4 pr-12 font-mono text-code">
+      <pre className="p-4 pr-12 font-mono text-code break-words whitespace-pre-wrap">
         <code>{language === 'sql' ? highlightSql(code) : code}</code>
       </pre>
     </div>

@@ -15,6 +15,7 @@ const KIND_LABEL: Record<string, string> = {
 }
 
 function label(step: Step): string {
+  if (step.kind === 'approval' && step.actor === 'user') return 'You approved'
   if (step.kind === 'tool') return step.tool_name ? `Tool: ${step.tool_name}` : 'Tool call'
   return KIND_LABEL[step.kind] ?? step.kind
 }
@@ -36,7 +37,6 @@ export function RunTimeline({ steps }: { steps: Step[] }) {
                   className={failed ? 'text-danger' : 'text-success'}
                 />
                 <span className="font-medium">{label(step)}</span>
-                {step.actor === 'user' && <Badge variant="primary">you</Badge>}
                 {failed && <Badge variant="danger">{step.error_code || step.status}</Badge>}
                 <span className="ml-auto text-small text-muted-foreground">
                   {formatDuration(step.latency_ms / 1000)}

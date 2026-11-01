@@ -56,7 +56,7 @@ function Body({
           {failure.message} {failure.hint}
         </p>
       )}
-      <RunTimeline steps={steps} />
+      {run.status === 'succeeded' ? null : <RunTimeline steps={steps} />}
       {stream.phase === 'dropped' && !isFinished(run.status) && run.status !== 'awaiting_approval' && (
         <div
           role="alert"
@@ -79,6 +79,14 @@ function Body({
         <>
           {run.has_result && <ResultTable runId={run.id} />}
           <Feedback runId={run.id} vote={run.feedback ?? null} />
+          <details className="rounded-md border bg-surface p-3">
+            <summary className="cursor-pointer text-body font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              What the agent did ({steps.length} steps)
+            </summary>
+            <div className="mt-3">
+              <RunTimeline steps={steps} />
+            </div>
+          </details>
         </>
       )}
     </div>
