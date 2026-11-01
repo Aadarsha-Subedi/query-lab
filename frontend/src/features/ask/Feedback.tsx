@@ -15,7 +15,7 @@ export function Feedback({ runId, vote }: { runId: number; vote: Vote | null }) 
   })
   const failure = mutation.isError ? errorText(mutation.error) : null
   return (
-    <div className="flex items-center gap-2" role="group" aria-label="Was this answer right?">
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Was this answer right?">
       <span className="text-small text-muted-foreground">Was this right?</span>
       <Button
         variant={vote === 'up' ? 'primary' : 'secondary'}
@@ -39,6 +39,10 @@ export function Feedback({ runId, vote }: { runId: number; vote: Vote | null }) 
           mutation.mutate('down')
         }}
       />
+      <span role="status" className="text-small text-muted-foreground">
+        {vote === 'up' && 'Thanks. This answer is marked right.'}
+        {vote === 'down' && 'Thanks. This answer is marked wrong and goes to the team as a review case.'}
+      </span>
       {failure && (
         <span role="alert" className="text-small text-danger-foreground">
           {failure.message}
