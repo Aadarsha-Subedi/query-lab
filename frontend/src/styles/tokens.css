@@ -103,7 +103,7 @@
   --surface: var(--n-0);
   --surface-muted: var(--n-100);
   --border: var(--n-200);
-  --input: var(--n-300);
+  --input: var(--n-500); /* 3:1 on surface (WCAG 1.4.11) */
   /* A step darker than zinc-500 so it passes 4.5:1 on surface-muted too. */
   --muted-foreground: color-mix(in oklab, var(--n-500) 70%, var(--n-600));
 
@@ -149,7 +149,7 @@
   --surface: var(--n-900);
   --surface-muted: var(--n-850);
   --border: color-mix(in oklab, var(--n-700) 70%, var(--n-800));
-  --input: var(--n-700);
+  --input: var(--n-500);
   --muted-foreground: var(--n-400);
 
   --primary: var(--n-50);
