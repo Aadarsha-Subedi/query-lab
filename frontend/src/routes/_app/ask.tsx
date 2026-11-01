@@ -17,6 +17,8 @@ import { SchemaPanel } from '@/features/schema/SchemaPanel'
 const searchSchema = z.object({
   run: z.number().int().positive().optional(),
   workspace: z.number().int().positive().optional(),
+  /** Pre-fills the question box (Ask again). */
+  question: z.string().optional(),
 })
 
 export const Route = createFileRoute('/_app/ask')({
@@ -25,7 +27,7 @@ export const Route = createFileRoute('/_app/ask')({
 })
 
 function AskPage() {
-  const { run, workspace } = Route.useSearch()
+  const { run, workspace, question } = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const [example, setExample] = useState({ text: '', n: 0 })
   const limits = useQuery(limitsQuery(workspace))
@@ -46,8 +48,8 @@ function AskPage() {
           />
         </div>
         <AskBox
-          key={example.n}
-          initialQuestion={example.text}
+          key={`${example.n}-${question ?? ''}`}
+          initialQuestion={example.text || question}
           workspace={workspace}
           disabled={runsFull}
           onStarted={(id) => {

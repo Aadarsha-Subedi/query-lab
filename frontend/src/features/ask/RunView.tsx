@@ -1,5 +1,6 @@
-import { ArrowReloadHorizontalIcon } from '@hugeicons/core-free-icons'
+import { ArrowReloadHorizontalIcon, MessageQuestionIcon } from '@hugeicons/core-free-icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 
 import { QueryBoundary } from '@/components/QueryBoundary'
@@ -67,6 +68,22 @@ function Body({
         <>
           {run.has_result && <ResultTable runId={run.id} />}
           <Feedback runId={run.id} vote={run.feedback ?? null} />
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="secondary" size="sm" icon={ArrowReloadHorizontalIcon}>
+              <Link
+                from="/ask"
+                to="/ask"
+                search={(previous) => ({ workspace: previous.workspace, question: run.question })}
+              >
+                Ask again
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" size="sm" icon={MessageQuestionIcon}>
+              <Link from="/ask" to="/ask" search={(previous) => ({ workspace: previous.workspace })}>
+                New question
+              </Link>
+            </Button>
+          </div>
           <details className="rounded-md border bg-surface p-3">
             <summary className="cursor-pointer text-body font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring">
               What the agent did ({steps.length} steps)

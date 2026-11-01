@@ -143,7 +143,7 @@ export function HistoryTable({ filters }: { filters: HistoryFilters }) {
                     <TableHead>Status</TableHead>
                     <TableHead>Time</TableHead>
                     <TableHead>When</TableHead>
-                    <TableHead>Replay</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -166,13 +166,22 @@ export function HistoryTable({ filters }: { filters: HistoryFilters }) {
                         <TableCell>{formatDuration(run.latency_ms / 1000)}</TableCell>
                         <TableCell>{formatRelative(run.created_at)}</TableCell>
                         <TableCell>
-                          <Link
-                            to="/runs/$runId/replay"
-                            params={{ runId: String(run.id) }}
-                            className="underline-offset-4 hover:underline"
-                          >
-                            Replay
-                          </Link>
+                          <div className="flex gap-4">
+                            <Link
+                              to="/runs/$runId/replay"
+                              params={{ runId: String(run.id) }}
+                              className="underline-offset-4 hover:underline"
+                            >
+                              Replay
+                            </Link>
+                            <Link
+                              to="/ask"
+                              search={{ question: run.question }}
+                              className="underline-offset-4 hover:underline"
+                            >
+                              Ask again
+                            </Link>
+                          </div>
                         </TableCell>
                       </TableRow>
                     )
