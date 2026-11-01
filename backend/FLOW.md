@@ -11,7 +11,7 @@ noted. Rows marked *new* are step 4; the rest exist. Since step 5, `schema`, `as
 | Who am I, CSRF cookie | `GET /me` (401 when signed out) | exists |
 | Sign in / out | `/_allauth/browser/v1/...` | exists |
 | Schema panel (tables, columns, keys, comments) | `GET /schema`, `GET /schema/tables/{name}` | new (4.2) |
-| Does the user have their own key | `GET /llm-keys`, `PUT/DELETE /llm-keys/{provider}` | exists |
+| Does the user have their own key | `GET /llm-keys` (provider, last4, model, is_active, updated_at), `PUT/DELETE /llm-keys/{provider}`, `PUT /llm-keys/{provider}/model`, `PUT /llm-keys/{provider}/activate`, `GET /llm-keys-models`, `GET/PUT /llm-settings` (source: querylab or own) | exists |
 | What is left before a limit | `GET /agent/limits` | new (4.6) |
 | Ask a question | `POST /agent/runs {question}` | exists |
 | Live progress | `GET /agent/runs/{id}/events` (SSE) | exists; `status` event gains `pending` (4.4) |

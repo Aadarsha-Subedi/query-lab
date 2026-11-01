@@ -11,8 +11,16 @@ from accounts.models import User
 from agent.models import AgentRun
 from agent.stream import STREAMS_KEY
 from ask import keys
-from ask.models import UserLLMKey
+from ask.models import UserAISetting, UserLLMKey
 from common.redis import get_redis
+
+
+def uses_own_key(user: User) -> bool:
+    """True when this user's asks run on their own active key, not QueryLab's."""
+    return (
+        keys.ai_source(user) == UserAISetting.SOURCE_OWN
+        and UserLLMKey.objects.filter(user=user, is_active=True).exists()
+    )
 
 
 def _next_utc_midnight() -> datetime:
@@ -40,7 +48,7 @@ def limits_for(user: User) -> dict[str, Any]:
             "remaining": allowed - used,
             "resets_at": _next_utc_midnight(),
         },
-        "has_own_key": UserLLMKey.objects.filter(user=user).exists(),
+        "has_own_key": uses_own_key(user),
         "unfinished_runs": {
             "count": unfinished,
             "allowed": settings.AGENT_MAX_CONCURRENT_RUNS_PER_USER,

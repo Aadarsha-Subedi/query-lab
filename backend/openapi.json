@@ -1,6 +1,23 @@
 {
   "components": {
     "schemas": {
+      "AISettingOut": {
+        "properties": {
+          "source": {
+            "enum": [
+              "querylab",
+              "own"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "title": "AISettingOut",
+        "type": "object"
+      },
       "AgentLimitsOut": {
         "properties": {
           "default_key": {
@@ -1536,6 +1553,10 @@
       },
       "LLMKeyOut": {
         "properties": {
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
           "key_last4": {
             "title": "Key Last4",
             "type": "string"
@@ -1547,14 +1568,59 @@
           "provider": {
             "title": "Provider",
             "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
           }
         },
         "required": [
           "provider",
           "key_last4",
-          "model"
+          "model",
+          "is_active",
+          "updated_at"
         ],
         "title": "LLMKeyOut",
+        "type": "object"
+      },
+      "LLMModelIn": {
+        "properties": {
+          "model": {
+            "title": "Model",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model"
+        ],
+        "title": "LLMModelIn",
+        "type": "object"
+      },
+      "LLMModelsOut": {
+        "description": "The models a user may pick, per provider; the first of each list is the default.",
+        "properties": {
+          "gemini": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Gemini",
+            "type": "array"
+          },
+          "openai": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Openai",
+            "type": "array"
+          }
+        },
+        "required": [
+          "gemini",
+          "openai"
+        ],
+        "title": "LLMModelsOut",
         "type": "object"
       },
       "LimitsOut": {
@@ -2744,6 +2810,40 @@
         "title": "StepOut",
         "type": "object"
       },
+      "SuccessEnvelope_AISettingOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AISettingOut"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Meta",
+            "type": "object"
+          },
+          "status_code": {
+            "title": "Status Code",
+            "type": "integer"
+          },
+          "success": {
+            "const": true,
+            "default": true,
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status_code",
+          "message",
+          "data"
+        ],
+        "title": "SuccessEnvelope[AISettingOut]",
+        "type": "object"
+      },
       "SuccessEnvelope_AgentLimitsOut_": {
         "properties": {
           "data": {
@@ -3048,6 +3148,40 @@
           "data"
         ],
         "title": "SuccessEnvelope[LLMKeyOut]",
+        "type": "object"
+      },
+      "SuccessEnvelope_LLMModelsOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/LLMModelsOut"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Meta",
+            "type": "object"
+          },
+          "status_code": {
+            "title": "Status Code",
+            "type": "integer"
+          },
+          "success": {
+            "const": true,
+            "default": true,
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status_code",
+          "message",
+          "data"
+        ],
+        "title": "SuccessEnvelope[LLMModelsOut]",
         "type": "object"
       },
       "SuccessEnvelope_LimitsOut_": {
@@ -6014,6 +6148,54 @@
         ]
       }
     },
+    "/api/llm-keys-models": {
+      "get": {
+        "description": "The models allowed per provider (from settings).",
+        "operationId": "list_llm_models",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_LLMModelsOut_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          }
+        ],
+        "summary": "List Llm Models",
+        "tags": [
+          "ask"
+        ]
+      }
+    },
     "/api/llm-keys/{provider}": {
       "delete": {
         "operationId": "delete_llm_key",
@@ -6170,6 +6352,293 @@
           }
         ],
         "summary": "Save Llm Key",
+        "tags": [
+          "ask"
+        ]
+      }
+    },
+    "/api/llm-keys/{provider}/activate": {
+      "put": {
+        "description": "Make this key the one your asks use (the other one stops being active).",
+        "operationId": "activate_llm_key",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "enum": [
+                "gemini",
+                "openai"
+              ],
+              "title": "Provider",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_LLMKeyOut_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          }
+        ],
+        "summary": "Activate Llm Key",
+        "tags": [
+          "ask"
+        ]
+      }
+    },
+    "/api/llm-keys/{provider}/model": {
+      "put": {
+        "description": "Switch the model of a saved key; the key is not sent again.",
+        "operationId": "change_llm_model",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "enum": [
+                "gemini",
+                "openai"
+              ],
+              "title": "Provider",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LLMModelIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_LLMKeyOut_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          }
+        ],
+        "summary": "Change Llm Model",
+        "tags": [
+          "ask"
+        ]
+      }
+    },
+    "/api/llm-settings": {
+      "get": {
+        "operationId": "get_ai_setting",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_AISettingOut_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          }
+        ],
+        "summary": "Get Ai Setting",
+        "tags": [
+          "ask"
+        ]
+      },
+      "put": {
+        "description": "Choose QueryLab's AI or your own.",
+        "operationId": "set_ai_setting",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AISettingOut"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_AISettingOut_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          }
+        ],
+        "summary": "Set Ai Setting",
         "tags": [
           "ask"
         ]

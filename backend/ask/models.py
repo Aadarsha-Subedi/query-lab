@@ -15,16 +15,40 @@ class UserLLMKey(TimeStampModel):
     encrypted_key = models.TextField()
     key_last4 = models.CharField(max_length=4)
     model = models.CharField(max_length=100)
+    # The key asks use when the user's AI source is "own". At most one per user.
+    is_active = models.BooleanField(default=False)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "provider"], name="unique_llm_key_per_provider"
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=models.Q(is_active=True),
+                name="one_active_llm_key_per_user",
+            ),
         ]
 
     def __str__(self) -> str:
         return f"{self.user_id}:{self.provider}"
+
+
+class UserAISetting(TimeStampModel):
+    """Which AI a user's questions use: QueryLab's shared key (daily limit) or their own
+    active key. No row means QueryLab's AI."""
+
+    SOURCE_QUERYLAB = "querylab"
+    SOURCE_OWN = "own"
+    SOURCES = (SOURCE_QUERYLAB, SOURCE_OWN)
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ai_setting"
+    )
+    source = models.CharField(max_length=10, default=SOURCE_QUERYLAB)
+
+    def __str__(self) -> str:
+        return f"{self.user_id}:{self.source}"
 
 
 class AskLog(TimeStampModel):

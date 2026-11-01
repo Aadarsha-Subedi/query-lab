@@ -88,9 +88,17 @@ def test_unfinished_runs_skip_finished_and_expired_pauses(
 
 def test_own_key_flag(client: Client, user: User) -> None:
     UserLLMKey.objects.create(
-        user=user, provider="gemini", encrypted_key="x", key_last4="abcd", model="m"
+        user=user,
+        provider="gemini",
+        encrypted_key="x",
+        key_last4="abcd",
+        model="m",
+        is_active=True,
     )
     client.force_login(user)
+    # A saved key is not enough: the user must also have chosen their own AI.
+    assert client.get(URL).json()["data"]["has_own_key"] is False
+    keys.set_ai_source(user, "own")
     assert client.get(URL).json()["data"]["has_own_key"] is True
 
 

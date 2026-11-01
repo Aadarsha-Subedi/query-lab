@@ -482,3 +482,17 @@ The agent ones are now `AgentLimitsOut` and `RunResultOut`, and `common/tests/te
 `GET /api/me` also returns `is_staff` so the screens can show the workbench to staff only; the API still enforces it.
 
 **Colab quota cut the first run off (7.3.6).** The free GPU limit ended the 3B run at step 436 of 834. Checkpoints now save every 50 steps (three kept), only a checkpoint with `trainer_state.json` counts as resumable, and `run_name` keeps each model's checkpoints and adapter in its own Drive folder. Resuming with `epochs=1` from a late checkpoint finishes cleanly because the cosine schedule is rebuilt from the new total steps.
+
+## AI source and the active key (frontend asks, 2026-11-01)
+
+**Two explicit choices instead of "most recently saved wins".** A user picks a source (`UserAISetting.source`: `querylab`
+= the shared Gemini key with the daily limit, `own` = their own key) and, among at most two saved keys (one OpenAI, one
+Gemini, already unique per provider), one **active** key (`UserLLMKey.is_active`, one per user by a partial unique
+constraint). The first key saved becomes active; deleting the active key hands over to the other one. `own` with no active
+key is refused with `no_active_key` rather than quietly spending QueryLab's key. Migration `0003` keeps today's behaviour
+for existing users: anyone with a key gets source `own` and their most recently saved key active.
+
+`has_own_key` on `/agent/limits` now means "asks run on the user's own key" (source `own` and an active key). The model list
+is served by `GET /llm-keys-models` (from the settings allowlists); `PUT /llm-keys/{provider}/model` changes a model
+without sending the key again. The model-list route is `llm-keys-models`, not `llm-keys/models`, so it can never be read
+as a provider.

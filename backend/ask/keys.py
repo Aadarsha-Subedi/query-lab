@@ -1,15 +1,16 @@
-"""Which LLM key an ask uses: the user's own (OpenAI or Gemini) if they saved
-one, else QueryLab's default Gemini key from .env, with a daily cap per user."""
+"""Which LLM key an ask uses. The user picks a source: QueryLab's default Gemini key
+from .env (daily cap per user) or their own active key (one OpenAI, one Gemini)."""
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from django.conf import settings
 from django.core.cache import cache
+from django.db import transaction
 
 from accounts.models import User
 from ask.errors import DefaultKeyLimitReached
-from ask.models import UserLLMKey
+from ask.models import UserAISetting, UserLLMKey
 from common import crypto
 from common.exception.domain import BadRequestException
 from common.llm import LLMError, LLMProvider, allowed_models, create_provider
@@ -56,13 +57,82 @@ def save_key(user: User, provider: str, api_key: str, model: str | None) -> User
             "model": model,
         },
     )
+    if not UserLLMKey.objects.filter(user=user, is_active=True).exists():
+        row.is_active = True
+        row.save(update_fields=["is_active", "updated_at"])
     return row
 
 
+def change_model(user: User, provider: str, model: str) -> UserLLMKey:
+    """Switch the model of a saved key without sending the key again."""
+    row = _own_key(user, provider)
+    if model not in allowed_models(provider):
+        raise BadRequestException(
+            "That model is not available.", error_code="model_invalid"
+        )
+    row.model = model
+    row.save(update_fields=["model", "updated_at"])
+    return row
+
+
+def activate_key(user: User, provider: str) -> UserLLMKey:
+    """Make this provider's key the one asks use (only one is active at a time)."""
+    row = _own_key(user, provider)
+    with transaction.atomic():
+        UserLLMKey.objects.filter(user=user, is_active=True).update(is_active=False)
+        row.is_active = True
+        row.save(update_fields=["is_active", "updated_at"])
+    return row
+
+
+def delete_key(user: User, provider: str) -> None:
+    """Remove a key. If it was the active one, the remaining key (if any) takes over."""
+    with transaction.atomic():
+        removed = UserLLMKey.objects.filter(user=user, provider=provider).first()
+        if removed is None:
+            return
+        was_active = removed.is_active
+        removed.delete()
+        if was_active:
+            other = UserLLMKey.objects.filter(user=user).first()
+            if other is not None:
+                other.is_active = True
+                other.save(update_fields=["is_active", "updated_at"])
+
+
+def _own_key(user: User, provider: str) -> UserLLMKey:
+    if provider not in PROVIDERS:
+        raise BadRequestException("Unknown provider.", error_code="unknown_provider")
+    row = UserLLMKey.objects.filter(user=user, provider=provider).first()
+    if row is None:
+        raise BadRequestException(
+            "Save a key for that provider first.", error_code="no_key_for_provider"
+        )
+    return row
+
+
+def ai_source(user: User) -> str:
+    setting = UserAISetting.objects.filter(user=user).first()
+    return setting.source if setting else UserAISetting.SOURCE_QUERYLAB
+
+
+def set_ai_source(user: User, source: str) -> str:
+    if source not in UserAISetting.SOURCES:
+        raise BadRequestException("Unknown AI source.", error_code="unknown_ai_source")
+    UserAISetting.objects.update_or_create(user=user, defaults={"source": source})
+    return source
+
+
 def resolve_provider(user: User) -> ResolvedProvider:
-    """The user's most recently saved key, else the default key."""
-    own = UserLLMKey.objects.filter(user=user).order_by("-updated_at").first()
-    if own is not None:
+    """The key this user's asks run on, by their chosen source. "Own" with no active
+    key is refused with a clear message instead of quietly spending QueryLab's key."""
+    if ai_source(user) == UserAISetting.SOURCE_OWN:
+        own = UserLLMKey.objects.filter(user=user, is_active=True).first()
+        if own is None:
+            raise BadRequestException(
+                "You chose your own AI but have no active key.",
+                error_code="no_active_key",
+            )
         provider = create_provider(
             own.provider, crypto.decrypt(own.encrypted_key), own.model
         )

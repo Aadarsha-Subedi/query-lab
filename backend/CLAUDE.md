@@ -37,7 +37,7 @@ config/            settings/{base,local,test,prod}.py, api.py (the one NinjaAPI)
 core/              health checks, DB router, data-DB SQL (datadb.py), Olist loader (demo.py),
                    commands bootstrap_data_db and load_demo
 ask/               text-to-SQL (step 1): schema.py, prompt.py, guard.py (sqlglot), runner.py,
-                   keys.py (own/default LLM key), service.py, api.py (/ask, /llm-keys),
+                   keys.py (AI source, active own key, default key), service.py, api.py (/ask, /llm-keys),
                    schema_api.py (/schema, /schema/tables/{name}: the schema browser, step 4),
                    models UserLLMKey and AskLog
 agent/             the agent (step 3): loop.py (plan, act, pause, execute, reflect), tools/ (one file

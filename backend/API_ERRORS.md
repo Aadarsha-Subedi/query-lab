@@ -55,6 +55,9 @@ Every error answers in the envelope `{success: false, status_code, message, code
 | `unknown_provider` | 400 | The provider in the URL is not supported. | A bug in the client. |
 | `key_invalid` | 400 | The key looks invalid (length). | Ask for the key again. |
 | `model_invalid` | 400 | The model is not available for that provider. | Pick from the list. |
+| `no_key_for_provider` | 400 | Activate or change the model of a provider you have no saved key for. | Save a key for it first. |
+| `no_active_key` | 400 | The user chose their own AI but has no active key (an ask is blocked, not sent to QueryLab's key). | Send them to the keys page to add or activate a key, or switch back to QueryLab's AI. |
+| `unknown_ai_source` | 400 | The AI source is not `querylab` or `own` (the API schema already answers 422; this is the domain check). | A bug in the client. |
 | `run_not_found` | 404 | No such run (also another user's run). | Go back to history. |
 | `run_not_awaiting_approval` | 409 | Approve, edit or cancel on a run that is not paused (a double click, or a run that moved on). | Reload the run and show its real state. |
 | `run_not_succeeded` | 409 | `GET /result` on a run that has no result. | Show the run's status instead of a table. |
