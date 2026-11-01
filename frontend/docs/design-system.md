@@ -68,8 +68,9 @@ Each status colour also gets a `-subtle` background (about 10% strength) and a
 
 Contrast targets: body text and `muted-foreground` at least 4.5:1 on
 `background` and `surface`; `primary` text on `surface` at least 4.5:1; focus
-rings at least 3:1 against what they surround. `/design` computes every pair
-live; the lowest is 5.0:1.
+rings at least 3:1 against what they surround; form-control borders (`input`) at
+least 3:1 on `surface` (WCAG 1.4.11, now `n-500` in both themes). `/design` computes every pair
+live; the lowest text pair is 5.0:1.
 
 ### 2.2 Data colours (charts, step 4 and the eval dashboard)
 
@@ -236,8 +237,11 @@ and stores the choice in a persisted Zustand store. The theme is applied with a
   2 px background-coloured gap) on every interactive element, never removed.
 - Everything works by keyboard; dialogs trap focus and return it on close
   (Radix handles this).
-- Hit targets at least 32 × 32 px (24 px minimum for dense table actions, with
-  spacing).
+- Hit targets: 32 to 36 px with a mouse; 44 px on coarse pointers (`pointer-coarse:`
+  raises buttons, inputs, selects, tabs and nav links; checkbox, switch and dialog close
+  get a 44 px hit area).
+- Reduced motion: overlays fade without sliding or zooming and the spinner pulses; state
+  changes still show. Each page's h1 sets the tab title; a skip link jumps to `#main`.
 - Status is never colour alone (text or icon too); charts have labels.
 
 ## 12. Components

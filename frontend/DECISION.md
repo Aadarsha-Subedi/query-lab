@@ -213,3 +213,13 @@ errors or horizontal overflow at 375, 768 and 1280 px; a real run reached the ap
 creating a workspace, a table, a row, running SQL and deleting the workspace all worked. Findings fixed: three pending
 migrations in the dev database (not a code bug), the schema list clipped by the scroll area, long SQL scrolling under the copy
 button, and the ask page order on phones. Not checked: the Google/GitHub sign-in itself, which needs your accounts.
+
+**Impeccable pass (2026-11-01, branch `feat/frontend-impeccable-pass`).** Scored 27/40 on design heuristics and 17/20 on
+the technical audit (detector: 0 findings). Fixed: form-control borders to 3:1; 44 px targets on coarse pointers; page
+titles from the h1 (done in `Heading`, no router head API) plus a skip link and `<main id="main">`; reduced motion that
+fades instead of freezing; one `RunStatusBadge` and one focus ring; a real Home (replaces `PlaceholderPage`; system health
+moved to the workbench); guard, revision and limit meanings as always-visible text rather than tooltips (tooltips do not
+work on touch); vote copy; Ask again / New question (`/ask?question=`); limits chip invalidated when a run ends; result rows
+before SQL; on phones the schema panel now comes after the question box. Not done: an "active key" badge on the keys page
+(the API returns no saved-at time, so the UI cannot know which key is used), and a score column in History (needs a backend
+field). No new timers or retries were added.

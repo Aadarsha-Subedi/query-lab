@@ -26,8 +26,8 @@ _public           beforeLoad: signed in -> redirect /app
   /login            Continue with Google / GitHub (real form POSTs to allauth)
   /auth/callback    only seen when a sign-in did not finish (a finished one is moved on to /app by the guard)
 _app              beforeLoad: signed out -> redirect /; adds { me }; renders AppShell (header, nav, limits chip)
-  /app              home (placeholder page + HealthPanel)
-  /ask              ?run=&workspace=   workspace picker, schema panel, question box, RunView
+  /app              home: ask button, how it works, last 3 questions (RecentRuns); skip link targets every page's <main id="main">
+  /ask              ?run=&workspace=&question=   (question pre-fills the box: Ask again) workspace picker, schema panel, question box, RunView
   /history          ?status=&q=&ordering=&offset=&workspace=   your runs; rows link to /ask?run= and the replay
   /runs/$runId/replay   stored trace, one step at a time
   /workspaces       the demo and your private workspaces; create, delete (typed name)
@@ -105,7 +105,7 @@ RunView(runId)
   status awaiting_approval -> ApprovalCard(pending)
       Approve | Edit SQL (400 guard_rejected: reason under the editor, run stays paused) | Cancel
       success -> invalidate the run, reopen the stream (Last-Event-ID = last step seen)
-  status succeeded -> ResultTable (GET /result, runs the SQL again), Feedback, collapsed step list
+  status succeeded -> ResultTable (rows first, SQL in a collapsible block; GET /result runs the SQL again), Feedback (says what a vote does), Ask again / New question, collapsed step list. When the stream ends the limits chip is invalidated (an event, not a timer)
   failed / expired / cancelled -> the error_code in plain words (describeError)
 ```
 
