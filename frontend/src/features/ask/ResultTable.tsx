@@ -24,7 +24,6 @@ function cell(value: unknown): string {
 function Rows({ result }: { result: RunResult }) {
   return (
     <div className="flex flex-col gap-3">
-      <CodeBlock code={result.sql} />
       {result.truncated && (
         <p role="status" className="text-small text-warning-foreground">
           Showing the first {formatNumber(result.rows.length)} rows. There are more than this view shows.
@@ -55,6 +54,14 @@ function Rows({ result }: { result: RunResult }) {
           </TableBody>
         </Table>
       )}
+      <details className="rounded-md border bg-surface p-3">
+        <summary className="cursor-pointer text-body font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          The SQL that produced this
+        </summary>
+        <div className="mt-3">
+          <CodeBlock code={result.sql} />
+        </div>
+      </details>
       <p className="text-small text-muted-foreground">
         {formatNumber(result.row_count)} rows. Results are fetched by running the SQL again, so the numbers
         can differ from the first run if the data changed.
