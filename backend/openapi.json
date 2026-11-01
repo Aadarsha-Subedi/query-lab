@@ -538,6 +538,67 @@
         "title": "CasePreviewOut",
         "type": "object"
       },
+      "ClusterAccuracyOut": {
+        "properties": {
+          "accuracy": {
+            "title": "Accuracy",
+            "type": "number"
+          },
+          "cluster_key": {
+            "title": "Cluster Key",
+            "type": "string"
+          },
+          "correct": {
+            "title": "Correct",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cluster_key",
+          "total",
+          "correct",
+          "accuracy"
+        ],
+        "title": "ClusterAccuracyOut",
+        "type": "object"
+      },
+      "ClusterDeltaOut": {
+        "properties": {
+          "base_correct": {
+            "title": "Base Correct",
+            "type": "integer"
+          },
+          "cluster_key": {
+            "title": "Cluster Key",
+            "type": "string"
+          },
+          "diff_points": {
+            "title": "Diff Points",
+            "type": "number"
+          },
+          "other_correct": {
+            "title": "Other Correct",
+            "type": "integer"
+          },
+          "shared": {
+            "title": "Shared",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cluster_key",
+          "shared",
+          "base_correct",
+          "other_correct",
+          "diff_points"
+        ],
+        "title": "ClusterDeltaOut",
+        "type": "object"
+      },
       "ClusterOut": {
         "properties": {
           "key": {
@@ -707,6 +768,68 @@
         "title": "ColumnPatch",
         "type": "object"
       },
+      "ComparisonOut": {
+        "properties": {
+          "base": {
+            "$ref": "#/components/schemas/EvalRunOut"
+          },
+          "base_accuracy": {
+            "title": "Base Accuracy",
+            "type": "number"
+          },
+          "clusters": {
+            "items": {
+              "$ref": "#/components/schemas/ClusterDeltaOut"
+            },
+            "title": "Clusters",
+            "type": "array"
+          },
+          "diff_points": {
+            "title": "Diff Points",
+            "type": "number"
+          },
+          "flips": {
+            "items": {
+              "$ref": "#/components/schemas/FlipOut"
+            },
+            "title": "Flips",
+            "type": "array"
+          },
+          "only_in_base": {
+            "title": "Only In Base",
+            "type": "integer"
+          },
+          "only_in_other": {
+            "title": "Only In Other",
+            "type": "integer"
+          },
+          "other": {
+            "$ref": "#/components/schemas/EvalRunOut"
+          },
+          "other_accuracy": {
+            "title": "Other Accuracy",
+            "type": "number"
+          },
+          "shared": {
+            "title": "Shared",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "base",
+          "other",
+          "shared",
+          "only_in_base",
+          "only_in_other",
+          "base_accuracy",
+          "other_accuracy",
+          "diff_points",
+          "flips",
+          "clusters"
+        ],
+        "title": "ComparisonOut",
+        "type": "object"
+      },
       "CountLimit": {
         "properties": {
           "allowed": {
@@ -870,6 +993,289 @@
         "title": "ErrorEnvelope",
         "type": "object"
       },
+      "EvalRunDetailOut": {
+        "properties": {
+          "accuracy": {
+            "title": "Accuracy",
+            "type": "number"
+          },
+          "by_cluster": {
+            "items": {
+              "$ref": "#/components/schemas/ClusterAccuracyOut"
+            },
+            "title": "By Cluster",
+            "type": "array"
+          },
+          "correct_count": {
+            "title": "Correct Count",
+            "type": "integer"
+          },
+          "cost_per_question_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Question Usd"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "prompt_version": {
+            "title": "Prompt Version",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "question_count": {
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ResultOut"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "runner": {
+            "title": "Runner",
+            "type": "string"
+          },
+          "split": {
+            "title": "Split",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "target",
+          "split",
+          "provider",
+          "model",
+          "prompt_version",
+          "runner",
+          "status",
+          "question_count",
+          "correct_count",
+          "accuracy",
+          "cost_per_question_usd",
+          "started_at",
+          "finished_at",
+          "by_cluster",
+          "results"
+        ],
+        "title": "EvalRunDetailOut",
+        "type": "object"
+      },
+      "EvalRunFilter": {
+        "description": "`?target=traces&runner=agent&model=...&prompt_version=v2-agent`",
+        "properties": {
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version"
+          },
+          "runner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runner"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          }
+        },
+        "title": "EvalRunFilter",
+        "type": "object"
+      },
+      "EvalRunOrdering": {
+        "properties": {
+          "ordering": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ordering"
+          }
+        },
+        "title": "EvalRunOrdering",
+        "type": "object"
+      },
+      "EvalRunOut": {
+        "properties": {
+          "accuracy": {
+            "title": "Accuracy",
+            "type": "number"
+          },
+          "correct_count": {
+            "title": "Correct Count",
+            "type": "integer"
+          },
+          "cost_per_question_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Question Usd"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "prompt_version": {
+            "title": "Prompt Version",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "question_count": {
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "runner": {
+            "title": "Runner",
+            "type": "string"
+          },
+          "split": {
+            "title": "Split",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "target",
+          "split",
+          "provider",
+          "model",
+          "prompt_version",
+          "runner",
+          "status",
+          "question_count",
+          "correct_count",
+          "accuracy",
+          "cost_per_question_usd",
+          "started_at",
+          "finished_at"
+        ],
+        "title": "EvalRunOut",
+        "type": "object"
+      },
       "FeedbackIn": {
         "properties": {
           "note": {
@@ -924,6 +1330,56 @@
           "note"
         ],
         "title": "FeedbackOut",
+        "type": "object"
+      },
+      "FlipOut": {
+        "properties": {
+          "base_outcome": {
+            "title": "Base Outcome",
+            "type": "string"
+          },
+          "cluster_key": {
+            "title": "Cluster Key",
+            "type": "string"
+          },
+          "direction": {
+            "title": "Direction",
+            "type": "string"
+          },
+          "other_outcome": {
+            "title": "Other Outcome",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "question_id": {
+            "title": "Question Id",
+            "type": "string"
+          },
+          "trace_case_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Case Id"
+          }
+        },
+        "required": [
+          "question_id",
+          "question",
+          "direction",
+          "base_outcome",
+          "other_outcome",
+          "cluster_key",
+          "trace_case_id"
+        ],
+        "title": "FlipOut",
         "type": "object"
       },
       "ForeignKeyOut": {
@@ -1302,45 +1758,67 @@
       },
       "ResultOut": {
         "properties": {
-          "columns": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Columns",
-            "type": "array"
-          },
-          "row_count": {
-            "title": "Row Count",
-            "type": "integer"
-          },
-          "rows": {
-            "items": {
-              "items": {},
-              "type": "array"
-            },
-            "title": "Rows",
-            "type": "array"
-          },
-          "run_id": {
-            "title": "Run Id",
-            "type": "integer"
-          },
-          "sql": {
-            "title": "Sql",
+          "cluster_key": {
+            "title": "Cluster Key",
             "type": "string"
           },
-          "truncated": {
-            "title": "Truncated",
-            "type": "boolean"
+          "gold_sql": {
+            "title": "Gold Sql",
+            "type": "string"
+          },
+          "outcome": {
+            "title": "Outcome",
+            "type": "string"
+          },
+          "predicted_sql": {
+            "title": "Predicted Sql",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "question_id": {
+            "title": "Question Id",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "trace_case_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Case Id"
+          },
+          "trace_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Path"
           }
         },
         "required": [
-          "run_id",
-          "sql",
-          "columns",
-          "rows",
-          "row_count",
-          "truncated"
+          "question_id",
+          "question",
+          "gold_sql",
+          "predicted_sql",
+          "outcome",
+          "reason",
+          "cluster_key",
+          "trace_case_id",
+          "trace_path"
         ],
         "title": "ResultOut",
         "type": "object"
@@ -2286,6 +2764,40 @@
         "title": "SuccessEnvelope[CaseOut]",
         "type": "object"
       },
+      "SuccessEnvelope_ComparisonOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ComparisonOut"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Meta",
+            "type": "object"
+          },
+          "status_code": {
+            "title": "Status Code",
+            "type": "integer"
+          },
+          "success": {
+            "const": true,
+            "default": true,
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status_code",
+          "message",
+          "data"
+        ],
+        "title": "SuccessEnvelope[ComparisonOut]",
+        "type": "object"
+      },
       "SuccessEnvelope_DraftQueuedOut_": {
         "properties": {
           "data": {
@@ -2318,6 +2830,40 @@
           "data"
         ],
         "title": "SuccessEnvelope[DraftQueuedOut]",
+        "type": "object"
+      },
+      "SuccessEnvelope_EvalRunDetailOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/EvalRunDetailOut"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Meta",
+            "type": "object"
+          },
+          "status_code": {
+            "title": "Status Code",
+            "type": "integer"
+          },
+          "success": {
+            "const": true,
+            "default": true,
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status_code",
+          "message",
+          "data"
+        ],
+        "title": "SuccessEnvelope[EvalRunDetailOut]",
         "type": "object"
       },
       "SuccessEnvelope_FeedbackOut_": {
@@ -3041,6 +3587,44 @@
           "data"
         ],
         "title": "SuccessEnvelope[list[ClusterOut]]",
+        "type": "object"
+      },
+      "SuccessEnvelope_list_EvalRunOut__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EvalRunOut"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Meta",
+            "type": "object"
+          },
+          "status_code": {
+            "title": "Status Code",
+            "type": "integer"
+          },
+          "success": {
+            "const": true,
+            "default": true,
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status_code",
+          "message",
+          "data"
+        ],
+        "title": "SuccessEnvelope[list[EvalRunOut]]",
         "type": "object"
       },
       "SuccessEnvelope_list_LLMKeyOut__": {
@@ -6354,6 +6938,412 @@
           }
         ],
         "summary": "List Clusters",
+        "tags": [
+          "workbench"
+        ]
+      }
+    },
+    "/api/workbench/eval/compare": {
+      "get": {
+        "description": "Staff only. Two runs on the same target, case by case: the shared cases,\nwhich flipped to wrong or to correct, the accuracy difference in percentage\npoints (on the shared cases) and the difference per cluster. 422\n`eval_runs_not_comparable` when the targets differ.",
+        "operationId": "compare_eval_runs",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "base",
+            "required": true,
+            "schema": {
+              "title": "Base",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "other",
+            "required": true,
+            "schema": {
+              "title": "Other",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_ComparisonOut_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "StaffAuth": []
+          }
+        ],
+        "summary": "Compare Eval Runs",
+        "tags": [
+          "workbench"
+        ]
+      }
+    },
+    "/api/workbench/eval/runs": {
+      "get": {
+        "description": "Staff only. Eval runs, newest first, with accuracy, cost per question (null\nwhen the model has no price in EVAL_MODEL_PRICES) and finish time. Filter by\n`target`, `runner`, `model`, `prompt_version` and `status`.",
+        "operationId": "list_eval_runs",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "target",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Target"
+            }
+          },
+          {
+            "in": "query",
+            "name": "runner",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Runner"
+            }
+          },
+          {
+            "in": "query",
+            "name": "model",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model"
+            }
+          },
+          {
+            "in": "query",
+            "name": "prompt_version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Prompt Version"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ordering",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ordering"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_list_EvalRunOut__"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "StaffAuth": []
+          }
+        ],
+        "summary": "List Eval Runs",
+        "tags": [
+          "workbench"
+        ]
+      }
+    },
+    "/api/workbench/eval/runs/{run_id}": {
+      "get": {
+        "description": "Staff only. One run with its per-case results (question, gold SQL, predicted\nSQL, outcome, reason, and a link to the source trace) and accuracy per cluster.\n`meta.count` is the number of results; page through them with `limit`/`offset`.",
+        "operationId": "get_eval_run",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_EvalRunDetailOut_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "StaffAuth": []
+          }
+        ],
+        "summary": "Get Eval Run",
         "tags": [
           "workbench"
         ]

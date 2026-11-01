@@ -3235,6 +3235,177 @@
               }
             }
           ]
+        },
+        {
+          "name": "List eval runs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workbench/eval/runs?limit=20&target=traces&runner=agent&model=gemini-3.5-flash&prompt_version=v2-agent&status=done&ordering=-started_at",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workbench",
+                "eval",
+                "runs"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "target",
+                  "value": "traces",
+                  "disabled": true
+                },
+                {
+                  "key": "runner",
+                  "value": "agent",
+                  "disabled": true
+                },
+                {
+                  "key": "model",
+                  "value": "gemini-3.5-flash",
+                  "disabled": true
+                },
+                {
+                  "key": "prompt_version",
+                  "value": "v2-agent",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "done",
+                  "disabled": true
+                },
+                {
+                  "key": "ordering",
+                  "value": "-started_at",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Eval runs with accuracy, cost per question (null without a price in EVAL_MODEL_PRICES) and finish time."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 403, 422, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 422, 429]));",
+                  "const b = pm.response.json(); if (pm.response.code === 200 && b.data.length) { pm.environment.set('evalRunId', b.data[0].id); if (b.data[1]) pm.environment.set('evalRunOtherId', b.data[1].id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get an eval run",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workbench/eval/runs/{{evalRunId}}?limit=50&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workbench",
+                "eval",
+                "runs",
+                "{{evalRunId}}"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": false
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Per-case results (question, gold, predicted, outcome, reason, link to the source case) and accuracy per cluster."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 403, 404, 422, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 404, 422, 429]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Compare two eval runs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workbench/eval/compare?base={{evalRunId}}&other={{evalRunOtherId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workbench",
+                "eval",
+                "compare"
+              ],
+              "query": [
+                {
+                  "key": "base",
+                  "value": "{{evalRunId}}",
+                  "disabled": false
+                },
+                {
+                  "key": "other",
+                  "value": "{{evalRunOtherId}}",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Shared cases, flips to wrong or to correct, accuracy difference in points and per cluster. 422 `eval_runs_not_comparable` for runs of different targets."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 403, 404, 422, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 404, 422, 429]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },

@@ -61,6 +61,18 @@
       "value": "",
       "type": "default",
       "enabled": true
+    },
+    {
+      "key": "evalRunId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "evalRunOtherId",
+      "value": "",
+      "type": "default",
+      "enabled": true
     }
   ],
   "_postman_variable_scope": "environment"

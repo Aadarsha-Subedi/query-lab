@@ -21,3 +21,13 @@ class CaseNotReviewable(ConflictException):
 class DraftUnusable(UnprocessableEntityException):
     message = "The draft failed its checks. Send corrected SQL to approve this case."
     error_code = "draft_unusable"
+
+
+class EvalRunNotFound(NotFoundException):
+    message = "Eval run not found."
+    error_code = "eval_run_not_found"
+
+
+class EvalRunsNotComparable(UnprocessableEntityException):
+    message = "These runs scored different question sets, so they cannot be compared."
+    error_code = "eval_runs_not_comparable"

@@ -14,6 +14,8 @@ Every error answers in the envelope `{success: false, status_code, message, code
 | `case_not_found` | 404 | No such trace case. | Reload the case list. |
 | `case_not_reviewable` | 409 | The case is not `drafted` (already approved, rejected or not drafted yet). | Reload the case. |
 | `draft_unusable` | 422 | The draft failed its checks and no corrected SQL was sent. | Ask the reviewer to edit the SQL. |
+| `eval_run_not_found` | 404 | No such eval run. | Reload the run list. |
+| `eval_runs_not_comparable` | 422 | The two runs scored different targets. | Pick two runs of the same target. |
 | `not_found` | 404 | No such route or resource. | Show "not found". |
 | `method_not_allowed` | 405 | Wrong HTTP method for the route. | A bug in the client. |
 | `unsupported_media_type` | 415 | Body was not JSON. | A bug in the client. |

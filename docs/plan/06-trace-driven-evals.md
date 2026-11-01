@@ -84,10 +84,10 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 6.7 Eval results API (read only)
 
-- [ ] **6.7.1** `GET /api/workbench/eval/runs` (filter by target, runner, model, prompt version) with accuracy, cost per question, finished time.
-- [ ] **6.7.2** `GET /api/workbench/eval/runs/{id}` with per-case results (question, gold, predicted, outcome, reason, link to the source trace) and `by_cluster` accuracy.
-- [ ] **6.7.3** `GET /api/workbench/eval/compare?base={id}&other={id}`: the shared cases, which flipped to wrong or to correct, accuracy difference, per-cluster difference. Built on `evals/compare.py`.
-- [ ] **6.7.4** Tests: staff only; comparing runs from different targets is refused with a typed error; the numbers match the step 2 report command on the same data.
+- [x] **6.7.1** `GET /api/workbench/eval/runs` (filter by target, runner, model, prompt version) with accuracy, cost per question, finished time.
+- [x] **6.7.2** `GET /api/workbench/eval/runs/{id}` with per-case results (question, gold, predicted, outcome, reason, link to the source trace) and `by_cluster` accuracy.
+- [x] **6.7.3** `GET /api/workbench/eval/compare?base={id}&other={id}`: the shared cases, which flipped to wrong or to correct, accuracy difference, per-cluster difference. Built on `evals/compare.py`.
+- [x] **6.7.4** Tests: staff only; comparing runs from different targets is refused with a typed error; the numbers match the step 2 report command on the same data.
 
 ## 6.8 Regression gate
 
