@@ -13,7 +13,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatDuration, formatNumber, formatRelative } from '@/lib/format'
 
-import { RunStatusBadge, runStatusLabel } from '@/features/ask/RunStatusBadge'
+import { RunStatusBadge } from '@/features/ask/RunStatusBadge'
+import { runStatusLabel } from '@/features/ask/run-status'
 
 import { historyQuery, ORDERINGS, STATUSES, type HistoryFilters } from './api'
 
