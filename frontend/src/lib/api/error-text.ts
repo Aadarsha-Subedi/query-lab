@@ -1,5 +1,5 @@
-import { ApiError } from '@/lib/api'
-import { describeError } from '@/lib/api/errors'
+import { ApiError } from './client'
+import { describeError } from './errors'
 
 /** The text to show for a failed call: our wording for the code, else the server's. */
 export function errorText(error: unknown): { message: string; hint: string } {

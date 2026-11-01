@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 
 import { clearVote, voteOnRun, type Vote } from './api'
-import { errorText } from './errors'
+import { errorText } from '@/lib/api/error-text'
 
 /** 👍 / 👎 on a finished run. Press the active one again to take it back. The server's answer decides the state. */
 export function Feedback({ runId, vote }: { runId: number; vote: Vote | null }) {

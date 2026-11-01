@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 
 import { createRun } from './api'
-import { errorText } from './errors'
+import { errorText } from '@/lib/api/error-text'
 
 type AskBoxProps = {
   /** Fills the box on first render (the page remounts it with a new key to load an example). */

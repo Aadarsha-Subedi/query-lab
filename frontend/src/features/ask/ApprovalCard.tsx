@@ -11,7 +11,7 @@ import { ApiError } from '@/lib/api'
 import { formatDateTime } from '@/lib/format'
 
 import { approveRun, cancelRun, editRun } from './api'
-import { errorText } from './errors'
+import { errorText } from '@/lib/api/error-text'
 import { useDraftStore } from './draft-store'
 import type { Pending } from './types'
 

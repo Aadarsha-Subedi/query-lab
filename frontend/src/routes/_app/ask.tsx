@@ -11,6 +11,7 @@ import { DEMO_EXAMPLES } from '@/features/ask/examples'
 import { AskBox } from '@/features/ask/AskBox'
 import { RunView } from '@/features/ask/RunView'
 import { limitsQuery } from '@/features/limits/api'
+import { WorkspaceSelect } from '@/features/workspaces/WorkspaceSelect'
 import { SchemaPanel } from '@/features/schema/SchemaPanel'
 
 const searchSchema = z.object({
@@ -41,7 +42,15 @@ function AskPage() {
         <SchemaPanel workspace={workspace} />
       </aside>
       <main className="flex min-w-0 flex-col gap-6">
-        <Heading level={1}>Ask</Heading>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Heading level={1}>Ask</Heading>
+          <WorkspaceSelect
+            workspace={workspace}
+            onChange={(next) => {
+              void navigate({ search: { workspace: next } })
+            }}
+          />
+        </div>
         <AskBox
           key={example.n}
           initialQuestion={example.text}

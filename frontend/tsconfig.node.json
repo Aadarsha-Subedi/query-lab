@@ -27,6 +27,8 @@
     "env.test.ts",
     "build.test.ts",
     "api-errors.test.ts",
+    "ws-contract.test.ts",
+    "src/features/workspaces/contract.ts",
     "src/lib/api/errors.ts",
     "src/env.ts"
   ]

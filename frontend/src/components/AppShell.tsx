@@ -1,4 +1,10 @@
-import { Clock01Icon, Home01Icon, Menu01Icon, MessageQuestionIcon } from '@hugeicons/core-free-icons'
+import {
+  Clock01Icon,
+  DatabaseIcon,
+  Home01Icon,
+  Menu01Icon,
+  MessageQuestionIcon,
+} from '@hugeicons/core-free-icons'
 import { Link, Outlet } from '@tanstack/react-router'
 import type { ComponentProps } from 'react'
 
@@ -20,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/app', label: 'Home', icon: Home01Icon },
   { to: '/ask', label: 'Ask', icon: MessageQuestionIcon },
   { to: '/history', label: 'History', icon: Clock01Icon },
+  { to: '/workspaces', label: 'Workspaces', icon: DatabaseIcon },
 ]
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
