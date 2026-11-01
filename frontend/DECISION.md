@@ -270,3 +270,9 @@ shimmer is a CSS animation (not a JS timer) and stands still under reduced motio
 and a note in plain words (`describe_table` becomes "Reading the orders table", `reflect` becomes "Looks right. ..."), so raw
 JSON never reaches the screen: unknown JSON is dropped, plain text is kept. The same text feeds `RunTimeline` (finished runs,
 Replay and the staff trace view). The Ask column is `--chat-max` (768 px) and centred.
+
+**Ask trimmed to a chat (2026-11-01).** The user's question is a right-aligned bubble, not a heading, and carries no status tag
+(the status is still announced to screen readers; cancelled and expired runs say so in one muted line). The collapsed "What the
+agent did" list and the Ask again / New question buttons are gone from the Ask page: History already has the replay and an Ask
+again link. The thumbs are plain icons with no background; the chosen one is darker and bolder, so the state does not rely on a
+fill. `RunTimeline` remains for Replay and the staff trace view.

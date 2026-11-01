@@ -105,7 +105,7 @@ RunView(runId)
   status awaiting_approval -> ApprovalCard(pending)
       Approve | Edit SQL (400 guard_rejected: reason under the editor, run stays paused) | Cancel
       success -> invalidate the run, reopen the stream (Last-Event-ID = last step seen)
-  status succeeded -> ResultTable (rows first, SQL in a collapsible block; GET /result runs the SQL again), Feedback (says what a vote does), Ask again / New question, collapsed step list. When the stream ends the limits chip is invalidated (an event, not a timer)
+  status succeeded -> ResultTable (rows first, SQL in a collapsible block; GET /result runs the SQL again), Feedback (icon-only thumbs, says what a vote does). The question is a right-aligned message bubble with no status tag; the steps list and the follow-up buttons are gone from Ask (History has the replay and an Ask again link). When the stream ends the limits chip is invalidated (an event, not a timer)
   failed / expired / cancelled -> the error_code in plain words (describeError)
 ```
 

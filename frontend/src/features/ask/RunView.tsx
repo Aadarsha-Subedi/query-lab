@@ -1,10 +1,8 @@
-import { ArrowReloadHorizontalIcon, MessageQuestionIcon } from '@hugeicons/core-free-icons'
+import { ArrowReloadHorizontalIcon } from '@hugeicons/core-free-icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 
 import { QueryBoundary } from '@/components/QueryBoundary'
-import { Heading } from '@/components/typography/Heading'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { describeError } from '@/lib/api/errors'
@@ -13,10 +11,8 @@ import { ApprovalCard } from './ApprovalCard'
 import { runQuery } from './api'
 import { Feedback } from './Feedback'
 import { ResultTable } from './ResultTable'
-import { RunStatusBadge } from './RunStatusBadge'
 import { runStatusLabel } from './run-status'
 import { Reasoning } from './Reasoning'
-import { RunTimeline } from './RunTimeline'
 import { describeStep } from './step-text'
 import { mergeSteps } from './steps'
 import { isFinished, type RunDetail, type Step } from './types'
@@ -48,10 +44,9 @@ function Body({
   const failure = run.error_code ? describeError(run.error_code, '') : null
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Heading level={2}>{run.question}</Heading>
-        <RunStatusBadge status={run.status} />
-      </div>
+      <p className="max-w-[85%] self-end rounded-2xl bg-surface-muted px-4 py-2 text-body break-words whitespace-pre-wrap">
+        {run.question}
+      </p>
       <div aria-live="polite" className="sr-only">
         {runStatusLabel(run.status)}
       </div>
@@ -60,10 +55,13 @@ function Body({
           {failure.message} {failure.hint}
         </p>
       )}
-      {run.status === 'running' ? (
-        <LiveReasoning steps={steps} />
-      ) : run.status === 'succeeded' ? null : (
-        <RunTimeline steps={steps} />
+      {run.status === 'running' && <LiveReasoning steps={steps} />}
+      {(run.status === 'cancelled' || run.status === 'expired') && (
+        <p className="text-small text-muted-foreground">
+          {run.status === 'cancelled'
+            ? 'This run was cancelled.'
+            : 'This run expired before it was approved.'}
+        </p>
       )}
       {stream.phase === 'dropped' && !isFinished(run.status) && run.status !== 'awaiting_approval' && (
         <div
@@ -87,30 +85,6 @@ function Body({
         <>
           {run.has_result && <ResultTable runId={run.id} />}
           <Feedback runId={run.id} vote={run.feedback ?? null} />
-          <div className="flex flex-wrap gap-2">
-            <Button asChild variant="secondary" size="sm" icon={ArrowReloadHorizontalIcon}>
-              <Link
-                from="/ask"
-                to="/ask"
-                search={(previous) => ({ workspace: previous.workspace, question: run.question })}
-              >
-                Ask again
-              </Link>
-            </Button>
-            <Button asChild variant="secondary" size="sm" icon={MessageQuestionIcon}>
-              <Link from="/ask" to="/ask" search={(previous) => ({ workspace: previous.workspace })}>
-                New question
-              </Link>
-            </Button>
-          </div>
-          <details className="rounded-md border bg-surface p-3">
-            <summary className="cursor-pointer text-body font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              What the agent did ({steps.length} steps)
-            </summary>
-            <div className="mt-3">
-              <RunTimeline steps={steps} />
-            </div>
-          </details>
         </>
       )}
     </div>

@@ -205,6 +205,21 @@ describe('failed and finished runs', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('The query took too long')
   })
 
+  it('shows the question as a message, with no status tag, steps list or follow-up buttons', async () => {
+    serve({
+      'GET /api/agent/runs/5': () => envelope(run({ status: 'succeeded', pending: null, has_result: false })),
+      'GET /api/agent/runs/5/events': () => sse(''),
+    })
+    show(<RunView runId={5} />)
+    expect(await screen.findByText('How many orders?')).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'How many orders?' })).not.toBeInTheDocument()
+    // The status is announced to screen readers only: no visible tag.
+    expect(document.querySelector('[data-slot="badge"]')).toBeNull()
+    expect(screen.queryByText(/What the agent did/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Ask again' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'New question' })).not.toBeInTheDocument()
+  })
+
   it('records a thumbs-up and then reflects the server answer', async () => {
     let vote: string | null = null
     const calls = serve({

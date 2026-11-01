@@ -6,6 +6,10 @@ import { Button } from '@/components/ui/button'
 import { clearVote, voteOnRun, type Vote } from './api'
 import { errorText } from '@/lib/api/error-text'
 
+/** The icon alone, no background: the chosen one is darker and bolder. */
+const thumb = (chosen: boolean) =>
+  chosen ? 'text-foreground [&_svg]:[stroke-width:2.25]' : 'text-muted-foreground hover:text-foreground'
+
 /** 👍 / 👎 on a finished run. Press the active one again to take it back. The server's answer decides the state. */
 export function Feedback({ runId, vote }: { runId: number; vote: Vote | null }) {
   const queryClient = useQueryClient()
@@ -18,7 +22,8 @@ export function Feedback({ runId, vote }: { runId: number; vote: Vote | null }) 
     <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Was this answer right?">
       <span className="text-small text-muted-foreground">Was this right?</span>
       <Button
-        variant={vote === 'up' ? 'primary' : 'secondary'}
+        variant="ghost"
+        className={thumb(vote === 'up')}
         size="icon-sm"
         icon={ThumbsUpIcon}
         aria-label="Yes, this was right"
@@ -29,7 +34,8 @@ export function Feedback({ runId, vote }: { runId: number; vote: Vote | null }) 
         }}
       />
       <Button
-        variant={vote === 'down' ? 'primary' : 'secondary'}
+        variant="ghost"
+        className={thumb(vote === 'down')}
         size="icon-sm"
         icon={ThumbsDownIcon}
         aria-label="No, this was wrong"
