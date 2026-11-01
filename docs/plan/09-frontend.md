@@ -138,6 +138,6 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 9.12 Close-out
 
-- [ ] **9.12.1** `pnpm lint`, `typecheck`, `test`, `build`, `gen:api:check` all pass; CI frontend job green on the branch locally via `act`-free dry run (commands only; no push).
+- [ ] **9.12.1** `pnpm lint`, `typecheck`, `test`, `build`, `gen:api:check` all pass, run locally with the same commands the CI frontend job uses (nothing is pushed).
 - [ ] **9.12.2** Update `frontend/CLAUDE.md` (layout of new features, new conventions), `frontend/FLOW.md` (the run's live flow, approval flow, staff guard, manual-reconnect rule) and `frontend/DECISION.md` (each decision above, bundle sizes, anything deferred).
 - [ ] **9.12.3** Tick step 9 in the root README with a note of what remains for you (9.11.2).
