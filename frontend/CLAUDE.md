@@ -37,7 +37,7 @@ src/
   lib/api/error-text.ts, form-errors.ts  turn an ApiError into text / field errors
   lib/query-client.ts  TanStack Query defaults (no retries, no refetch on focus/reconnect)
   features/<name>/   per-feature queries (api.ts) and components: auth, health, limits, schema, ask,
-                     history, workspaces, llm-keys, workbench, design
+                     history, home, workspaces, llm-keys, workbench, design
   components/QueryBoundary.tsx  a component's loading / error / empty / success
   styles/boot.css    the boot screen (linked from index.html)
   styles/tokens.css  every design token (light + dark); the only place colours are defined
