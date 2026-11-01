@@ -834,6 +834,219 @@
               }
             }
           ]
+        },
+        {
+          "name": "List allowed models",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/llm-keys-models",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "llm-keys-models"
+              ]
+            },
+            "description": "The models you may pick per provider; the first of each list is the default."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change the OpenAI model",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/llm-keys/openai/model",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "llm-keys",
+                "openai",
+                "model"
+              ]
+            },
+            "description": "Switch the model of a saved key without sending the key again. 400 `no_key_for_provider` or `model_invalid`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"gpt-5-mini\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401, 422]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 422]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Make the Gemini key the active one",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/llm-keys/gemini/activate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "llm-keys",
+                "gemini",
+                "activate"
+              ]
+            },
+            "description": "Only one key is active at a time. 400 `no_key_for_provider` when none is saved.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get my AI setting",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/llm-settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "llm-settings"
+              ]
+            },
+            "description": "Whether asks use QueryLab's AI (`querylab`) or your own active key (`own`), and the Gemini model used on QueryLab's key."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Set my AI setting",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/llm-settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "llm-settings"
+              ]
+            },
+            "description": "Send `source`, `querylab_model`, or both. With `own` and no active key, asks are refused with 400 `no_active_key`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source\": \"querylab\",\n  \"querylab_model\": \"gemini-3.5-flash\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 400, 401, 422]', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 422]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },

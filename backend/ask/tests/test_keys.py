@@ -2,6 +2,7 @@ import json
 from typing import Any
 
 import pytest
+from django.conf import settings
 from django.core.cache import cache
 from django.test import Client, override_settings
 
@@ -230,11 +231,15 @@ def test_ai_source_defaults_to_querylab_and_is_saved(
     client: Client, user: User
 ) -> None:
     client.force_login(user)
-    assert client.get("/api/llm-settings").json()["data"] == {"source": "querylab"}
+    default = settings.LLM_DEFAULT_MODEL
+    assert client.get("/api/llm-settings").json()["data"] == {
+        "source": "querylab",
+        "querylab_model": default,
+    }
     assert (
         call(client, "put", "/api/llm-settings", {"source": "own"}).status_code == 200
     )
-    assert client.get("/api/llm-settings").json()["data"] == {"source": "own"}
+    assert client.get("/api/llm-settings").json()["data"]["source"] == "own"
     assert call(client, "put", "/api/llm-settings", {"source": "x"}).status_code == 422
 
 
@@ -245,3 +250,31 @@ def test_own_source_without_an_active_key_is_blocked(
     with pytest.raises(BadRequestException) as error:
         keys.resolve_provider(user)
     assert error.value.error_code == "no_active_key"
+
+
+def test_querylab_model_is_chosen_from_the_gemini_list(
+    client: Client, user: User, calls: Calls
+) -> None:
+    client.force_login(user)
+    other = next(
+        m
+        for m in client.get("/api/llm-keys-models").json()["data"]["gemini"]
+        if m != settings.LLM_DEFAULT_MODEL
+    )
+    response = call(client, "put", "/api/llm-settings", {"querylab_model": other})
+    assert response.status_code == 200
+    assert response.json()["data"]["querylab_model"] == other
+    assert response.json()["data"]["source"] == "querylab"  # unchanged
+    keys.resolve_provider(user)
+    assert calls.built[-1] == ("gemini", "test-gemini-key", other)
+    bad = call(client, "put", "/api/llm-settings", {"querylab_model": "gpt-5-nano"})
+    assert bad.status_code == 400
+    assert bad.json()["code"] == "model_invalid"
+
+
+def test_a_model_removed_from_the_list_falls_back_to_the_default(
+    user: User, calls: Calls
+) -> None:
+    keys.set_querylab_model(user, settings.LLM_GEMINI_MODELS[-1])
+    with override_settings(LLM_GEMINI_MODELS=[settings.LLM_DEFAULT_MODEL]):
+        assert keys.querylab_model(user) == settings.LLM_DEFAULT_MODEL

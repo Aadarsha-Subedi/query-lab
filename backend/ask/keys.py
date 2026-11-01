@@ -123,6 +123,27 @@ def set_ai_source(user: User, source: str) -> str:
     return source
 
 
+def querylab_model(user: User) -> str:
+    """The Gemini model this user's asks use on QueryLab's key. A saved choice that is
+    no longer on the allowed list quietly falls back to the default model."""
+    setting = UserAISetting.objects.filter(user=user).first()
+    chosen = setting.querylab_model if setting else ""
+    if chosen and chosen in allowed_models(PROVIDER_GEMINI):
+        return chosen
+    return settings.LLM_DEFAULT_MODEL
+
+
+def set_querylab_model(user: User, model: str) -> str:
+    if model not in allowed_models(PROVIDER_GEMINI):
+        raise BadRequestException(
+            "That model is not available.", error_code="model_invalid"
+        )
+    UserAISetting.objects.update_or_create(
+        user=user, defaults={"querylab_model": model}
+    )
+    return model
+
+
 def resolve_provider(user: User) -> ResolvedProvider:
     """The key this user's asks run on, by their chosen source. "Own" with no active
     key is refused with a clear message instead of quietly spending QueryLab's key."""
@@ -140,7 +161,7 @@ def resolve_provider(user: User) -> ResolvedProvider:
     provider = create_provider(
         PROVIDER_GEMINI,
         settings.LLM_DEFAULT_GEMINI_API_KEY,
-        settings.LLM_DEFAULT_MODEL,
+        querylab_model(user),
     )
     return ResolvedProvider(provider, PROVIDER_GEMINI, KEY_DEFAULT)
 

@@ -1,8 +1,45 @@
 {
   "components": {
     "schemas": {
+      "AISettingIn": {
+        "description": "Send what changes: the source, the QueryLab model, or both.",
+        "properties": {
+          "querylab_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Querylab Model"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "querylab",
+                  "own"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "title": "AISettingIn",
+        "type": "object"
+      },
       "AISettingOut": {
         "properties": {
+          "querylab_model": {
+            "title": "Querylab Model",
+            "type": "string"
+          },
           "source": {
             "enum": [
               "querylab",
@@ -13,7 +50,8 @@
           }
         },
         "required": [
-          "source"
+          "source",
+          "querylab_model"
         ],
         "title": "AISettingOut",
         "type": "object"
@@ -6568,14 +6606,14 @@
         ]
       },
       "put": {
-        "description": "Choose QueryLab's AI or your own.",
+        "description": "Choose QueryLab's AI or your own, and the model used on QueryLab's key.",
         "operationId": "set_ai_setting",
         "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AISettingOut"
+                "$ref": "#/components/schemas/AISettingIn"
               }
             }
           },

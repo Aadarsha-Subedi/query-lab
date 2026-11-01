@@ -48,6 +48,22 @@ class LLMModelsOut(Schema):
 class AISettingOut(Schema):
     # "querylab" (shared key, daily limit) or "own" (your active key).
     source: Literal["querylab", "own"]
+    # The Gemini model used on QueryLab's key.
+    querylab_model: str
+
+
+class AISettingIn(Schema):
+    """Send what changes: the source, the QueryLab model, or both."""
+
+    source: Literal["querylab", "own"] | None = None
+    querylab_model: str | None = None
+
+
+def _setting_out(user: User) -> dict:
+    return AISettingOut(
+        source=cast(Literal["querylab", "own"], keys.ai_source(user)),
+        querylab_model=keys.querylab_model(user),
+    ).dict()
 
 
 def _out(row: UserLLMKey) -> dict:
@@ -140,7 +156,7 @@ def activate_llm_key(request: HttpRequest, provider: Provider) -> dict:
     auth=django_auth,
 )
 def get_ai_setting(request: HttpRequest) -> dict:
-    return success({"source": keys.ai_source(cast(User, request.user))})
+    return success(_setting_out(cast(User, request.user)))
 
 
 @router.put(
@@ -148,10 +164,14 @@ def get_ai_setting(request: HttpRequest) -> dict:
     response={200: SuccessEnvelope[AISettingOut], **errors(400, 401, 422, 429)},
     auth=django_auth,
 )
-def set_ai_setting(request: HttpRequest, payload: AISettingOut) -> dict:
-    """Choose QueryLab's AI or your own."""
-    source = keys.set_ai_source(cast(User, request.user), payload.source)
-    return success({"source": source}, message="AI source saved.")
+def set_ai_setting(request: HttpRequest, payload: AISettingIn) -> dict:
+    """Choose QueryLab's AI or your own, and the model used on QueryLab's key."""
+    user = cast(User, request.user)
+    if payload.source is not None:
+        keys.set_ai_source(user, payload.source)
+    if payload.querylab_model is not None:
+        keys.set_querylab_model(user, payload.querylab_model)
+    return success(_setting_out(user), message="AI setting saved.")
 
 
 class AskIn(Schema):

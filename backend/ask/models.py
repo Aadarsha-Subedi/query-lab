@@ -46,6 +46,8 @@ class UserAISetting(TimeStampModel):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ai_setting"
     )
     source = models.CharField(max_length=10, default=SOURCE_QUERYLAB)
+    # The Gemini model used on QueryLab's key; blank means the default model.
+    querylab_model = models.CharField(max_length=100, blank=True, default="")
 
     def __str__(self) -> str:
         return f"{self.user_id}:{self.source}"
