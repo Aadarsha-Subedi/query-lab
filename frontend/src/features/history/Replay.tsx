@@ -4,11 +4,11 @@ import { useState } from 'react'
 
 import { QueryBoundary } from '@/components/QueryBoundary'
 import { Heading } from '@/components/typography/Heading'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CodeBlock } from '@/components/typography/Code'
 import { replayQuery } from '@/features/history/replay-api'
+import { RunStatusBadge } from '@/features/ask/RunStatusBadge'
 import { RunTimeline } from '@/features/ask/RunTimeline'
 import { formatDateTime } from '@/lib/format'
 
@@ -22,7 +22,7 @@ function Stepper({ run }: { run: RunDetail }) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         <Heading level={2}>{run.question}</Heading>
-        <Badge>{run.status}</Badge>
+        <RunStatusBadge status={run.status} />
         <span className="text-small text-muted-foreground">{formatDateTime(run.created_at)}</span>
       </div>
       <div className="flex items-center gap-2">

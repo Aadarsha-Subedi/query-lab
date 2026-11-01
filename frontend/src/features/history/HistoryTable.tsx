@@ -13,25 +13,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatDuration, formatNumber, formatRelative } from '@/lib/format'
 
+import { RunStatusBadge, runStatusLabel } from '@/features/ask/RunStatusBadge'
+
 import { historyQuery, ORDERINGS, STATUSES, type HistoryFilters } from './api'
 
 const ALL = 'all'
-const STATUS_LABEL: Record<(typeof STATUSES)[number], string> = {
-  running: 'Working',
-  awaiting_approval: 'Needs approval',
-  succeeded: 'Done',
-  failed: 'Failed',
-  cancelled: 'Cancelled',
-  expired: 'Expired',
-}
-const STATUS_VARIANT = {
-  running: 'primary',
-  awaiting_approval: 'warning',
-  succeeded: 'success',
-  failed: 'danger',
-  cancelled: 'neutral',
-  expired: 'neutral',
-} as const
 const ORDER_LABEL: Record<(typeof ORDERINGS)[number], string> = {
   '-created_at': 'Newest first',
   created_at: 'Oldest first',
@@ -85,7 +71,7 @@ function Filters({
             <SelectItem value={ALL}>All statuses</SelectItem>
             {STATUSES.map((status) => (
               <SelectItem key={status} value={status}>
-                {STATUS_LABEL[status]}
+                {runStatusLabel(status)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -161,7 +147,6 @@ export function HistoryTable({ filters }: { filters: HistoryFilters }) {
                 </TableHeader>
                 <TableBody>
                   {page.data.map((run) => {
-                    const status = run.status as keyof typeof STATUS_VARIANT
                     return (
                       <TableRow key={run.id}>
                         <TableCell className="max-w-md">
@@ -175,7 +160,7 @@ export function HistoryTable({ filters }: { filters: HistoryFilters }) {
                           {run.edited && <Badge className="ml-2">edited</Badge>}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>
+                          <RunStatusBadge status={run.status} />
                         </TableCell>
                         <TableCell>{formatDuration(run.latency_ms / 1000)}</TableCell>
                         <TableCell>{formatRelative(run.created_at)}</TableCell>

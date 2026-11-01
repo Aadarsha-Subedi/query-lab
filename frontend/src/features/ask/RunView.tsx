@@ -4,7 +4,6 @@ import { useEffect, useRef } from 'react'
 
 import { QueryBoundary } from '@/components/QueryBoundary'
 import { Heading } from '@/components/typography/Heading'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { describeError } from '@/lib/api/errors'
@@ -13,22 +12,11 @@ import { ApprovalCard } from './ApprovalCard'
 import { runQuery } from './api'
 import { Feedback } from './Feedback'
 import { ResultTable } from './ResultTable'
+import { RunStatusBadge, runStatusLabel } from './RunStatusBadge'
 import { RunTimeline } from './RunTimeline'
 import { mergeSteps } from './steps'
 import { isFinished, type RunDetail } from './types'
 import { useRunStream } from './useRunStream'
-
-const STATUS_TEXT: Record<
-  string,
-  { label: string; variant: 'neutral' | 'primary' | 'success' | 'warning' | 'danger' }
-> = {
-  running: { label: 'Working', variant: 'primary' },
-  awaiting_approval: { label: 'Needs your approval', variant: 'warning' },
-  succeeded: { label: 'Done', variant: 'success' },
-  failed: { label: 'Failed', variant: 'danger' },
-  cancelled: { label: 'Cancelled', variant: 'neutral' },
-  expired: { label: 'Expired', variant: 'neutral' },
-}
 
 function Body({
   run,
@@ -40,16 +28,15 @@ function Body({
   reconnect: () => void
 }) {
   const steps = mergeSteps(run.steps, stream.steps)
-  const status = STATUS_TEXT[run.status] ?? { label: run.status, variant: 'neutral' as const }
   const failure = run.error_code ? describeError(run.error_code, '') : null
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         <Heading level={2}>{run.question}</Heading>
-        <Badge variant={status.variant}>{status.label}</Badge>
+        <RunStatusBadge status={run.status} />
       </div>
       <div aria-live="polite" className="sr-only">
-        {status.label}
+        {runStatusLabel(run.status)}
       </div>
       {failure && (
         <p role="alert" className="text-body text-danger-foreground">
