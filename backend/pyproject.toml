@@ -47,7 +47,7 @@ package = false
 [tool.ruff]
 target-version = "py312"
 line-length = 88
-extend-exclude = ["**/migrations/*"]
+extend-exclude = ["**/migrations/*", "finetune/colab/*"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "DJ", "RUF", "BLE", "C4", "SIM"]

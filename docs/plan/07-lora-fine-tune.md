@@ -50,18 +50,18 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 7.3 Training notebook (Colab)
 
-- [ ] **7.3.1** `finetune/colab/train.ipynb`, committed without outputs, with a pinned install cell (`transformers`, `peft`, `trl`, `bitsandbytes`, `accelerate`, `datasets`, `wandb`, exact versions chosen when drafted and recorded in `DECISION.md`).
-- [ ] **7.3.2** Load `FINETUNE_BASE_MODEL` in 4-bit NF4 with double quantization and fp16 compute (T4 has no bf16); gradient checkpointing; LoRA on all attention and MLP projection layers; rank, alpha, dropout, learning rate, epochs and max sequence length as one config cell, with starting values and the reasons in `DECISION.md`.
-- [ ] **7.3.3** Train on `train.jsonl` with loss on the reply tokens only (completion-only), evaluate on `validation.jsonl` each epoch, save checkpoints to Drive every N steps, and resume from the latest on a rerun after a disconnect.
-- [ ] **7.3.4** W&B logging of config, loss, validation loss and GPU memory. The run name carries the git commit of the repo and the dataset manifest hash.
+- [x] **7.3.1** `finetune/colab/train.ipynb`, committed without outputs, with a pinned install cell (`transformers`, `peft`, `trl`, `bitsandbytes`, `accelerate`, `datasets`, `wandb`, exact versions chosen when drafted and recorded in `DECISION.md`).
+- [x] **7.3.2** Load `FINETUNE_BASE_MODEL` in 4-bit NF4 with double quantization and fp16 compute (T4 has no bf16); gradient checkpointing; LoRA on all attention and MLP projection layers; rank, alpha, dropout, learning rate, epochs and max sequence length as one config cell, with starting values and the reasons in `DECISION.md`.
+- [x] **7.3.3** Train on `train.jsonl` with loss on the reply tokens only (completion-only), evaluate on `validation.jsonl` each epoch, save checkpoints to Drive every N steps, and resume from the latest on a rerun after a disconnect.
+- [x] **7.3.4** W&B logging of config, loss, validation loss and GPU memory. The run name carries the git commit of the repo and the dataset manifest hash.
 - [ ] **7.3.5** **(You)** Run a short smoke training (50 steps) to confirm it fits in T4 memory; report the peak memory. If the 3B model does not fit with the chosen length, drop to 1.5B and record it.
 - [ ] **7.3.6** **(You)** Run the full training; keep the adapter on Drive and download `adapter/` plus `train_config.json` (Claude never needs the weights in the repo).
 
 ## 7.4 Predictions and merge (Colab)
 
 - [x] **7.4.1** Export the benchmark questions from the repo: management command `export_benchmark` writes `bench.jsonl` with `id`, `target`, `db_id`, `question` and the **schema text only**, never gold SQL or rows, for Spider held-out and the Olist golden set.
-- [ ] **7.4.2** Notebook `finetune/colab/predict.ipynb`: for the **base** model and the **tuned** model (base plus adapter, merged for speed), greedy decoding (temperature 0), same prompt, write `predictions-<label>.jsonl` with `id`, `sql`, `raw_reply`, token counts, and the model label.
-- [ ] **7.4.3** Add `train_config.json` plus the adapter hash to each predictions file header, so a score can always be traced to a training run.
+- [x] **7.4.2** Notebook `finetune/colab/predict.ipynb`: for the **base** model and the **tuned** model (base plus adapter, merged for speed), greedy decoding (temperature 0), same prompt, write `predictions-<label>.jsonl` with `id`, `sql`, `raw_reply`, token counts, and the model label.
+- [x] **7.4.3** Add `train_config.json` plus the adapter hash to each predictions file header, so a score can always be traced to a training run.
 - [ ] **7.4.4** **(You)** Run both prediction passes in Colab and download the two files into `FINETUNE_OUTPUT_DIR`.
 
 ## 7.5 Score from file

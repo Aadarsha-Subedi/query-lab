@@ -34,7 +34,7 @@ step 9 on the approved design system, just before deployment.
 - [x] 4. Analyst API (your real-browser CORS check, 4.7.5, remains; [plan](docs/plan/04-analyst-api.md))
 - [x] 5. User workspaces (CSV import, 5.7, dropped for now: it may return with R2 object storage; your real-Neon checks, 5.9.7, remain; [plan](docs/plan/05-user-workspaces.md))
 - [x] 6. Trace-driven evals (backend only; your review of the first drafted batch and the live Olist agent eval, 6.9.2, remain, then 6.9.3; [plan](docs/plan/06-trace-driven-evals.md))
-- [ ] 7. LoRA fine-tune (stretch)
+- [ ] 7. LoRA fine-tune (stretch; built in code, your Colab steps remain: Spider train file, W&B, run the two notebooks, then score; [plan](docs/plan/07-lora-fine-tune.md))
 - [ ] 8. Schema-RAG + semantic cache (optional)
 - [ ] 9. Frontend
 - [ ] 10. Deploy + portfolio polish

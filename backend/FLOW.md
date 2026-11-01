@@ -486,6 +486,25 @@ A run remembers its workspace: `AgentRun.workspace_id` (null = demo), `excluded_
 
 CSV import was planned (5.7) and dropped; see DECISION.md. A user fills tables through `POST .../rows` (up to `WORKSPACE_MAX_ROWS_PER_EDIT` rows per call) or the SQL console (`INSERT`, or `INSERT ... SELECT`).
 
+## Fine-tuning and scoring a model from a file (step 7)
+
+Everything here is offline: the Django commands run in the dev container, training runs in Google Colab, and nothing touches the production image.
+
+```
+make eval ARGS="build_finetune_data"            -> FINETUNE_OUTPUT_DIR/{train,validation}.jsonl + manifest.json
+make eval ARGS="export_benchmark --out bench.jsonl"  -> prompts only (no gold SQL, no rows)
+Colab: finetune/colab/train.ipynb   (data/*.jsonl on Drive -> run/adapter + train_config.json, W&B)
+Colab: finetune/colab/predict.ipynb (data/bench.jsonl + adapter -> predictions-base-*.jsonl, predictions-tuned-*.jsonl)
+make eval ARGS="run_eval --target spider --split held-out --predictions predictions-tuned-....jsonl"
+make eval ARGS="run_eval --target olist --predictions predictions-tuned-....jsonl"
+```
+
+**Your setup (once):** put `train_spider.json` next to `dev.json` in `infra/data/spider/` (`database/` already holds every database); create a W&B account; in Colab add the secret `WANDB_API_KEY` and mount Drive. Copy the new `FINETUNE_*` lines from `.env.example` to `.env`. Upload `train.jsonl`, `validation.jsonl`, `manifest.json` and `bench.jsonl` to `MyDrive/querylab/data/`.
+
+**Training data:** each record is the product's own chat: SQLite system prompt, `<schema>`/`<question>` user prompt (schema text read from the Spider SQLite file, sample values included, exactly as in eval), and the assistant reply `{"answerable": true, "sql": ..., "rationale": "", "self_confidence": 1.0}` which `ask.prompt.parse_reply` reads. Validation is whole databases.
+
+**Predictions file** (JSONL): line 1 `{"header": {"label": ..., "adapter_sha256": ..., "train_config": ...}}`; then `{"prompt_sha256", "raw_reply", "input_tokens", "output_tokens"}` per prompt. `run_eval --predictions` stores an `EvalRun` with `provider=file`, `model=<label>`, so `eval_report`, the compare API and `--gate` work on it unchanged. A file model gets no repair retry: the same reply is replayed, so its first answer decides (the Gemini baselines do get the repair loop).
+
 ## Database topology
 
 ```
