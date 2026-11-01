@@ -20,6 +20,12 @@ const GUARD_LABEL: Record<string, string> = {
   qualified_tables: 'Table names qualified',
 }
 
+/** What each automatic change means, in plain words. */
+const GUARD_HELP: Record<string, string> = {
+  limit_clamped: 'We added or lowered a row limit so the query cannot return a huge result.',
+  qualified_tables: 'We wrote the full schema name before each table so it points at the right data.',
+}
+
 type ApprovalCardProps = {
   runId: number
   pending: Pending
@@ -58,6 +64,10 @@ export function ApprovalCard({ runId, pending, onDecided }: ApprovalCardProps) {
       <CardHeader>
         <CardTitle>Approve this SQL before it runs</CardTitle>
         <CardDescription>{pending.rationale}</CardDescription>
+        <p className="text-small text-muted-foreground">
+          This is the SQL the agent wrote for your question. It reads your data and never changes it. Nothing
+          runs until you approve.
+        </p>
         <div className="flex flex-wrap items-center gap-2">
           {pending.guard.map((code) => (
             <Badge key={code} variant="info">
@@ -92,6 +102,22 @@ export function ApprovalCard({ runId, pending, onDecided }: ApprovalCardProps) {
           </>
         ) : (
           <CodeBlock code={pending.sql} />
+        )}
+        {(pending.guard.length > 0 || pending.revision > 0) && (
+          <ul className="list-disc pl-5 text-small text-muted-foreground">
+            {pending.guard.map((code) => (
+              <li key={code}>
+                <span className="font-medium text-foreground">{GUARD_LABEL[code] ?? code}.</span>{' '}
+                {GUARD_HELP[code] ?? 'A safety check changed this query.'}
+              </li>
+            ))}
+            {pending.revision > 0 && (
+              <li>
+                <span className="font-medium text-foreground">Revision {pending.revision}.</span> You have
+                edited this SQL {pending.revision === 1 ? 'once' : `${pending.revision} times`}.
+              </li>
+            )}
+          </ul>
         )}
         {pending.assumptions.length > 0 && (
           <div>

@@ -13,28 +13,34 @@ import { limitsQuery, type AgentLimits } from './api'
 function Details({ limits }: { limits: AgentLimits }) {
   const { default_key, unfinished_runs, streams, has_own_key } = limits
   return (
-    <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 text-small">
-      <dt className="text-muted-foreground">{has_own_key ? 'Your own key' : 'Shared key, used today'}</dt>
-      <dd>
-        {has_own_key
-          ? 'No daily limit from us'
-          : `${formatNumber(default_key.used)} of ${formatNumber(default_key.allowed)}`}
-      </dd>
-      {!has_own_key && (
-        <>
-          <dt className="text-muted-foreground">Resets</dt>
-          <dd>{formatDateTime(default_key.resets_at)}</dd>
-        </>
-      )}
-      <dt className="text-muted-foreground">Open runs</dt>
-      <dd>
-        {formatNumber(unfinished_runs.count)} of {formatNumber(unfinished_runs.allowed)}
-      </dd>
-      <dt className="text-muted-foreground">Live streams</dt>
-      <dd>
-        {formatNumber(streams.open)} of {formatNumber(streams.allowed)}
-      </dd>
-    </dl>
+    <>
+      <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 text-small">
+        <dt className="text-muted-foreground">{has_own_key ? 'Your own key' : 'Shared key, used today'}</dt>
+        <dd>
+          {has_own_key
+            ? 'No daily limit from us'
+            : `${formatNumber(default_key.used)} of ${formatNumber(default_key.allowed)}`}
+        </dd>
+        {!has_own_key && (
+          <>
+            <dt className="text-muted-foreground">Resets</dt>
+            <dd>{formatDateTime(default_key.resets_at)}</dd>
+          </>
+        )}
+        <dt className="text-muted-foreground">Open questions</dt>
+        <dd>
+          {formatNumber(unfinished_runs.count)} of {formatNumber(unfinished_runs.allowed)}
+        </dd>
+        <dt className="text-muted-foreground">Live views</dt>
+        <dd>
+          {formatNumber(streams.open)} of {formatNumber(streams.allowed)}
+        </dd>
+      </dl>
+      <p className="mt-3 text-caption text-muted-foreground">
+        Open questions are still running or waiting for your approval. Live views are pages showing a run as
+        it happens.
+      </p>
+    </>
   )
 }
 
@@ -77,7 +83,7 @@ export function LimitsIndicator({ workspace }: { workspace?: number }) {
           className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Badge variant={exhausted || runsFull ? 'danger' : 'neutral'}>
-            {exhausted ? 'Daily limit reached' : runsFull ? 'Open runs full' : label}
+            {exhausted ? 'Daily limit reached' : runsFull ? 'Open questions full' : label}
           </Badge>
         </button>
       </PopoverTrigger>
