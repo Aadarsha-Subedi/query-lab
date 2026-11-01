@@ -1875,6 +1875,21 @@ export interface components {
             /** Workspace Id */
             workspace_id: number | null;
         };
+        /** RunResultOut */
+        RunResultOut: {
+            /** Columns */
+            columns: string[];
+            /** Row Count */
+            row_count: number;
+            /** Rows */
+            rows: unknown[][];
+            /** Run Id */
+            run_id: number;
+            /** Sql */
+            sql: string;
+            /** Truncated */
+            truncated: boolean;
+        };
         /** SchemaOut */
         SchemaOut: {
             /** Name */
@@ -2206,27 +2221,6 @@ export interface components {
              */
             success: true;
         };
-        /** SuccessEnvelope[ResultOut] */
-        SuccessEnvelope_ResultOut_: {
-            data: components["schemas"]["ResultOut"];
-            /** Message */
-            message: string;
-            /**
-             * Meta
-             * @default {}
-             */
-            meta: {
-                [key: string]: unknown;
-            };
-            /** Status Code */
-            status_code: number;
-            /**
-             * Success
-             * @default true
-             * @constant
-             */
-            success: true;
-        };
         /** SuccessEnvelope[RowOut] */
         SuccessEnvelope_RowOut_: {
             data: components["schemas"]["RowOut"];
@@ -2335,6 +2329,27 @@ export interface components {
         /** SuccessEnvelope[RunOut] */
         SuccessEnvelope_RunOut_: {
             data: components["schemas"]["RunOut"];
+            /** Message */
+            message: string;
+            /**
+             * Meta
+             * @default {}
+             */
+            meta: {
+                [key: string]: unknown;
+            };
+            /** Status Code */
+            status_code: number;
+            /**
+             * Success
+             * @default true
+             * @constant
+             */
+            success: true;
+        };
+        /** SuccessEnvelope[RunResultOut] */
+        SuccessEnvelope_RunResultOut_: {
+            data: components["schemas"]["RunResultOut"];
             /** Message */
             message: string;
             /**
@@ -3600,7 +3615,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_ResultOut_"];
+                    "application/json": components["schemas"]["SuccessEnvelope_RunResultOut_"];
                 };
             };
             /** @description Bad Request */
