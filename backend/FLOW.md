@@ -488,15 +488,15 @@ CSV import was planned (5.7) and dropped; see DECISION.md. A user fills tables t
 
 ## Fine-tuning and scoring a model from a file (step 7)
 
-Everything here is offline: the Django commands run in the dev container, training runs in Google Colab, and nothing touches the production image.
+`/data/finetune` in the container is `infra/data/finetune/` on your machine (git-ignored; added to the compose volumes, so run `docker compose ... up -d` again once to pick it up). These are Django management commands, so run them through `make eval`, not `python file.py`. Everything here is offline: the Django commands run in the dev container, training runs in Google Colab, and nothing touches the production image.
 
 ```
 make eval ARGS="build_finetune_data"            -> FINETUNE_OUTPUT_DIR/{train,validation}.jsonl + manifest.json
-make eval ARGS="export_benchmark --out bench.jsonl"  -> prompts only (no gold SQL, no rows)
+make eval ARGS="export_benchmark --out /data/finetune/bench.jsonl"  -> prompts only (no gold SQL, no rows)
 Colab: finetune/colab/train.ipynb   (data/*.jsonl on Drive -> run/adapter + train_config.json, W&B)
 Colab: finetune/colab/predict.ipynb (data/bench.jsonl + adapter -> predictions-base-*.jsonl, predictions-tuned-*.jsonl)
-make eval ARGS="run_eval --target spider --split held-out --predictions predictions-tuned-....jsonl"
-make eval ARGS="run_eval --target olist --predictions predictions-tuned-....jsonl"
+make eval ARGS="run_eval --target spider --split held-out --predictions /data/finetune/predictions-tuned-....jsonl"
+make eval ARGS="run_eval --target olist --predictions /data/finetune/predictions-tuned-....jsonl"
 ```
 
 **Your setup (once):** put `train_spider.json` next to `dev.json` in `infra/data/spider/` (`database/` already holds every database); create a W&B account; in Colab add the secret `WANDB_API_KEY` and mount Drive. Copy the new `FINETUNE_*` lines from `.env.example` to `.env`. Upload `train.jsonl`, `validation.jsonl`, `manifest.json` and `bench.jsonl` to `MyDrive/querylab/data/`.
