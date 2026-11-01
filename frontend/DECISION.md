@@ -223,3 +223,10 @@ work on touch); vote copy; Ask again / New question (`/ask?question=`); limits c
 before SQL; on phones the schema panel now comes after the question box. Not done: an "active key" badge on the keys page
 (the API returns no saved-at time, so the UI cannot know which key is used), and a score column in History (needs a backend
 field). No new timers or retries were added.
+
+**AI settings page (2026-11-01).** The keys page became "AI settings": a two-option choice (QueryLab AI or My own AI), and for
+"own" a fixed two-row table (OpenAI, Gemini) with a model dropdown per saved key, a radio for the one key in use, and Remove,
+plus one add-or-replace form whose provider dropdown shows the logos. The choice is saved at once (`PUT /api/llm-settings`).
+With "own" and no key in use the page says questions are paused and the backend refuses them (`no_active_key`): no quiet
+fallback to QueryLab's key. The "In use" column sits before "Model" so the radio stays on screen on phones. The OpenAI logo
+is black on transparent, so it is inverted on the dark theme. Radix Select needs pointer-capture stubs in `test/setup.ts`.

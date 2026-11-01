@@ -159,22 +159,6 @@ function KeyRow({
           </div>
         </TableCell>
         <TableCell>
-          {saved ? (
-            <ModelSelect
-              provider={provider}
-              value={saved.model}
-              models={models}
-              label={`${label} model`}
-              disabled={busy}
-              onChange={(next) => {
-                model.mutate(next)
-              }}
-            />
-          ) : (
-            <span className="text-muted-foreground">Save a key to pick a model</span>
-          )}
-        </TableCell>
-        <TableCell>
           <label className="inline-flex min-h-11 items-center gap-2">
             <input
               type="radio"
@@ -187,8 +171,26 @@ function KeyRow({
               aria-label={`Use the ${label} key`}
               className="size-4 accent-primary"
             />
-            <span aria-hidden="true">{saved?.is_active ? 'In use' : 'Use this'}</span>
+            <span aria-hidden="true" className="hidden sm:inline">
+              {saved?.is_active ? 'In use' : 'Use this'}
+            </span>
           </label>
+        </TableCell>
+        <TableCell>
+          {saved ? (
+            <ModelSelect
+              provider={provider}
+              value={saved.model}
+              models={models}
+              label={`${label} model`}
+              disabled={busy}
+              onChange={(next) => {
+                model.mutate(next)
+              }}
+            />
+          ) : (
+            <span className="text-muted-foreground">Needs a key</span>
+          )}
         </TableCell>
         <TableCell className="text-right">
           {saved && (
@@ -355,8 +357,8 @@ function OwnKeys() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Provider</TableHead>
-                      <TableHead>Model</TableHead>
                       <TableHead>In use</TableHead>
+                      <TableHead>Model</TableHead>
                       <TableHead>
                         <span className="sr-only">Remove</span>
                       </TableHead>
