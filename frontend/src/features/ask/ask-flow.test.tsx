@@ -240,12 +240,33 @@ describe('AskBox', () => {
     const onStarted = vi.fn()
     show(<AskBox workspace={3} onStarted={onStarted} />)
     await userEvent.type(screen.getByRole('textbox', { name: 'Your question' }), '  Top products?  ')
-    await userEvent.click(screen.getByRole('button', { name: 'Ask' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Send question' }))
     await waitFor(() => {
       expect(onStarted).toHaveBeenCalledWith(9)
     })
     expect(sent).toEqual({ question: 'Top products?', workspace: 3 })
     expect(screen.getByRole('textbox', { name: 'Your question' })).toHaveValue('')
+  })
+
+  it('sends on Enter and makes a new line on Shift+Enter', async () => {
+    let sent: unknown
+    serve({
+      'POST /api/agent/runs': (request) => {
+        sent = request.body
+        return envelope({ id: 9 }, 201)
+      },
+    })
+    const onStarted = vi.fn()
+    show(<AskBox onStarted={onStarted} />)
+    const box = screen.getByRole('textbox', { name: 'Your question' })
+    await userEvent.type(box, 'Top{Shift>}{Enter}{/Shift}products?')
+    expect(box).toHaveValue('Top\nproducts?')
+    expect(onStarted).not.toHaveBeenCalled()
+    await userEvent.type(box, '{Enter}')
+    await waitFor(() => {
+      expect(onStarted).toHaveBeenCalledWith(9)
+    })
+    expect(sent).toEqual({ question: 'Top\nproducts?', workspace: null })
   })
 
   it('keeps the text and shows the server wording on an error', async () => {
@@ -254,7 +275,7 @@ describe('AskBox', () => {
     })
     show(<AskBox onStarted={vi.fn()} />)
     await userEvent.type(screen.getByRole('textbox', { name: 'Your question' }), 'Anything')
-    await userEvent.click(screen.getByRole('button', { name: 'Ask' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Send question' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Too many unfinished runs')
     expect(screen.getByRole('textbox', { name: 'Your question' })).toHaveValue('Anything')
   })
@@ -262,7 +283,7 @@ describe('AskBox', () => {
   it('is disabled while another run is open', () => {
     serve({})
     show(<AskBox disabled onStarted={vi.fn()} />)
-    expect(screen.getByRole('button', { name: 'Ask' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Send question' })).toBeDisabled()
     expect(screen.getByText('Finish or cancel your open run first.')).toBeVisible()
   })
 
@@ -272,7 +293,7 @@ describe('AskBox', () => {
     })
     show(<AskBox onStarted={vi.fn()} />)
     await userEvent.type(screen.getByRole('textbox', { name: 'Your question' }), 'Anything')
-    await userEvent.click(screen.getByRole('button', { name: 'Ask' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Send question' }))
     expect(await screen.findByRole('link', { name: 'Add your own key' })).toHaveAttribute('href', '/settings')
   })
 })

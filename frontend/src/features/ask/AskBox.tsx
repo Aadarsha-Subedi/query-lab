@@ -47,24 +47,40 @@ export function AskBox({ initialQuestion = '', workspace, disabled, onStarted }:
     mutation.mutate()
   }
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) submit()
+    // Enter sends, like a chat; Shift+Enter makes a new line.
+    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+      event.preventDefault()
+      submit()
+    }
   }
   const failure = mutation.isError ? errorText(mutation.error) : null
   const code = mutation.error instanceof ApiError ? mutation.error.code : ''
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-2">
-      <Textarea
-        aria-label="Your question"
-        placeholder="Ask a question about your data, for example: which product categories sold best last month?"
-        value={question}
-        onChange={(event) => {
-          setQuestion(event.target.value)
-        }}
-        onKeyDown={onKeyDown}
-        aria-invalid={failure ? true : undefined}
-        aria-describedby={failure ? 'ask-error' : undefined}
-      />
+      <div className="relative">
+        <Textarea
+          aria-label="Your question"
+          placeholder="Ask a question about your data, for example: which product categories sold best last month?"
+          className="min-h-24 resize-none pr-14 pb-12"
+          value={question}
+          onChange={(event) => {
+            setQuestion(event.target.value)
+          }}
+          onKeyDown={onKeyDown}
+          aria-invalid={failure ? true : undefined}
+          aria-describedby={failure ? 'ask-error' : 'ask-hint'}
+        />
+        <Button
+          type="submit"
+          size="icon-sm"
+          icon={SentIcon}
+          aria-label="Send question"
+          className="absolute right-2 bottom-2"
+          loading={mutation.isPending}
+          disabled={disabled || !question.trim()}
+        />
+      </div>
       {failure && (
         <p id="ask-error" role="alert" className="text-small text-danger-foreground">
           {failure.message} {failure.hint}
@@ -78,19 +94,9 @@ export function AskBox({ initialQuestion = '', workspace, disabled, onStarted }:
           )}
         </p>
       )}
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-small text-muted-foreground">
-          {disabled ? 'Finish or cancel your open run first.' : 'Ctrl+Enter to send'}
-        </span>
-        <Button
-          type="submit"
-          icon={SentIcon}
-          loading={mutation.isPending}
-          disabled={disabled || !question.trim()}
-        >
-          Ask
-        </Button>
-      </div>
+      <p id="ask-hint" className="text-caption text-muted-foreground">
+        {disabled ? 'Finish or cancel your open run first.' : 'Enter to send, Shift+Enter for a new line.'}
+      </p>
     </form>
   )
 }

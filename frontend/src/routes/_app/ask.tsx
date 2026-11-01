@@ -65,38 +65,54 @@ function AskPage() {
             }}
           />
         </div>
-        <TabsContent value="ask" className="flex max-w-[var(--content-max)] flex-col gap-6">
-          <AskBox
-            key={`${example.n}-${question ?? ''}`}
-            initialQuestion={example.text || question}
-            workspace={workspace}
-            disabled={runsFull}
-            onStarted={(id) => {
-              void navigate({ search: (previous) => ({ ...previous, run: id }) })
-            }}
-          />
-          {run === undefined && workspace === undefined && (
-            <section aria-label="Example questions" className="flex flex-col gap-2">
-              <p className="text-small text-muted-foreground">Try one of these on the demo data:</p>
-              <div className="flex flex-wrap gap-2">
-                {DEMO_EXAMPLES.map((text) => (
-                  <Button
-                    key={text}
-                    variant="secondary"
-                    size="sm"
-                    icon={SparklesIcon}
-                    className="h-auto min-h-8 max-w-full py-1.5 text-left whitespace-normal"
-                    onClick={() => {
-                      setExample((previous) => ({ text, n: previous.n + 1 }))
-                    }}
-                  >
-                    {text}
-                  </Button>
-                ))}
+        <TabsContent
+          value="ask"
+          className="flex min-h-[calc(100dvh-12rem)] max-w-[var(--content-max)] flex-col gap-6"
+        >
+          <div className="flex flex-1 flex-col gap-6">
+            {run !== undefined ? (
+              <RunView runId={run} />
+            ) : (
+              <div className="flex flex-1 flex-col items-center justify-center gap-2 py-12 text-center">
+                <Heading level={2}>What do you want to know?</Heading>
+                <p className="max-w-md text-body text-muted-foreground">
+                  Ask in plain English. You read and approve the SQL before anything runs.
+                </p>
               </div>
-            </section>
-          )}
-          {run !== undefined && <RunView runId={run} />}
+            )}
+          </div>
+          <div className="sticky bottom-0 flex flex-col gap-3 bg-background pt-2 pb-4">
+            {run === undefined && workspace === undefined && (
+              <section aria-label="Example questions" className="flex flex-col gap-2">
+                <p className="text-small text-muted-foreground">Try one of these on the demo data:</p>
+                <div className="flex flex-wrap gap-2">
+                  {DEMO_EXAMPLES.map((text) => (
+                    <Button
+                      key={text}
+                      variant="secondary"
+                      size="sm"
+                      icon={SparklesIcon}
+                      className="h-auto min-h-8 max-w-full py-1.5 text-left whitespace-normal"
+                      onClick={() => {
+                        setExample((previous) => ({ text, n: previous.n + 1 }))
+                      }}
+                    >
+                      {text}
+                    </Button>
+                  ))}
+                </div>
+              </section>
+            )}
+            <AskBox
+              key={`${example.n}-${question ?? ''}`}
+              initialQuestion={example.text || question}
+              workspace={workspace}
+              disabled={runsFull}
+              onStarted={(id) => {
+                void navigate({ search: (previous) => ({ ...previous, run: id }) })
+              }}
+            />
+          </div>
         </TabsContent>
         <TabsContent value="schema">
           <SchemaPanel workspace={workspace} />
