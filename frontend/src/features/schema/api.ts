@@ -15,12 +15,15 @@ export const schemaQuery = (workspace?: number) =>
     queryFn: ({ signal }) => api.get<DatabaseSchema>(withWorkspace('/api/schema', workspace), { signal }),
   })
 
-/** GET /api/schema/tables/{name}; an unknown name answers 404 table_not_found. */
-export const tableQuery = (name: string, workspace?: number) =>
+export type TableRows = Schema<'TableRowsOut'>
+
+/** GET /api/schema/tables/{name}/rows: one read-only page of a table's data. */
+export const tableRowsQuery = (name: string, workspace: number | undefined, offset: number) =>
   queryOptions({
-    queryKey: ['schema', workspace ?? null, 'table', name],
+    queryKey: ['schema', workspace ?? null, 'rows', name, offset],
     queryFn: ({ signal }) =>
-      api.get<TableInfo>(withWorkspace(`/api/schema/tables/${encodeURIComponent(name)}`, workspace), {
-        signal,
-      }),
+      api.get<TableRows>(
+        withWorkspace(`/api/schema/tables/${encodeURIComponent(name)}/rows?offset=${offset}`, workspace),
+        { signal },
+      ),
   })

@@ -464,6 +464,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/schema/tables/{name}/rows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Table Rows
+         * @description A read-only page of one table's rows, in primary-key order when it has one.
+         *     The table must exist in the schema (an unknown name is a 404 `table_not_found`);
+         *     the SQL is built here from catalog names only, never from the request, and runs on
+         *     the same reader connection as every other read. Page size is capped by
+         *     PAGINATION_MAX_LIMIT.
+         */
+        get: operations["get_table_rows"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/workbench/cases": {
         parameters: {
             query?: never;
@@ -2596,6 +2620,27 @@ export interface components {
              */
             success: true;
         };
+        /** SuccessEnvelope[TableRowsOut] */
+        SuccessEnvelope_TableRowsOut_: {
+            data: components["schemas"]["TableRowsOut"];
+            /** Message */
+            message: string;
+            /**
+             * Meta
+             * @default {}
+             */
+            meta: {
+                [key: string]: unknown;
+            };
+            /** Status Code */
+            status_code: number;
+            /**
+             * Success
+             * @default true
+             * @constant
+             */
+            success: true;
+        };
         /** SuccessEnvelope[TraceDetailOut] */
         SuccessEnvelope_TraceDetailOut_: {
             data: components["schemas"]["TraceDetailOut"];
@@ -2889,6 +2934,21 @@ export interface components {
             description?: string | null;
             /** Name */
             name?: string | null;
+        };
+        /** TableRowsOut */
+        TableRowsOut: {
+            /** Columns */
+            columns: string[];
+            /** Has More */
+            has_more: boolean;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Row Estimate */
+            row_estimate: number | null;
+            /** Rows */
+            rows: unknown[][];
         };
         /** TraceDetailOut */
         TraceDetailOut: {
@@ -4502,6 +4562,68 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    get_table_rows: {
+        parameters: {
+            query?: {
+                workspace?: number | null;
+                offset?: number;
+                limit?: number | null;
+            };
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessEnvelope_TableRowsOut_"];
+                };
             };
             /** @description Unauthorized */
             401: {

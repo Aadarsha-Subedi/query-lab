@@ -254,3 +254,10 @@ picker, so each gets the whole width. The per-table info button opens a dialog i
 `surface` colour with `--input` at `n-450` (about 3.4:1), the lightest grey that still passes WCAG 1.4.11; the earlier `n-500`
 made every field look heavy next to the light cards. Rows of the shared demo tables are still not viewable (no endpoint); the
 structure, columns, keys and samples are, on the Schema tab.
+
+**Table view and chat-style Ask (2026-11-01).** On the Schema tab, picking a table shows it as a table: a metadata block (description, size,
+primary and foreign keys, column notes), column headers that carry the type and PK/FK badges, and a read-only page of its rows from
+the new `GET /api/schema/tables/{name}/rows` (demo and private workspaces alike; paging is manual, no prefetch). This replaced the
+expand-in-list and the info-button modal (and the Zustand expand store). The chosen table is in the URL (`?table=`). The Ask tab is
+a chat: the conversation (or a short prompt before the first question) above, a sticky composer below with the example questions
+over it; the Ask button is gone, a send icon sits inside the text box, and Enter sends (Shift+Enter for a new line), as in an LLM chat.

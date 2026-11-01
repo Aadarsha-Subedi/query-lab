@@ -7,7 +7,6 @@ import { createQueryClient } from '@/lib/query-client'
 import { mockFetch, TEST_BASE_URL } from '@/test/http'
 
 import { SchemaPanel } from './SchemaPanel'
-import { useSchemaPanelStore } from './store'
 
 const envelope = (data: unknown) => ({
   status: 200,
@@ -27,45 +26,81 @@ const ORDERS = {
 }
 const CUSTOMERS = { ...ORDERS, name: 'customers', foreign_keys: [], columns: [ORDERS.columns[0]] }
 
-function show(workspace?: number) {
+function show(workspace?: number, table?: string, onSelect: (name: string) => void = () => undefined) {
   initApi(TEST_BASE_URL)
   render(
     <QueryClientProvider client={createQueryClient(0)}>
-      <SchemaPanel workspace={workspace} />
+      <SchemaPanel workspace={workspace} table={table} onSelect={onSelect} />
     </QueryClientProvider>,
   )
 }
 
-beforeEach(() => {
-  useSchemaPanelStore.setState({ open: {} })
-})
 afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+const ROWS = {
+  columns: ['order_id', 'customer_id'],
+  rows: [
+    ['o1', 'c1'],
+    ['o2', null],
+  ],
+  offset: 0,
+  limit: 2,
+  has_more: true,
+  row_estimate: 99441,
+}
+
 describe('SchemaPanel', () => {
-  it('lists tables, expands columns with keys, and filters', async () => {
-    mockFetch({ '/api/schema': () => envelope({ name: 'demo', tables: [ORDERS, CUSTOMERS] }) })
-    show()
-    await userEvent.click(await screen.findByRole('button', { name: /^orders/ }))
-    const columns = screen.getByRole('list', { name: 'orders columns' })
-    expect(within(columns).getByText('PK')).toBeVisible()
-    expect(within(columns).getByText('FK')).toBeVisible()
-
-    await userEvent.type(screen.getByRole('searchbox', { name: 'Filter tables and columns' }), 'customers')
-    expect(screen.queryByRole('button', { name: /^orders/ })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^customers/ })).toBeVisible()
-  })
-
-  it('opens the table detail from the info button', async () => {
+  it('opens the first table with its metadata, column headers and rows', async () => {
     mockFetch({
-      '/api/schema': () => envelope({ name: 'demo', tables: [ORDERS] }),
-      '/api/schema/tables/orders': () => envelope(ORDERS),
+      '/api/schema': () => envelope({ name: 'demo', tables: [ORDERS, CUSTOMERS] }),
+      '/api/schema/tables/orders/rows': () => envelope(ROWS),
     })
     show()
-    await userEvent.click(await screen.findByRole('button', { name: 'Details of orders' }))
-    expect(await screen.findByText('One row per order')).toBeVisible()
-    expect(screen.getByText('FK to customers')).toBeVisible()
+    const section = await screen.findByRole('region', { name: 'Table orders' })
+    expect(within(section).getByText('One row per order')).toBeVisible()
+    expect(within(section).getByText('Primary key')).toBeVisible()
+    expect(section).toHaveTextContent('customer_id to customers(customer_id)')
+    const table = await within(section).findByRole('table')
+    expect(within(table).getAllByRole('columnheader')).toHaveLength(2)
+    expect(within(table).getByText('PK')).toBeVisible()
+    expect(within(table).getByText('FK')).toBeVisible()
+    expect(within(table).getByText('o1')).toBeVisible()
+    expect(within(table).getByText('null')).toBeVisible()
+    expect(within(section).getByText(/of about 99,441/)).toBeVisible()
+  })
+
+  it('shows the table you pick in the list, and filters the list', async () => {
+    const picked = vi.fn()
+    mockFetch({
+      '/api/schema': () => envelope({ name: 'demo', tables: [ORDERS, CUSTOMERS] }),
+      '/api/schema/tables/orders/rows': () => envelope(ROWS),
+      '/api/schema/tables/customers/rows': () => envelope({ ...ROWS, columns: ['order_id'], rows: [['x']] }),
+    })
+    show(undefined, 'customers', picked)
+    const section = await screen.findByRole('region', { name: 'Table customers' })
+    expect(await within(section).findByText('x')).toBeVisible()
+    await userEvent.click(
+      within(screen.getByRole('list', { name: 'Tables' })).getByRole('button', { name: /^orders/ }),
+    )
+    expect(picked).toHaveBeenCalledWith('orders')
+    await userEvent.type(screen.getByRole('searchbox'), 'zzz')
+    expect(screen.getByText('No match')).toBeVisible()
+  })
+
+  it('pages with Next and asks for the next offset', async () => {
+    const asked: string[] = []
+    const fetchMock = mockFetch({
+      '/api/schema': () => envelope({ name: 'demo', tables: [ORDERS] }),
+      '/api/schema/tables/orders/rows': () => envelope(ROWS),
+    })
+    show()
+    await userEvent.click(await screen.findByRole('button', { name: 'Next' }))
+    await screen.findByRole('table')
+    for (const call of fetchMock.mock.calls)
+      asked.push(call[0] instanceof Request ? call[0].url : call[0].toString())
+    expect(asked.some((url) => url.includes('/rows?offset=2'))).toBe(true)
   })
 
   it('shows the empty state for a workspace with no tables', async () => {
@@ -74,21 +109,29 @@ describe('SchemaPanel', () => {
     expect(await screen.findByText('No tables yet')).toBeVisible()
   })
 
+  it('shows an empty table as No rows', async () => {
+    mockFetch({
+      '/api/schema': () => envelope({ name: 'demo', tables: [ORDERS] }),
+      '/api/schema/tables/orders/rows': () => envelope({ ...ROWS, rows: [], has_more: false }),
+    })
+    show()
+    expect(await screen.findByText('No rows')).toBeVisible()
+  })
+
   it('passes the workspace and shows an error with its own Try again', async () => {
     let calls = 0
-    const fetchMock = mockFetch({
+    mockFetch({
       '/api/schema': () => {
         calls += 1
         return calls === 1
           ? { status: 500, body: { success: false, message: 'Boom.', code: 'internal_error', errors: [] } }
           : envelope({ name: 'ws', tables: [ORDERS] })
       },
+      '/api/schema/tables/orders/rows': () => envelope(ROWS),
     })
     show(7)
     expect(await screen.findByText("Couldn't load the schema.")).toBeVisible()
     await userEvent.click(screen.getByRole('button', { name: /try again/i }))
-    expect(await screen.findByRole('button', { name: /^orders/ })).toBeVisible()
-    expect((fetchMock.mock.calls[0]?.[0] as URL).search).toBe('?workspace=7')
-    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(await screen.findByRole('region', { name: 'Table orders' })).toBeVisible()
   })
 })

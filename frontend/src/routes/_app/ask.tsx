@@ -22,6 +22,8 @@ const searchSchema = z.object({
   question: z.string().optional(),
   /** Ask (default) or the schema browser. */
   tab: z.enum(['ask', 'schema']).optional(),
+  /** The table open on the Schema tab. */
+  table: z.string().optional(),
 })
 
 export const Route = createFileRoute('/_app/ask')({
@@ -30,7 +32,7 @@ export const Route = createFileRoute('/_app/ask')({
 })
 
 function AskPage() {
-  const { run, workspace, question, tab = 'ask' } = Route.useSearch()
+  const { run, workspace, question, tab = 'ask', table } = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const [example, setExample] = useState({ text: '', n: 0 })
   const limits = useQuery(limitsQuery(workspace))
@@ -115,7 +117,13 @@ function AskPage() {
           </div>
         </TabsContent>
         <TabsContent value="schema">
-          <SchemaPanel workspace={workspace} />
+          <SchemaPanel
+            workspace={workspace}
+            table={table}
+            onSelect={(next) => {
+              void navigate({ search: (previous) => ({ ...previous, table: next }) })
+            }}
+          />
         </TabsContent>
       </Tabs>
     </main>

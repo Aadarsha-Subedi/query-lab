@@ -1,130 +1,177 @@
-import {
-  ArrowDown01Icon,
-  ArrowRight01Icon,
-  DatabaseIcon,
-  InformationCircleIcon,
-} from '@hugeicons/core-free-icons'
+import { DatabaseIcon } from '@hugeicons/core-free-icons'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { QueryBoundary } from '@/components/QueryBoundary'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Heading } from '@/components/typography/Heading'
 import { EmptyState } from '@/components/ui/data-state'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Icon } from '@/components/ui/icon'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatNumber } from '@/lib/format'
+import { cn } from '@/lib/utils'
 
 import { schemaQuery, type DatabaseSchema, type TableInfo } from './api'
-import { useSchemaPanelStore } from './store'
-import { TableDetail } from './TableDetail'
+import { TableData } from './TableData'
 
-function SchemaTable({ table, onDetails }: { table: TableInfo; onDetails: (name: string) => void }) {
-  const open = useSchemaPanelStore((state) => state.open[table.name] ?? false)
-  const toggle = useSchemaPanelStore((state) => state.toggle)
+/** What the table is: its description, size and keys. The columns themselves head the data below. */
+function TableMeta({ table }: { table: TableInfo }) {
+  const commented = table.columns.filter((column) => column.comment)
   return (
-    <li className="flex flex-col">
-      <div className="flex items-center gap-1">
-        <button
-          type="button"
-          aria-expanded={open}
-          onClick={() => {
-            toggle(table.name)
-          }}
-          className="flex h-8 min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 text-left text-body font-medium outline-none hover:bg-surface-muted focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <Icon icon={open ? ArrowDown01Icon : ArrowRight01Icon} size="sm" />
-          <span className="truncate font-mono">{table.name}</span>
-          {table.row_estimate !== null && (
-            <span className="ml-auto shrink-0 text-small text-muted-foreground">
-              {formatNumber(table.row_estimate)}
-            </span>
-          )}
-        </button>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          icon={InformationCircleIcon}
-          aria-label={`Details of ${table.name}`}
-          onClick={() => {
-            onDetails(table.name)
-          }}
-        />
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <Heading level={2} className="font-mono">
+          {table.name}
+        </Heading>
+        <span className="text-small text-muted-foreground">
+          {table.row_estimate !== null && <>About {formatNumber(table.row_estimate)} rows, </>}
+          {formatNumber(table.columns.length)} columns
+        </span>
       </div>
-      {open && (
-        <ul className="ml-6 flex flex-col gap-0.5 border-l pl-2" aria-label={`${table.name} columns`}>
-          {table.columns.map((column) => (
-            <li
-              key={column.name}
-              className="flex items-center gap-2 text-small"
-              title={column.comment || undefined}
-            >
-              <span className="truncate font-mono">{column.name}</span>
-              <span className="truncate font-mono text-muted-foreground">{column.type}</span>
-              {table.primary_key.includes(column.name) && <Badge variant="primary">PK</Badge>}
-              {table.foreign_keys.some((fk) => fk.columns.includes(column.name)) && (
-                <Badge variant="info">FK</Badge>
-              )}
-            </li>
-          ))}
-        </ul>
+      {table.comment && (
+        <p className="max-w-[var(--reading-max)] text-body text-muted-foreground">{table.comment}</p>
       )}
-    </li>
-  )
-}
-
-function Tables({ schema, workspace }: { schema: DatabaseSchema; workspace?: number }) {
-  const [filter, setFilter] = useState('')
-  const [details, setDetails] = useState<string | null>(null)
-  const needle = filter.trim().toLowerCase()
-  const shown = schema.tables.filter(
-    (table) =>
-      !needle ||
-      table.name.toLowerCase().includes(needle) ||
-      table.columns.some((c) => c.name.toLowerCase().includes(needle)),
-  )
-  return (
-    <div className="flex flex-col gap-4">
-      <Input
-        type="search"
-        aria-label="Filter tables and columns"
-        placeholder="Filter tables and columns"
-        value={filter}
-        onChange={(event) => {
-          setFilter(event.target.value)
-        }}
-      />
-      {shown.length === 0 ? (
-        <EmptyState icon={DatabaseIcon} title="No match" description="No table or column has that name." />
-      ) : (
-        <ul className="grid items-start gap-x-8 gap-y-0.5 lg:grid-cols-2">
-          {shown.map((table) => (
-            <SchemaTable key={table.name} table={table} onDetails={setDetails} />
+      {(table.primary_key.length > 0 || table.foreign_keys.length > 0) && (
+        <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-1 text-small">
+          {table.primary_key.length > 0 && (
+            <>
+              <dt className="text-muted-foreground">Primary key</dt>
+              <dd className="font-mono">{table.primary_key.join(', ')}</dd>
+            </>
+          )}
+          {table.foreign_keys.map((fk) => (
+            <div key={fk.columns.join()} className="col-span-2 grid grid-cols-subgrid">
+              <dt className="text-muted-foreground">Foreign key</dt>
+              <dd className="font-mono">
+                {fk.columns.join(', ')} <span className="font-sans text-muted-foreground">to</span>{' '}
+                {fk.ref_table}({fk.ref_columns.join(', ')})
+              </dd>
+            </div>
           ))}
-        </ul>
+        </dl>
       )}
-      <Dialog
-        open={details !== null}
-        onOpenChange={(open) => {
-          if (!open) setDetails(null)
-        }}
-      >
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-mono">{details}</DialogTitle>
-            <DialogDescription>Columns, keys and comments.</DialogDescription>
-          </DialogHeader>
-          {details !== null && <TableDetail name={details} workspace={workspace} />}
-        </DialogContent>
-      </Dialog>
+      {commented.length > 0 && (
+        <details className="max-w-[var(--reading-max)] text-small">
+          <summary className="cursor-pointer font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            Column notes ({commented.length})
+          </summary>
+          <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+            {commented.map((column) => (
+              <div key={column.name} className="col-span-2 grid grid-cols-subgrid">
+                <dt className="font-mono">{column.name}</dt>
+                <dd className="text-muted-foreground">{column.comment}</dd>
+              </div>
+            ))}
+          </dl>
+        </details>
+      )}
     </div>
   )
 }
 
-/** The schema browser: tables, columns, keys. Own loading, error and empty states. */
-export function SchemaPanel({ workspace }: { workspace?: number }) {
+function Tables({
+  schema,
+  workspace,
+  table,
+  onSelect,
+}: {
+  schema: DatabaseSchema
+  workspace?: number
+  table?: string
+  onSelect: (name: string) => void
+}) {
+  const [filter, setFilter] = useState('')
+  const needle = filter.trim().toLowerCase()
+  const shown = schema.tables.filter(
+    (candidate) =>
+      !needle ||
+      candidate.name.toLowerCase().includes(needle) ||
+      candidate.columns.some((c) => c.name.toLowerCase().includes(needle)),
+  )
+  const selected = schema.tables.find((candidate) => candidate.name === table) ?? schema.tables[0]
+
+  return (
+    <div className="grid min-w-0 gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
+      <div className="flex flex-col gap-3">
+        <Input
+          type="search"
+          aria-label="Filter tables and columns"
+          placeholder="Filter tables and columns"
+          value={filter}
+          onChange={(event) => {
+            setFilter(event.target.value)
+          }}
+        />
+        {shown.length === 0 ? (
+          <EmptyState icon={DatabaseIcon} title="No match" description="No table or column has that name." />
+        ) : (
+          <>
+            {/* On a phone a list this long would push the data away: a dropdown instead. */}
+            <div className="lg:hidden">
+              <Select value={selected?.name} onValueChange={onSelect}>
+                <SelectTrigger aria-label="Table" className="font-mono">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {shown.map((candidate) => (
+                    <SelectItem key={candidate.name} value={candidate.name} className="font-mono">
+                      {candidate.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <ul aria-label="Tables" className="hidden flex-col gap-0.5 lg:flex">
+              {shown.map((candidate) => {
+                const active = candidate.name === selected?.name
+                return (
+                  <li key={candidate.name}>
+                    <button
+                      type="button"
+                      aria-current={active ? 'true' : undefined}
+                      onClick={() => {
+                        onSelect(candidate.name)
+                      }}
+                      className={cn(
+                        'flex h-9 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left text-body outline-none hover:bg-surface-muted focus-visible:ring-2 focus-visible:ring-ring',
+                        active && 'bg-surface-muted font-medium',
+                      )}
+                    >
+                      <span className="truncate font-mono">{candidate.name}</span>
+                      {candidate.row_estimate !== null && (
+                        <span className="ml-auto shrink-0 text-small text-muted-foreground">
+                          {formatNumber(candidate.row_estimate)}
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </>
+        )}
+      </div>
+      {selected && (
+        <section aria-label={`Table ${selected.name}`} className="flex min-w-0 flex-col gap-4">
+          <TableMeta table={selected} />
+          {/* Remounted per table so paging starts at the first rows. */}
+          <TableData key={`${workspace ?? 'demo'}-${selected.name}`} table={selected} workspace={workspace} />
+        </section>
+      )}
+    </div>
+  )
+}
+
+/** The schema browser: pick a table, see its metadata, its columns and its rows. */
+export function SchemaPanel({
+  workspace,
+  table,
+  onSelect,
+}: {
+  workspace?: number
+  table?: string
+  onSelect: (name: string) => void
+}) {
   const query = useQuery(schemaQuery(workspace))
   return (
     <section aria-label="Schema" className="flex flex-col gap-3">
@@ -140,14 +187,17 @@ export function SchemaPanel({ workspace }: { workspace?: number }) {
           />
         }
         loading={
-          <div className="flex flex-col gap-2">
-            {Array.from({ length: 8 }, (_, index) => (
-              <Skeleton key={index} className="h-8 w-full" />
-            ))}
+          <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: 8 }, (_, index) => (
+                <Skeleton key={index} className="h-9 w-full" />
+              ))}
+            </div>
+            <Skeleton className="h-96 w-full" />
           </div>
         }
       >
-        {(schema) => <Tables schema={schema} workspace={workspace} />}
+        {(schema) => <Tables schema={schema} workspace={workspace} table={table} onSelect={onSelect} />}
       </QueryBoundary>
     </section>
   )
