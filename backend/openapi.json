@@ -4423,6 +4423,10 @@
             "title": "Id",
             "type": "integer"
           },
+          "is_staff": {
+            "title": "Is Staff",
+            "type": "boolean"
+          },
           "last_name": {
             "title": "Last Name",
             "type": "string"
@@ -4440,7 +4444,8 @@
           "email",
           "first_name",
           "last_name",
-          "providers"
+          "providers",
+          "is_staff"
         ],
         "title": "UserOut",
         "type": "object"

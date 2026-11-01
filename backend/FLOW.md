@@ -73,7 +73,7 @@ not unique).
 Logout: `DELETE /_allauth/browser/v1/auth/session`. Session cookie + CSRF cookie
 are shared by the frontend and API (same origin through the proxy).
 
-`GET /api/me` returns the user (with `providers`: `google` or `github`) or 401;
+`GET /api/me` returns the user (with `providers`: `google` or `github`, and `is_staff`, which the screens use to show the workbench) or 401;
 the frontend's route guards use it. It also sets the `csrftoken` cookie
 (`ensure_csrf_cookie`), signed in or not: the frontend calls it at every boot,
 so its first POST already has a token.

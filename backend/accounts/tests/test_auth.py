@@ -101,6 +101,16 @@ def test_me_shows_the_provider(client: Client) -> None:
     assert body["success"] is True
     assert body["data"]["email"] == SHARED_EMAIL
     assert body["data"]["providers"] == ["github"]
+    assert body["data"]["is_staff"] is False
+
+
+@pytest.mark.django_db
+def test_me_tells_the_screens_who_is_staff(client: Client) -> None:
+    staff = sign_in_with(GitHubProvider.id, github(43, SHARED_EMAIL))
+    staff.is_staff = True
+    staff.save(update_fields=["is_staff"])
+    client.force_login(staff)
+    assert client.get("/api/me").json()["data"]["is_staff"] is True
 
 
 @pytest.mark.django_db

@@ -20,6 +20,8 @@ class UserOut(Schema):
     last_name: str
     # The provider this user signed in with ("google" or "github").
     providers: list[str]
+    # True for staff accounts: the screens show the workbench only to them (the API enforces it).
+    is_staff: bool
 
 
 @router.get(
@@ -44,5 +46,6 @@ def me(request: HttpRequest) -> dict:
             first_name=user.first_name,
             last_name=user.last_name,
             providers=providers,
+            is_staff=user.is_staff,
         ).dict()
     )
