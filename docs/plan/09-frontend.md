@@ -78,11 +78,11 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 9.5 History and replay
 
-- [ ] **9.5.1** `features/history/api.ts`: `runsQuery(filters)` for `GET /agent/runs` with `status`, `q`, `created_after`, `created_before`, `ordering`, `limit`, `offset`. Filters live in the URL search params (validated with Zod), so a refresh keeps them.
-- [ ] **9.5.2** `HistoryTable`: question, status badge, workspace, created time, `edited`, `has_result`; sort, filter bar, pagination from `meta.count`. Empty and error states.
-- [ ] **9.5.3** Row click opens `/ask?run=<id>` (finished runs show the saved view; result is re-fetched on demand).
-- [ ] **9.5.4** Replay page `_app/runs/$runId/replay`: `GET .../replay` as a step-by-step stepper (previous / next), showing each step's payload as it was.
-- [ ] **9.5.5** Tests: filter-to-URL sync, pagination, replay stepping, 404 for a run that is not yours.
+- [x] **9.5.1** `features/history/api.ts`: `runsQuery(filters)` for `GET /agent/runs` with `status`, `q`, `created_after`, `created_before`, `ordering`, `limit`, `offset`. Filters live in the URL search params (validated with Zod), so a refresh keeps them.
+- [x] **9.5.2** `HistoryTable`: question, status badge, workspace, created time, `edited`, `has_result`; sort, filter bar, pagination from `meta.count`. Empty and error states.
+- [x] **9.5.3** Row click opens `/ask?run=<id>` (finished runs show the saved view; result is re-fetched on demand).
+- [x] **9.5.4** Replay page `_app/runs/$runId/replay`: `GET .../replay` as a step-by-step stepper (previous / next), showing each step's payload as it was.
+- [x] **9.5.5** Tests: filter-to-URL sync, pagination, replay stepping, 404 for a run that is not yours.
 
 ## 9.6 Workspaces
 

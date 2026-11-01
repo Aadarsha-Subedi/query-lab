@@ -55,9 +55,10 @@ export type RequestOptions = {
   signal?: AbortSignal
   /**
    * 'envelope' (default): our {success, data} shape. 'raw': return the parsed
-   * JSON as is (for /api/health, which is not enveloped).
+   * JSON as is (for /api/health, which is not enveloped). 'page': an enveloped
+   * list returned as {data, meta} (meta.count is the number of matches).
    */
-  shape?: 'envelope' | 'raw'
+  shape?: 'envelope' | 'raw' | 'page'
   /** Extra statuses that still count as an answer (e.g. 503 for /api/health). */
   acceptStatuses?: number[]
 }
@@ -98,6 +99,8 @@ function notifyThrottled(response: Response) {
       Number.isFinite(seconds) && seconds > 0 ? `Try again in ${seconds} seconds.` : 'Try again shortly.',
   })
 }
+
+export type Page<T> = { data: T[]; meta: { count: number; limit: number; offset: number } }
 
 export type ApiClient = ReturnType<typeof createApiClient>
 
@@ -149,7 +152,11 @@ export function createApiClient(baseUrl: string) {
     const answered = response.ok || (options.acceptStatuses ?? []).includes(response.status)
     if (!answered) throw errorFromBody(response.status, body, requestId)
     if (options.shape === 'raw') return body as T
-    if (isRecord(body) && body.success === true) return body.data as T
+    if (isRecord(body) && body.success === true) {
+      if (options.shape === 'page')
+        return { data: body.data, meta: isRecord(body.meta) ? body.meta : {} } as T
+      return body.data as T
+    }
     throw errorFromBody(response.status, body, requestId)
   }
 
@@ -211,6 +218,9 @@ export function createApiClient(baseUrl: string) {
     url: (path: string) => new URL(path, baseUrl).toString(),
     get: <T>(path: string, options?: Omit<RequestOptions, 'method' | 'body'>) =>
       request<T>(path, { ...options, method: 'GET' }),
+    /** A paginated list: the items and meta ({count, limit, offset}). */
+    getPage: <T>(path: string, options?: Omit<RequestOptions, 'method' | 'body' | 'shape'>) =>
+      request<Page<T>>(path, { ...options, method: 'GET', shape: 'page' }),
     post: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>) =>
       request<T>(path, { ...options, method: 'POST', body }),
     put: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>) =>

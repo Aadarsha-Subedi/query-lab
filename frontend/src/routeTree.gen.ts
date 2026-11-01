@@ -14,9 +14,11 @@ import { Route as PublicRouteImport } from './routes/_public'
 import { Route as DesignRouteImport } from './routes/design'
 import { Route as AppAppRouteImport } from './routes/_app/app'
 import { Route as AppAskRouteImport } from './routes/_app/ask'
+import { Route as AppHistoryRouteImport } from './routes/_app/history'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
 import { Route as PublicAuthCallbackRouteImport } from './routes/_public/auth.callback'
+import { Route as AppRunsRunIdReplayRouteImport } from './routes/_app/runs.$runId.replay'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -41,6 +43,11 @@ const AppAskRoute = AppAskRouteImport.update({
   path: '/ask',
   getParentRoute: () => AppRoute,
 } as any)
+const AppHistoryRoute = AppHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AppRoute,
+} as any)
 const PublicIndexRoute = PublicIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -56,22 +63,31 @@ const PublicAuthCallbackRoute = PublicAuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => PublicRoute,
 } as any)
+const AppRunsRunIdReplayRoute = AppRunsRunIdReplayRouteImport.update({
+  id: '/runs/$runId/replay',
+  path: '/runs/$runId/replay',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
   '/design': typeof DesignRoute
   '/app': typeof AppAppRoute
   '/ask': typeof AppAskRoute
+  '/history': typeof AppHistoryRoute
   '/login': typeof PublicLoginRoute
   '/auth/callback': typeof PublicAuthCallbackRoute
+  '/runs/$runId/replay': typeof AppRunsRunIdReplayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/design': typeof DesignRoute
   '/app': typeof AppAppRoute
   '/ask': typeof AppAskRoute
+  '/history': typeof AppHistoryRoute
   '/login': typeof PublicLoginRoute
   '/auth/callback': typeof PublicAuthCallbackRoute
+  '/runs/$runId/replay': typeof AppRunsRunIdReplayRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,15 +96,33 @@ export interface FileRoutesById {
   '/design': typeof DesignRoute
   '/_app/app': typeof AppAppRoute
   '/_app/ask': typeof AppAskRoute
+  '/_app/history': typeof AppHistoryRoute
   '/_public/login': typeof PublicLoginRoute
   '/_public/': typeof PublicIndexRoute
   '/_public/auth/callback': typeof PublicAuthCallbackRoute
+  '/_app/runs/$runId/replay': typeof AppRunsRunIdReplayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/design' | '/app' | '/ask' | '/login' | '/auth/callback'
+  fullPaths:
+    | '/'
+    | '/design'
+    | '/app'
+    | '/ask'
+    | '/history'
+    | '/login'
+    | '/auth/callback'
+    | '/runs/$runId/replay'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/design' | '/app' | '/ask' | '/login' | '/auth/callback'
+  to:
+    | '/'
+    | '/design'
+    | '/app'
+    | '/ask'
+    | '/history'
+    | '/login'
+    | '/auth/callback'
+    | '/runs/$runId/replay'
   id:
     | '__root__'
     | '/_app'
@@ -96,9 +130,11 @@ export interface FileRouteTypes {
     | '/design'
     | '/_app/app'
     | '/_app/ask'
+    | '/_app/history'
     | '/_public/login'
     | '/_public/'
     | '/_public/auth/callback'
+    | '/_app/runs/$runId/replay'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -144,6 +180,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAskRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/history': {
+      id: '/_app/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof AppHistoryRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_public/': {
       id: '/_public/'
       path: '/'
@@ -165,17 +208,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicAuthCallbackRouteImport
       parentRoute: typeof PublicRoute
     }
+    '/_app/runs/$runId/replay': {
+      id: '/_app/runs/$runId/replay'
+      path: '/runs/$runId/replay'
+      fullPath: '/runs/$runId/replay'
+      preLoaderRoute: typeof AppRunsRunIdReplayRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
   AppAppRoute: typeof AppAppRoute
   AppAskRoute: typeof AppAskRoute
+  AppHistoryRoute: typeof AppHistoryRoute
+  AppRunsRunIdReplayRoute: typeof AppRunsRunIdReplayRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAppRoute: AppAppRoute,
   AppAskRoute: AppAskRoute,
+  AppHistoryRoute: AppHistoryRoute,
+  AppRunsRunIdReplayRoute: AppRunsRunIdReplayRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

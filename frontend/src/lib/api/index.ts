@@ -4,7 +4,14 @@
  */
 import { createApiClient, type ApiClient } from './client'
 
-export { ApiError, createApiClient, type ApiClient, type FieldError, type RequestOptions } from './client'
+export {
+  ApiError,
+  createApiClient,
+  type ApiClient,
+  type Page,
+  type FieldError,
+  type RequestOptions,
+} from './client'
 
 let instance: ApiClient | null = null
 
@@ -18,6 +25,7 @@ export const api: ApiClient = {
   url: (...args) => current().url(...args),
   openStream: (...args) => current().openStream(...args),
   get: (...args) => current().get(...args),
+  getPage: (...args) => current().getPage(...args),
   post: (...args) => current().post(...args),
   put: (...args) => current().put(...args),
   patch: (...args) => current().patch(...args),
