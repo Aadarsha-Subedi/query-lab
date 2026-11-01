@@ -24,6 +24,31 @@ import { z } from 'zod'
 import { CodeBlock, Code } from '@/components/typography/Code'
 import { Heading } from '@/components/typography/Heading'
 import { Text } from '@/components/typography/Text'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
+import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -491,6 +516,92 @@ function QueryResult() {
   )
 }
 
+function MoreInputs() {
+  return (
+    <Demo title="Textarea, select, checkbox, switch" note="For the ask box, filters and settings.">
+      <div className="flex max-w-md flex-col gap-4">
+        <Textarea aria-label="Question" placeholder="Ask a question about your data" />
+        <Textarea aria-label="Question with an error" aria-invalid defaultValue="Too short" />
+        <Select defaultValue="all">
+          <SelectTrigger aria-label="Status">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All runs</SelectItem>
+            <SelectItem value="succeeded">Succeeded</SelectItem>
+            <SelectItem value="failed">Failed</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex items-center gap-2">
+          <Checkbox id="design-check" defaultChecked />
+          <Label htmlFor="design-check">Only runs with a result</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <Switch id="design-switch" />
+          <Label htmlFor="design-switch">Show assumptions</Label>
+        </div>
+      </div>
+    </Demo>
+  )
+}
+
+function MoreOverlays() {
+  return (
+    <Demo
+      title="Sheet, popover, alert dialog, scroll area"
+      note="Destructive confirmations use the alert dialog."
+    >
+      <div className="flex flex-wrap items-start gap-3">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="secondary" icon={FolderOpenIcon}>
+              Open sheet
+            </Button>
+          </SheetTrigger>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Table details</SheetTitle>
+              <SheetDescription>Columns, keys and comments.</SheetDescription>
+            </SheetHeader>
+          </SheetContent>
+        </Sheet>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="secondary" icon={InformationCircleIcon}>
+              Open popover
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent>The guard added a LIMIT to this query.</PopoverContent>
+        </Popover>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" icon={Delete02Icon}>
+              Delete workspace
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this workspace?</AlertDialogTitle>
+              <AlertDialogDescription>Its tables and rows are removed for good.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel />
+              <AlertDialogAction icon={Delete02Icon}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <ScrollArea className="h-24 w-56 rounded-md border">
+          <div className="flex flex-col gap-1 p-3 text-small">
+            {Array.from({ length: 12 }, (_, index) => (
+              <span key={index}>orders_{index + 1}</span>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+    </Demo>
+  )
+}
+
 export function ComponentSections() {
   return (
     <Section
@@ -504,6 +615,8 @@ export function ComponentSections() {
       <SampleForm />
       <Cards />
       <Overlays />
+      <MoreInputs />
+      <MoreOverlays />
       <BadgesAndAvatars />
     </Section>
   )
