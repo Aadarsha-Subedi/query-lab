@@ -994,6 +994,16 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AgentLimitsOut */
+        AgentLimitsOut: {
+            default_key: components["schemas"]["DefaultKeyLimitOut"];
+            /** Has Own Key */
+            has_own_key: boolean;
+            streams: components["schemas"]["OpenStreamsOut"];
+            unfinished_runs: components["schemas"]["CountLimitOut"];
+            /** Workspace Id */
+            workspace_id: number | null;
+        };
         /** ApproveIn */
         ApproveIn: {
             /** Question */
@@ -1942,6 +1952,27 @@ export interface components {
             status: string;
             /** Tool Name */
             tool_name: string;
+        };
+        /** SuccessEnvelope[AgentLimitsOut] */
+        SuccessEnvelope_AgentLimitsOut_: {
+            data: components["schemas"]["AgentLimitsOut"];
+            /** Message */
+            message: string;
+            /**
+             * Meta
+             * @default {}
+             */
+            meta: {
+                [key: string]: unknown;
+            };
+            /** Status Code */
+            status_code: number;
+            /**
+             * Success
+             * @default true
+             * @constant
+             */
+            success: true;
         };
         /** SuccessEnvelope[AskOut] */
         SuccessEnvelope_AskOut_: {
@@ -2898,7 +2929,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_LimitsOut_"];
+                    "application/json": components["schemas"]["SuccessEnvelope_AgentLimitsOut_"];
                 };
             };
             /** @description Unauthorized */
