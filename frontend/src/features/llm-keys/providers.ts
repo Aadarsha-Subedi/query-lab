@@ -7,3 +7,6 @@ export const PROVIDER_LABEL: Record<ProviderName, string> = {
   gemini: 'Google Gemini',
   openai: 'OpenAI',
 }
+
+/** The order the keys page lists them in. */
+export const PROVIDER_ORDER: readonly ProviderName[] = ['openai', 'gemini']

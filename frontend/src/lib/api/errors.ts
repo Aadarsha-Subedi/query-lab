@@ -206,6 +206,18 @@ export const ERROR_INFO: Record<string, ErrorInfo> = {
     message: 'The model is not available for that provider.',
     hint: 'Pick from the list.',
   },
+  no_key_for_provider: {
+    message: 'There is no saved key for that provider.',
+    hint: 'Save a key for it first.',
+  },
+  no_active_key: {
+    message: 'You chose your own AI but no key is in use.',
+    hint: 'Add a key and mark it as in use, or switch back to QueryLab AI.',
+  },
+  unknown_ai_source: {
+    message: 'That AI choice is not supported.',
+    hint: 'Reload the page and try again.',
+  },
   run_not_found: {
     message: "No such run (also another user's run).",
     hint: 'Go back to history.',

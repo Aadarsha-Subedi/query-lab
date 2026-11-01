@@ -25,6 +25,12 @@ if (typeof window !== 'undefined') {
   }
   window.ResizeObserver = ResizeObserverStub
 
+  // Radix Select (pointer capture, scrolling the chosen item into view).
+  Element.prototype.hasPointerCapture = () => false
+  Element.prototype.setPointerCapture = () => undefined
+  Element.prototype.releasePointerCapture = () => undefined
+  Element.prototype.scrollIntoView = () => undefined
+
   // Element.animate: resolve immediately, as if every animation had finished.
   Element.prototype.animate = function animate() {
     const animation: Partial<Animation> = {
