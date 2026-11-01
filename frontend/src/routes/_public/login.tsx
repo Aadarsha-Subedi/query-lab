@@ -1,9 +1,32 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 
-import { PlaceholderPage } from '@/components/PlaceholderPage'
+import { Heading } from '@/components/typography/Heading'
+import { Text } from '@/components/typography/Text'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { SignInButtons } from '@/features/auth/SignInButtons'
 
 export const Route = createFileRoute('/_public/login')({
-  component: () => (
-    <PlaceholderPage title="Sign in" note="Sign in with Google or GitHub. The two buttons come in step 9." />
-  ),
+  component: LoginPage,
 })
+
+function LoginPage() {
+  return (
+    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 px-6 py-16">
+      <Heading level={1}>Sign in</Heading>
+      <Card>
+        <CardHeader>
+          <CardTitle>Welcome to Querylab</CardTitle>
+          <CardDescription>Sign in with the account you already use. There is no password.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SignInButtons />
+        </CardContent>
+      </Card>
+      <Text variant="caption" muted>
+        <Link to="/" className="underline underline-offset-4">
+          Back to the home page
+        </Link>
+      </Text>
+    </main>
+  )
+}

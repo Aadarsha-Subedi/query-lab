@@ -1,4 +1,7 @@
 import '@testing-library/jest-dom/vitest'
+import { vi } from 'vitest'
+
+vi.stubEnv('VITE_APP_NAME', 'Querylab')
 
 // Browser APIs jsdom lacks but Radix and sonner use. Skipped in
 // node-environment tests (build.test.ts), which have no window.

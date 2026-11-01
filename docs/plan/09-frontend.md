@@ -48,10 +48,10 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 9.2 App shell, sign-in, landing
 
-- [ ] **9.2.1** App layout (`_app.tsx`): header with logo, nav, workspace switcher slot, theme toggle, user menu (avatar, logout); a collapsible side nav (Zustand `ui` store); responsive down to phone width. Nav items for staff only appear when `/me` says staff (confirm the field name in `openapi.json`; if missing, ask the backend owner, do not guess).
-- [ ] **9.2.2** Sign-in page (`_public/signin`): Continue with Google / GitHub using the allauth headless provider redirect (FLOW.md "Auth flow"), error states for a denied or failed sign-in, link back to landing. The local dev sign-in page stays backend-only.
-- [ ] **9.2.3** Logout: allauth session delete, then clear the query cache and go to `/`. Test the guard flow both ways.
-- [ ] **9.2.4** Landing page (`_public/index`): what QueryLab is, a three-step "ask, approve, measure" explainer, the sign-in buttons, the demo dataset note (Olist, CC BY-NC-SA 4.0 credit). No marketing images that need hosting.
+- [x] **9.2.1** (the staff-only nav entries wait for a staff flag on `/api/me`, which it lacks today; see DECISION.md) App layout (`_app.tsx`): header with logo, nav, workspace switcher slot, theme toggle, user menu (avatar, logout); a collapsible side nav (Zustand `ui` store); responsive down to phone width. Nav items for staff only appear when `/me` says staff (confirm the field name in `openapi.json`; if missing, ask the backend owner, do not guess).
+- [x] **9.2.2** Sign-in page (`_public/signin`): Continue with Google / GitHub using the allauth headless provider redirect (FLOW.md "Auth flow"), error states for a denied or failed sign-in, link back to landing. The local dev sign-in page stays backend-only.
+- [x] **9.2.3** Logout: allauth session delete, then clear the query cache and go to `/`. Test the guard flow both ways.
+- [x] **9.2.4** Landing page (`_public/index`): what QueryLab is, a three-step "ask, approve, measure" explainer, the sign-in buttons, the demo dataset note (Olist, CC BY-NC-SA 4.0 credit). No marketing images that need hosting.
 - [ ] **9.2.5** 404 and 403 pages inside the shell; route `errorComponent` that never shows a stack trace.
 - [ ] **9.2.6** `Limits` indicator in the header from `GET /agent/limits` (used / allowed / remaining / resets_at, has_own_key). Its own loading/error box; no polling. Test the over-limit state.
 

@@ -155,6 +155,8 @@ export function createApiClient(baseUrl: string) {
 
   return {
     request,
+    /** The absolute URL for a path (for forms the browser submits itself). */
+    url: (path: string) => new URL(path, baseUrl).toString(),
     get: <T>(path: string, options?: Omit<RequestOptions, 'method' | 'body'>) =>
       request<T>(path, { ...options, method: 'GET' }),
     post: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>) =>
