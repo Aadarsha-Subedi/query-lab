@@ -457,3 +457,11 @@ Backend only: the surface the analyst screen (step 9) needs, so the screen is on
 
 **Left for the owner (6.9.2, 6.9.3).** Review the first drafted batch in Postman and run the Olist agent eval with the live key; then record here the confidence verdict, whether `TRACES_CLUSTER_SIMILARITY` and `EVAL_GATE_*` need changing, and the first trace-set baseline run id.
 
+
+## LoRA fine-tune (step 7)
+
+**Decisions (owner, 2026-11-01).** Train on Google Colab (free T4, 16 GB), not the local 6 GB GPU. Track runs in Weights & Biases (free personal account). Base model Qwen2.5-Coder-3B-Instruct, falling back to 1.5B if the free tier proves flaky. The tuned model is benchmarked by generating predictions in Colab and scoring the file locally with the step 2 comparison (`run_eval --predictions`), so no model server is needed. Nothing in this step runs in the production container.
+
+**Image size, before any code (7.1.1).** Measured 2026-11-01 on the step 7 branch with CI's method (`du -sxm /` in the prod image): **296 MB against the 300 MB budget**, 4 MB of headroom, above the plan's 3 MB stop line. Step 7 adds no runtime dependency; training libraries go only in the `offline` group.
+
+**`FINETUNE_*` settings (7.1.5).** Five keys with no defaults, in `.env.example`, `.env.test` and settings: base model, output directory, validation fraction, seed, example cap. They are read only by the offline commands; the web app never uses them.
