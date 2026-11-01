@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from evals import candidates
+from evals import candidates, clustering
 
 
 class Command(BaseCommand):
@@ -12,3 +12,5 @@ class Command(BaseCommand):
     def handle(self, *args: object, **options: object) -> None:
         made = candidates.build_candidates()
         self.stdout.write(f"{made} new trace cases.")
+        changed = clustering.assign_clusters()
+        self.stdout.write(f"{changed} cluster keys updated.")

@@ -69,11 +69,11 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 6.5 Clustering
 
-- [ ] **6.5.1** `evals/clustering.py` feature extraction with sqlglot: outcome class, set of tables, and a shape fingerprint (literals replaced by placeholders; join count, aggregate functions, GROUP BY, window, subquery or CTE, ORDER BY with LIMIT). Pure functions; unit tests with literal-only differences giving the same fingerprint.
-- [ ] **6.5.2** Layer 1: group by `(outcome, tables, fingerprint)`; the key is stored as `TraceCase.cluster_key`.
-- [ ] **6.5.3** Layer 2: within the same outcome and tables, merge groups whose questions overlap (lowercase, stopwords removed, Jaccard on word sets at `TRACES_CLUSTER_SIMILARITY`, single link). Deterministic: ties broken by run id, so the same traces always give the same clusters. A cap on runs per pass (`TRACES_CLUSTER_MAX_RUNS`) keeps memory bounded.
-- [ ] **6.5.4** Cluster summary: a rule-built label (outcome, tables, shape in words), size, representative (most signals, then newest) and member ids. `GET /api/workbench/clusters` returns them largest first, with counts of cases per status.
-- [ ] **6.5.5** Tests: same pattern phrased differently merges; different tables never merge; reruns give identical clusters; an empty set and a single run work; 1,000 synthetic runs cluster inside a time bound on the dev container.
+- [x] **6.5.1** `evals/clustering.py` feature extraction with sqlglot: outcome class, set of tables, and a shape fingerprint (literals replaced by placeholders; join count, aggregate functions, GROUP BY, window, subquery or CTE, ORDER BY with LIMIT). Pure functions; unit tests with literal-only differences giving the same fingerprint.
+- [x] **6.5.2** Layer 1: group by `(outcome, tables, fingerprint)`; the key is stored as `TraceCase.cluster_key`.
+- [x] **6.5.3** Layer 2: within the same outcome and tables, merge groups whose questions overlap (lowercase, stopwords removed, Jaccard on word sets at `TRACES_CLUSTER_SIMILARITY`, single link). Deterministic: ties broken by run id, so the same traces always give the same clusters. A cap on runs per pass (`TRACES_CLUSTER_MAX_RUNS`) keeps memory bounded.
+- [x] **6.5.4** Cluster summary: a rule-built label (outcome, tables, shape in words), size, representative (most signals, then newest) and member ids. `GET /api/workbench/clusters` returns them largest first, with counts of cases per status.
+- [x] **6.5.5** Tests: same pattern phrased differently merges; different tables never merge; reruns give identical clusters; an empty set and a single run work; 1,000 synthetic runs cluster inside a time bound on the dev container.
 
 ## 6.6 Eval on trace cases
 

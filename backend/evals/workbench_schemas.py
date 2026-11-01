@@ -110,3 +110,15 @@ def case_dict(case: TraceCase) -> dict[str, Any]:
         note=case.note,
         created_at=case.created_at,
     ).model_dump(mode="json")
+
+
+class ClusterOut(Schema):
+    # Stable while the cases stay the same; also the tag on eval results.
+    key: str
+    label: str
+    size: int
+    # The case that stands for the cluster (most signals, then newest).
+    representative_id: int
+    member_ids: list[int]
+    # Cases per status: candidate, drafted, approved, rejected.
+    status_counts: dict[str, int]

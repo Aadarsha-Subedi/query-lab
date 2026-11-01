@@ -16,6 +16,7 @@ from ask import guard, keys, prompt, runner, schema
 from ask.errors import DefaultKeyLimitReached, GuardRejected, QueryFailed, QueryTimeout
 from common.exception.domain import AppException
 from common.llm import LLMError, LLMProvider, LLMRequest
+from evals import clustering
 from evals import runner as eval_runner
 from evals.models import TraceCase
 
@@ -89,13 +90,27 @@ def draft_case(case: TraceCase, provider: LLMProvider, schema_text: str) -> Trac
 
 
 def to_draft() -> list[TraceCase]:
-    """The cases to draft next: candidates, most signals first, then newest, at
-    most TRACES_DRAFT_MAX_PER_BATCH."""
-    return list(
-        TraceCase.objects.filter(status=TraceCase.STATUS_CANDIDATE).order_by(
-            "-signals", "-source_created_at", "-id"
-        )[: settings.TRACES_DRAFT_MAX_PER_BATCH]
-    )
+    """One case per cluster that has nothing drafted or approved yet: its best
+    candidate (most signals, then newest). Largest clusters first, at most
+    TRACES_DRAFT_MAX_PER_BATCH."""
+    clustering.assign_clusters()
+    chosen: list[TraceCase] = []
+    for summary in clustering.summaries():
+        if len(chosen) >= settings.TRACES_DRAFT_MAX_PER_BATCH:
+            break
+        members = TraceCase.objects.filter(pk__in=summary.member_ids)
+        if members.filter(
+            status__in=[TraceCase.STATUS_DRAFTED, TraceCase.STATUS_APPROVED]
+        ).exists():
+            continue
+        best = (
+            members.filter(status=TraceCase.STATUS_CANDIDATE)
+            .order_by("-signals", "-source_created_at", "-id")
+            .first()
+        )
+        if best is not None:
+            chosen.append(best)
+    return chosen
 
 
 def draft_batch(user: User, provider: LLMProvider | None = None) -> int:

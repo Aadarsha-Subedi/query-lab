@@ -538,6 +538,50 @@
         "title": "CasePreviewOut",
         "type": "object"
       },
+      "ClusterOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "member_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Member Ids",
+            "type": "array"
+          },
+          "representative_id": {
+            "title": "Representative Id",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "status_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Status Counts",
+            "type": "object"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "size",
+          "representative_id",
+          "member_ids",
+          "status_counts"
+        ],
+        "title": "ClusterOut",
+        "type": "object"
+      },
       "ColumnIn": {
         "properties": {
           "default": {
@@ -2959,6 +3003,44 @@
           "data"
         ],
         "title": "SuccessEnvelope[list[CaseOut]]",
+        "type": "object"
+      },
+      "SuccessEnvelope_list_ClusterOut__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ClusterOut"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Meta",
+            "type": "object"
+          },
+          "status_code": {
+            "title": "Status Code",
+            "type": "integer"
+          },
+          "success": {
+            "const": true,
+            "default": true,
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status_code",
+          "message",
+          "data"
+        ],
+        "title": "SuccessEnvelope[list[ClusterOut]]",
         "type": "object"
       },
       "SuccessEnvelope_list_LLMKeyOut__": {
@@ -6214,6 +6296,64 @@
           }
         ],
         "summary": "Reject Case",
+        "tags": [
+          "workbench"
+        ]
+      }
+    },
+    "/api/workbench/clusters": {
+      "get": {
+        "description": "Staff only. The trace cases grouped by outcome, tables and SQL shape, then\nmerged when their questions overlap. Largest first, each with a label, a\nrepresentative and its case counts per status. Computed from the stored\n`cluster_key`s (`build_trace_cases` and drafting refresh them).",
+        "operationId": "list_clusters",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_list_ClusterOut__"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "StaffAuth": []
+          }
+        ],
+        "summary": "List Clusters",
         "tags": [
           "workbench"
         ]

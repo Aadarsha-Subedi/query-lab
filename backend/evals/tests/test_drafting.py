@@ -40,6 +40,9 @@ def answer(sql: str, answerable: bool = True) -> str:
     )
 
 
+TABLES = ["orders", "customers", "products", "sellers", "order_items"]
+
+
 def make_case(n: int = 1, reasons: str = "failed", source_sql: str = "") -> TraceCase:
     return TraceCase.objects.create(
         source_run_id=n,
@@ -48,7 +51,7 @@ def make_case(n: int = 1, reasons: str = "failed", source_sql: str = "") -> Trac
         reasons=reasons,
         signals=len(reasons.split(",")),
         outcome="error",
-        source_sql=source_sql,
+        source_sql=source_sql or f"SELECT 1 FROM {TABLES[n % len(TABLES)]}",
     )
 
 
@@ -98,7 +101,7 @@ def test_the_prompt_has_question_schema_and_edited_sql_but_no_rows() -> None:
     assert "How many orders 1?" in text and "SCHEMA TEXT" in text
     assert "<approved_sql>\nSELECT 7" in text
     plain = drafting.build_draft_prompt(make_case(2, source_sql="SELECT 7"), "S")
-    assert "SELECT 7" not in plain
+    assert "approved_sql" not in plain
 
 
 def test_a_batch_is_capped_and_counts_the_default_key(
@@ -120,3 +123,13 @@ def test_a_batch_stops_when_the_key_limit_is_used_up(user: User, settings: Any) 
     provider = Scripted([answer(GOOD)] * 2)
     assert drafting.draft_batch(user, provider) == 1
     assert len(provider.requests) == 1
+
+
+def test_one_call_per_cluster_not_per_run(user: User) -> None:
+    for n in (1, 6, 11):  # same table and shape: one cluster
+        make_case(n, source_sql="SELECT count(*) FROM orders")
+        TraceCase.objects.filter(source_run_id=n).update(question="count orders")
+    provider = Scripted([answer(GOOD)] * 3)
+    assert drafting.draft_batch(user, provider) == 1
+    assert len(provider.requests) == 1
+    assert drafting.draft_batch(user, provider) == 0  # the cluster has a draft

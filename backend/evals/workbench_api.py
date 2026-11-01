@@ -16,12 +16,13 @@ from common.order.domain import OrderingSchema
 from common.permissions import staff_only
 from common.response.domain import SuccessEnvelope, errors, success
 from common.throttling.scoped import ResultThrottle
-from evals import review, tasks, traces
+from evals import clustering, review, tasks, traces
 from evals.models import TraceCase
 from evals.workbench_schemas import (
     ApproveIn,
     CaseDetailOut,
     CaseOut,
+    ClusterOut,
     DraftQueuedOut,
     RejectIn,
     TraceDetailOut,
@@ -224,3 +225,26 @@ def mark_case_unanswerable(
     return success(
         case_dict(review.mark_unanswerable(_staff(request), case_id, payload.note))
     )
+
+
+@router.get(
+    "/clusters",
+    response={200: SuccessEnvelope[list[ClusterOut]], **errors(401, 403, 429)},
+)
+def list_clusters(request: HttpRequest) -> dict:
+    """Staff only. The trace cases grouped by outcome, tables and SQL shape, then
+    merged when their questions overlap. Largest first, each with a label, a
+    representative and its case counts per status. Computed from the stored
+    `cluster_key`s (`build_trace_cases` and drafting refresh them)."""
+    items = [
+        ClusterOut(
+            key=s.key,
+            label=s.label,
+            size=s.size,
+            representative_id=s.representative_id,
+            member_ids=list(s.member_ids),
+            status_counts=s.status_counts,
+        ).model_dump()
+        for s in clustering.summaries()
+    ]
+    return success(items, meta={"count": len(items)})

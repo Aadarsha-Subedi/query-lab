@@ -3200,6 +3200,41 @@
               }
             }
           ]
+        },
+        {
+          "name": "List clusters",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workbench/clusters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workbench",
+                "clusters"
+              ]
+            },
+            "description": "Trace cases grouped by outcome, tables and SQL shape, merged when their questions overlap (TRACES_CLUSTER_SIMILARITY). Largest first, with label, representative and case counts per status. Keys are refreshed by `build_trace_cases` and by drafting."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of [200, 401, 403, 429]', () => pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 429]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
