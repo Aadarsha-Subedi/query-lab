@@ -86,7 +86,7 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 ## 7.8 Close-out
 
 - [ ] **7.8.1** Record in `DECISION.md`: base model and why, hyperparameters, training time, W&B run link, dataset counts and manifest hash, base vs tuned numbers, the hand reading of misses, and what the tuned model does **not** prove (small benchmark, one seed, Spider noise).
-- [ ] **7.8.2** `ruff`, `mypy` and the full test suite pass; a test confirms the Django app imports none of the training libraries.
-- [ ] **7.8.3** `backend/openapi.json` unchanged (no API change) and checked; `API_ERRORS.md` drift test passes.
-- [ ] **7.8.4** Final image-size check with CI's method; record it in `DECISION.md`.
-- [ ] **7.8.5** Update `backend/CLAUDE.md` (new package, rules), `FLOW.md` (the offline training and scoring flow, exact commands), and `DECISION.md`; tick step 7 in the root README and note what remains for you.
+- [x] **7.8.2** `ruff`, `mypy` and the full test suite pass; a test confirms the Django app imports none of the training libraries.
+- [x] **7.8.3** `backend/openapi.json` unchanged (no API change) and checked; `API_ERRORS.md` drift test passes.
+- [x] **7.8.4** Final image-size check with CI's method; record it in `DECISION.md`.
+- [x] **7.8.5** Update `backend/CLAUDE.md` (new package, rules), `FLOW.md` (the offline training and scoring flow, exact commands), and `DECISION.md`; tick step 7 in the root README and note what remains for you.
