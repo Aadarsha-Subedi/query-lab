@@ -23,6 +23,7 @@
   --n-200: oklch(0.92 0.004 286.3);
   --n-300: oklch(0.871 0.006 286.3);
   --n-400: oklch(0.705 0.015 286.1);
+  --n-450: oklch(0.63 0.015 286);
   --n-500: oklch(0.552 0.016 285.9);
   --n-600: oklch(0.442 0.017 285.8);
   --n-700: oklch(0.37 0.013 285.8);
@@ -103,7 +104,7 @@
   --surface: var(--n-0);
   --surface-muted: var(--n-100);
   --border: var(--n-200);
-  --input: var(--n-500); /* 3:1 on surface (WCAG 1.4.11) */
+  --input: var(--n-450); /* about 3.4:1 on surface and background (WCAG 1.4.11), as light as that allows */
   /* A step darker than zinc-500 so it passes 4.5:1 on surface-muted too. */
   --muted-foreground: color-mix(in oklab, var(--n-500) 70%, var(--n-600));
 
