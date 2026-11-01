@@ -26,6 +26,8 @@ export class ApiError extends Error {
   readonly errors: FieldError[]
   /** X-Request-ID of the failed call, shown in ErrorState for bug reports. */
   readonly requestId: string | null
+  /** Seconds the server asks us to wait (429); null when waiting does not help or none was sent. */
+  readonly retryAfterSeconds: number | null
 
   constructor(init: {
     status: number
@@ -33,6 +35,7 @@ export class ApiError extends Error {
     message: string
     errors?: FieldError[]
     requestId?: string | null
+    retryAfterSeconds?: number | null
   }) {
     super(init.message)
     this.name = 'ApiError'
@@ -40,6 +43,7 @@ export class ApiError extends Error {
     this.code = init.code
     this.errors = init.errors ?? []
     this.requestId = init.requestId ?? null
+    this.retryAfterSeconds = init.retryAfterSeconds ?? null
   }
 }
 
@@ -76,6 +80,7 @@ function errorFromBody(status: number, body: unknown, requestId: string | null):
       message: typeof body.message === 'string' ? body.message : 'The request failed.',
       errors: Array.isArray(body.errors) ? (body.errors as FieldError[]) : [],
       requestId,
+      retryAfterSeconds: typeof body.retry_after_seconds === 'number' ? body.retry_after_seconds : null,
     })
   }
   return new ApiError({
@@ -154,6 +159,10 @@ export function createApiClient(baseUrl: string) {
       request<T>(path, { ...options, method: 'GET' }),
     post: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>) =>
       request<T>(path, { ...options, method: 'POST', body }),
+    put: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>) =>
+      request<T>(path, { ...options, method: 'PUT', body }),
+    patch: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>) =>
+      request<T>(path, { ...options, method: 'PATCH', body }),
     delete: <T>(path: string, options?: Omit<RequestOptions, 'method' | 'body'>) =>
       request<T>(path, { ...options, method: 'DELETE' }),
   }

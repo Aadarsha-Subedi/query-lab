@@ -26,6 +26,8 @@
     "env.config.ts",
     "env.test.ts",
     "build.test.ts",
+    "api-errors.test.ts",
+    "src/lib/api/errors.ts",
     "src/env.ts"
   ]
 }

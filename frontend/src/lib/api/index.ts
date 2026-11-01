@@ -17,6 +17,8 @@ export const api: ApiClient = {
   request: (...args) => current().request(...args),
   get: (...args) => current().get(...args),
   post: (...args) => current().post(...args),
+  put: (...args) => current().put(...args),
+  patch: (...args) => current().patch(...args),
   delete: (...args) => current().delete(...args),
 }
 

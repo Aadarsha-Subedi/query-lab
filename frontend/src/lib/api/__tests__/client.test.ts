@@ -95,4 +95,33 @@ describe('api client', () => {
       status: 'degraded',
     })
   })
+
+  it('sends PUT and PATCH with a body and the CSRF token', async () => {
+    document.cookie = 'csrftoken=abc123'
+    const fetchMock = mockFetch({
+      '/api/thing': () => ({ status: 200, body: { success: true, data: { ok: true } } }),
+    })
+    await client().put('/api/thing', { a: 1 })
+    await client().patch('/api/thing', { b: 2 })
+    const init = (call: number) => fetchMock.mock.calls[call]?.[1] as RequestInit
+    expect(init(0)).toMatchObject({ method: 'PUT', body: JSON.stringify({ a: 1 }) })
+    expect(init(1)).toMatchObject({ method: 'PATCH', body: JSON.stringify({ b: 2 }) })
+    expect((init(0).headers as Record<string, string>)['X-CSRFToken']).toBe('abc123')
+    expect((init(1).headers as Record<string, string>)['X-CSRFToken']).toBe('abc123')
+  })
+
+  it('keeps retry_after_seconds on the error, null when waiting does not help', async () => {
+    mockFetch({
+      '/api/wait': () => ({
+        status: 429,
+        body: { success: false, message: 'Slow.', code: 'throttled', retry_after_seconds: 12 },
+      }),
+      '/api/never': () => ({
+        status: 429,
+        body: { success: false, message: 'Full.', code: 'agent_run_limit', retry_after_seconds: null },
+      }),
+    })
+    await expect(client().get('/api/wait')).rejects.toMatchObject({ retryAfterSeconds: 12 })
+    await expect(client().get('/api/never')).rejects.toMatchObject({ retryAfterSeconds: null })
+  })
 })
