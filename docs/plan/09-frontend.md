@@ -38,13 +38,13 @@ Each atomic task is one small commit (Conventional Commits). **(You)** marks a t
 
 ## 9.1 Preparation and the typed client
 
-- [ ] **9.1.1** Branch `feat/step-9-frontend` from `feat/step-7-lora-finetune` (done when this plan is committed). Record the baseline: `pnpm test`, `lint`, `typecheck`, `build` all pass; note the build size in `DECISION.md`.
-- [ ] **9.1.2** Add `openapi-typescript` as a dev dependency. `pnpm gen:api` writes `src/lib/api/schema.gen.ts` from `../backend/openapi.json` (committed, never edited by hand, like `routeTree.gen.ts`).
-- [ ] **9.1.3** Test/CI: `pnpm gen:api:check` regenerates to a temp file and fails when the committed one differs. Added to the frontend CI job.
-- [ ] **9.1.4** `lib/api/errors.ts`: a typed map from API error `code` to a user message and an action (`API_ERRORS.md` is the source). Unknown codes fall back to the server's message. Test: every code in `API_ERRORS.md` has an entry (a drift test, like the backend's).
-- [ ] **9.1.5** Extend the client with `put` and `patch` (needed for keys, feedback, workspace edits) with the same envelope, CSRF and 429 handling and no retry. Tests for each verb, including a CSRF header and a 429 toast.
-- [ ] **9.1.6** Add the missing base components from shadcn, restyled with tokens and `<Icon>`, each shown on `/design` in light and dark: `select`, `textarea`, `checkbox`, `switch`, `scroll-area`, `sheet`, `popover`, `alert-dialog`, `pagination`/`data-table` helper (built on `table`). Tests per component.
-- [ ] **9.1.7** `lib/format.ts`: durations, relative times, numbers, byte sizes, one place, using `Intl`. Tests.
+- [x] **9.1.1** Branch `feat/step-9-frontend` from `feat/step-7-lora-finetune` (done when this plan is committed). Record the baseline: `pnpm test`, `lint`, `typecheck`, `build` all pass; note the build size in `DECISION.md`.
+- [x] **9.1.2** Add `openapi-typescript` as a dev dependency. `pnpm gen:api` writes `src/lib/api/schema.gen.ts` from `../backend/openapi.json` (committed, never edited by hand, like `routeTree.gen.ts`).
+- [x] **9.1.3** Test/CI: `pnpm gen:api:check` regenerates to a temp file and fails when the committed one differs. Added to the frontend CI job.
+- [x] **9.1.4** `lib/api/errors.ts`: a typed map from API error `code` to a user message and an action (`API_ERRORS.md` is the source). Unknown codes fall back to the server's message. Test: every code in `API_ERRORS.md` has an entry (a drift test, like the backend's).
+- [x] **9.1.5** Extend the client with `put` and `patch` (needed for keys, feedback, workspace edits) with the same envelope, CSRF and 429 handling and no retry. Tests for each verb, including a CSRF header and a 429 toast.
+- [x] **9.1.6** Add the missing base components from shadcn, restyled with tokens and `<Icon>`, each shown on `/design` in light and dark: `select`, `textarea`, `checkbox`, `switch`, `scroll-area`, `sheet`, `popover`, `alert-dialog`, `pagination`/`data-table` helper (built on `table`). Tests per component.
+- [x] **9.1.7** `lib/format.ts`: durations, relative times, numbers, byte sizes, one place, using `Intl`. Tests.
 
 ## 9.2 App shell, sign-in, landing
 
