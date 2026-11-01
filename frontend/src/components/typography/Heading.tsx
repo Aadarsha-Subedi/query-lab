@@ -1,5 +1,6 @@
-import type { ComponentProps } from 'react'
+import { useEffect, type ComponentProps } from 'react'
 
+import { appName } from '@/lib/app-name'
 import { cn } from '@/lib/utils'
 
 const LEVELS = {
@@ -11,8 +12,14 @@ const LEVELS = {
 
 type HeadingProps = ComponentProps<'h1'> & { level: keyof typeof LEVELS }
 
+/** The page's h1 names the tab too (WCAG 2.4.2): "History · Querylab". */
 export function Heading({ level, className, ...props }: HeadingProps) {
   const { tag: Tag, className: size } = LEVELS[level]
+  const title = Tag === 'h1' && typeof props.children === 'string' ? props.children : undefined
+  useEffect(() => {
+    if (title === undefined) return
+    document.title = `${title} · ${appName()}`
+  }, [title])
   return (
     <Tag
       className={cn(size, 'font-semibold tracking-[var(--tracking-heading)] text-foreground', className)}

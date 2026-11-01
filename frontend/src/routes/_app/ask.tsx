@@ -35,16 +35,7 @@ function AskPage() {
 
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 px-4 py-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
-      <aside
-        aria-label="Schema browser"
-        className="max-h-[70vh] lg:sticky lg:top-20 lg:h-[calc(100vh-7rem)] lg:max-h-none"
-      >
-        <Heading level={3} className="mb-3">
-          Schema
-        </Heading>
-        <SchemaPanel workspace={workspace} />
-      </aside>
-      <main className="order-1 flex min-w-0 flex-col gap-6 lg:order-2">
+      <main id="main" tabIndex={-1} className="order-1 flex min-w-0 flex-col gap-6 lg:order-2">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Heading level={1}>Ask</Heading>
           <WorkspaceSelect
@@ -86,6 +77,15 @@ function AskPage() {
         )}
         {run !== undefined && <RunView runId={run} />}
       </main>
+      <aside
+        aria-label="Schema browser"
+        className="order-2 max-h-[70vh] lg:sticky lg:top-20 lg:order-1 lg:h-[calc(100vh-7rem)] lg:max-h-none"
+      >
+        <Heading level={2} className="mb-3">
+          Schema
+        </Heading>
+        <SchemaPanel workspace={workspace} />
+      </aside>
     </div>
   )
 }

@@ -22,7 +22,7 @@ function WorkspacePage() {
   const navigate = useNavigate({ from: Route.fullPath })
   const workspaceId = Number(id)
   return (
-    <main className="flex flex-col gap-6 px-4 py-6">
+    <main id="main" tabIndex={-1} className="flex flex-col gap-6 px-4 py-6">
       <div className="flex items-center gap-3">
         <Button asChild variant="ghost" size="sm" icon={ArrowLeft01Icon}>
           <Link to="/workspaces">Workspaces</Link>

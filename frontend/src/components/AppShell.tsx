@@ -64,6 +64,12 @@ export function AppShell({ user }: { user: User }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-body focus:shadow-md"
+      >
+        Skip to content
+      </a>
       <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/90 px-4 backdrop-blur">
         <Button
           variant="ghost"

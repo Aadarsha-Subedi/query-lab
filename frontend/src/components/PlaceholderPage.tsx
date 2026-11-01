@@ -14,7 +14,11 @@ export function PlaceholderPage({
   children?: ReactNode
 }) {
   return (
-    <main className="mx-auto flex max-w-[var(--reading-max)] flex-col gap-4 px-6 py-16">
+    <main
+      id="main"
+      tabIndex={-1}
+      className="mx-auto flex max-w-[var(--reading-max)] flex-col gap-4 px-6 py-16"
+    >
       <Heading level={1}>{title}</Heading>
       <Text muted>{note}</Text>
       {children}
