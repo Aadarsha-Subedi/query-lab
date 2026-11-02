@@ -99,3 +99,54 @@ def split(script: str) -> list[Statement]:
         for text in statements
         if _first_word(text)
     ]
+
+
+def split_partial(script: str) -> tuple[list[str], str]:
+    """The complete statements (their text up to, not including, the `;`) and the
+    unfinished rest. Lets a reader feed a big script in pieces without holding it
+    all: a `;` inside a quote, dollar quote or comment is not an end."""
+    statements: list[str] = []
+    start = 0
+    i = 0
+    n = len(script)
+    while i < n:
+        ch = script[i]
+        if ch in "'\"":
+            end = script.find(ch, i + 1)
+            while end != -1 and end + 1 < n and script[end + 1] == ch:
+                end = script.find(ch, end + 2)
+            if end == -1:
+                return statements, script[start:]
+            i = end + 1
+        elif script.startswith("--", i):
+            end = script.find("\n", i)
+            if end == -1:
+                return statements, script[start:]
+            i = end + 1
+        elif script.startswith("/*", i):
+            depth, i = 1, i + 2
+            while i < n and depth:
+                if script.startswith("/*", i):
+                    depth, i = depth + 1, i + 2
+                elif script.startswith("*/", i):
+                    depth, i = depth - 1, i + 2
+                else:
+                    i += 1
+            if depth:
+                return statements, script[start:]
+        elif ch == "$" and (tag := _DOLLAR.match(script, i)):
+            end = script.find(tag.group(0), tag.end())
+            if end == -1:
+                return statements, script[start:]
+            i = end + len(tag.group(0))
+        elif ch == ";":
+            statements.append(script[start:i])
+            i += 1
+            start = i
+        else:
+            i += 1
+    return statements, script[start:]
+
+
+def first_word(text: str) -> str:
+    return _first_word(text)
