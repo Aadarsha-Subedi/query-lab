@@ -72,3 +72,41 @@ class WorkspaceDDLLog(TimeStampModel):
     class Meta:
         ordering = ["id"]
         indexes = [models.Index(fields=["workspace_id", "id"])]
+
+
+class ImportJob(TimeStampModel):
+    """One dump import into a workspace. The dump itself lives in R2 under
+    `object_key` until the job ends (success or failure), then it is deleted.
+    `awaiting_upload` -> `queued` (the client says the upload is done) ->
+    `running` -> `succeeded` | `failed`."""
+
+    AWAITING_UPLOAD = "awaiting_upload"
+    QUEUED = "queued"
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    ACTIVE = (AWAITING_UPLOAD, QUEUED, RUNNING)
+
+    workspace = models.ForeignKey(
+        Workspace, on_delete=models.CASCADE, related_name="imports"
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+"
+    )
+    object_key = models.CharField(max_length=200)
+    size_bytes = models.PositiveBigIntegerField()
+    # True: the import first drops this workspace's tables, inside its own
+    # transaction, so a failed import leaves the old data in place.
+    replace = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, default=AWAITING_UPLOAD)
+    statements_run = models.PositiveIntegerField(default=0)
+    tables_created = models.PositiveIntegerField(default=0)
+    error_code = models.CharField(max_length=60, blank=True, default="")
+    error_message = models.TextField(blank=True, default="")
+    # Where in the dump the failure was: the statement number and file line.
+    error_statement = models.PositiveIntegerField(null=True, blank=True)
+    error_line = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-id"]
+        indexes = [models.Index(fields=["workspace", "status"])]

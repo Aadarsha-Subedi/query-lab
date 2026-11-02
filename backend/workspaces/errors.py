@@ -196,3 +196,23 @@ class DumpTooLarge(UnprocessableEntityException):
 class DumpUploadMissing(UnprocessableEntityException):
     message = "The uploaded file was not found. Upload it again."
     error_code = "dump_upload_missing"
+
+
+class WorkspaceNotEmpty(ConflictException):
+    message = "This workspace already has tables. Use Replace data to import over them."
+    error_code = "workspace_not_empty"
+
+
+class ImportInProgress(ConflictException):
+    message = "A dump import is already running for you. Wait for it to finish."
+    error_code = "import_in_progress"
+
+
+class ImportNotFound(NotFoundException):
+    message = "Import not found."
+    error_code = "import_not_found"
+
+
+class ImportNotReady(ConflictException):
+    message = "This import is not waiting for an upload."
+    error_code = "import_not_ready"
