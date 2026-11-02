@@ -183,3 +183,16 @@ class RowInvalid(UnprocessableEntityException):
 class RowRequestTooBig(UnprocessableEntityException):
     message = "Too many rows in one request."
     error_code = "too_many_rows"
+
+
+# ── dump import ───────────────────────────────────────────────────────────
+
+
+class DumpTooLarge(UnprocessableEntityException):
+    message = "The dump is too large."
+    error_code = "dump_too_large"
+
+
+class DumpUploadMissing(UnprocessableEntityException):
+    message = "The uploaded file was not found. Upload it again."
+    error_code = "dump_upload_missing"
