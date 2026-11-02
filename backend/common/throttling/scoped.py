@@ -93,3 +93,10 @@ class WorkspaceSqlThrottle(AskThrottle):
 
     scope = "workspace_sql"
     rate_setting = "THROTTLE_WORKSPACE_SQL_RATE"
+
+
+class WorkspaceImportThrottle(AskThrottle):
+    """Starting a dump import: a presigned upload, then a background job."""
+
+    scope = "workspace_import"
+    rate_setting = "THROTTLE_WORKSPACE_IMPORT_RATE"

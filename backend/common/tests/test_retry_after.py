@@ -59,6 +59,14 @@ def hit_workspace_sql(client: Client) -> object:
     )
 
 
+def hit_workspace_import(client: Client) -> object:
+    return client.post(
+        "/api/workspaces/1/imports",
+        '{"filename": "a.sql", "size": 1}',
+        content_type="application/json",
+    )
+
+
 def hit_workspace(client: Client) -> object:
     return client.delete("/api/workspaces/1")  # counts, and changes nothing
 
@@ -74,6 +82,11 @@ CASES: dict[type, tuple[str, Callable[[Client], object], bool]] = {
     scoped.WorkspaceSqlThrottle: (
         "THROTTLE_WORKSPACE_SQL_RATE",
         hit_workspace_sql,
+        True,
+    ),
+    scoped.WorkspaceImportThrottle: (
+        "THROTTLE_WORKSPACE_IMPORT_RATE",
+        hit_workspace_import,
         True,
     ),
 }
