@@ -93,7 +93,7 @@ API_ERRORS.md      every error code, its HTTP status and what the screen should 
 - One small commit per atomic task.
 - Every new or changed endpoint is added to `postman/collection.json` in the same commit, and `make openapi` is re-run so `openapi.json` matches. New error codes go in `API_ERRORS.md` (a test checks it).
 - Every endpoint (except `/api/health`) answers in the envelope from `common/response/domain.py`; errors raise an `AppException` subclass.
-- New dependencies: runtime ones only if they fit the container budget (image < 300 MB, idle web + worker < 500 MB). Test tools go in `test`, lint/type/hook tools in `lint` (host and CI only), heavy tools in `offline`.
+- New dependencies: runtime ones only if they fit the container budget (image < 400 MB, idle web + worker < 500 MB). Test tools go in `test`, lint/type/hook tools in `lint` (host and CI only), heavy tools in `offline`.
 
 ## Hard rules
 

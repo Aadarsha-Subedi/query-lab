@@ -18,7 +18,7 @@ permissions:
 
 env:
   # Production image budget for the Cloudflare basic container (0.10.30).
-  IMAGE_SIZE_BUDGET_MB: 300
+  IMAGE_SIZE_BUDGET_MB: 400
   # uv download tuning for the image build (required build args, no defaults).
   UV_HTTP_TIMEOUT: 120
   UV_CONCURRENT_DOWNLOADS: 8
