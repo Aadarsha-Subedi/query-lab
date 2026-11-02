@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Querylab backend: Django + django-ninja API for a text-to-SQL analyst with evals."
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "boto3>=1.43.123",
     "cryptography>=50.0.2",
     "disposable-email-domains>=0.0.287",
     "django>=6.1.2",

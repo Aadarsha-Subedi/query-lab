@@ -39,6 +39,10 @@ RUN --mount=type=cache,id=querylab-uv,target=/root/.cache/uv,sharing=locked \
 # that the packages ship (about 20 MB), to stay inside the image budget.
 RUN find /opt/venv/lib/python3.12/site-packages -type d -path '*/locale/*' -prune \
         ! -name 'en' ! -name 'en_*' -exec rm -rf {} +
+# boto3 is used for R2 (S3 API) only: botocore ships a model for ~440 AWS
+# services (about 27 MB); keep the S3 one and the shared config files.
+RUN cd /opt/venv/lib/python3.12/site-packages/botocore/data \
+    && find . -mindepth 1 -maxdepth 1 -type d ! -name s3 -exec rm -rf {} +
 COPY . .
 
 # ── prod: the virtualenv and the code, run as a non-root user ────────────
