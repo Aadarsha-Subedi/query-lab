@@ -547,4 +547,6 @@ Copied from the owner's project-management and resolve-ai: one `backend/cloudfla
 - **Sleep after 3 minutes (owner),** the references' value. Activity counts requests only, so a job can be killed mid-run. Accepted: imports report `dump_interrupted` and the user retries. To be checked with a real 50 MB dump.
 - **One Redis database.** Managed Redis usually offers database 0 only, so `REDIS_URL` and `CACHE_URL` share it. Huey, cache and agent keys have separate prefixes, and `cache.clear()` runs only in tests.
 
-**Measured locally at 1 GiB and 0.25 CPU (throwaway Postgres and Redis):** image 305 MB; seed 135 s, about 375 MiB; cold start to a healthy `/api/health` 40 s; idle 363 MiB. Not measured: anything against real Neon, Redis or Cloudflare, including Huey's Redis command use, which matters on a free tier with a monthly limit.
+- **Same worker counts as the other projects (owner):** 1 gunicorn worker with 4 threads and 2 Huey workers (`settings.json`), as in resolve-ai. Cost: `AGENT_MAX_OPEN_STREAMS` stays 3 and each stream holds a thread, so three open streams leave one thread for every other request. Lower the cap if requests queue in practice.
+
+**Measured locally at 1 GiB and 0.25 CPU (throwaway Postgres and Redis):** image 305 MB; seed 135 s, about 375 MiB (with 2 gunicorn workers); cold start to a healthy `/api/health` 33 s and 55 s; idle 249 MiB. Not measured: anything against real Neon, Redis or Cloudflare, including Huey's Redis command use, which matters on a free tier with a monthly limit.

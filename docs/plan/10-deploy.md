@@ -43,7 +43,7 @@
 
 - Image files: 305 MB normal, 425 MB first deploy. No `cloudflare` folder inside.
 - Seed (migrate, bootstrap, load 99,441 orders): 135 seconds from container start. Neon over the network will be slower. Peak memory about 375 MiB.
-- Cold start to `/api/health` 200: 40 seconds. Idle memory: 363 MiB (budget 500).
+- With 1 gunicorn worker (4 threads) and 2 Huey workers, the owner's choice to match the other projects: cold start to `/api/health` 200 took 33 and 55 seconds on two runs; idle memory 249 MiB (budget 500). With 2 gunicorn workers: 40 seconds, 363 MiB.
 - A stop signal shuts the container down in 1 second.
 
 ## Atomic steps
@@ -104,4 +104,4 @@
 - [ ] F.7 Sign in with Google and with GitHub.
 - [ ] F.8 Ask a demo question: the agent reads through the replica, the SSE stream stays open, approve and replay work.
 - [ ] F.9 Create a workspace and import a real dump through R2 (closes D.10 of the dump import plan and 5.9.7's real-Neon checks), then measure a 50 MB dump (closes D.11) and tune `DUMP_STATEMENT_TIMEOUT_MS`.
-- [ ] F.10 Let the container sleep and record the real cold start. If 40 seconds or so hurts, try `WEB_CONCURRENCY=1`.
+- [ ] F.10 Let the container sleep and record the real cold start.
