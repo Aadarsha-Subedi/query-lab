@@ -22,7 +22,7 @@ index.html            boot screen (plain HTML + tokens.css + boot.css), themed b
 ```
 __root            ThemeController, TooltipProvider, Toaster; not-found and error pages (RouteStatus)
 _public           beforeLoad: signed in -> redirect /ask
-  /                 landing: what it is, ask / approve / measure, dataset licence
+  /                 landing: navbar, hero with a static product preview, how it works, features, baseline scores, FAQ, sign-in band, footer (no request but the boot's /api/me)
   /login            Continue with Google / GitHub (real form POSTs to allauth)
   /auth/callback    only seen when a sign-in did not finish (a finished one is moved on to /ask by the guard)
 _app              beforeLoad: signed out -> redirect /; adds { me }; renders AppShell (header, nav, limits chip)
@@ -36,6 +36,9 @@ _app              beforeLoad: signed out -> redirect /; adds { me }; renders App
     /runs, /runs/$runId        traces and one trace (proposed vs approved SQL)
     /cases, /cases/$caseId     clusters, cases, the review form
     /evals, /evals/$runId, /evals/compare?base=&other=
+_site             no guard: open signed in and signed out; navbar (signed in: only Open the app) and footer
+  /privacy          Privacy Policy
+  /terms            Terms
 /design           dev only (notFound in production; the page is not in the bundle)
 ```
 
