@@ -23,6 +23,7 @@ import { z } from 'zod'
 
 import { CodeBlock, Code } from '@/components/typography/Code'
 import { Heading } from '@/components/typography/Heading'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Text } from '@/components/typography/Text'
 import {
   AlertDialog,
@@ -655,6 +656,23 @@ function MoreOverlays() {
   )
 }
 
+function Accordions() {
+  return (
+    <Demo title="Accordion" note="One open at a time; used by the landing page's FAQ">
+      <Accordion type="single" collapsible>
+        <AccordionItem value="one">
+          <AccordionTrigger>What does the guard refuse?</AccordionTrigger>
+          <AccordionContent>Anything but one SELECT on known tables.</AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="two">
+          <AccordionTrigger>Does anything run before approval?</AccordionTrigger>
+          <AccordionContent>No. The run waits for you.</AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </Demo>
+  )
+}
+
 export function ComponentSections() {
   return (
     <Section
@@ -670,6 +688,7 @@ export function ComponentSections() {
       <Overlays />
       <MoreInputs />
       <MoreOverlays />
+      <Accordions />
       <ProductPieces />
       <BadgesAndAvatars />
     </Section>

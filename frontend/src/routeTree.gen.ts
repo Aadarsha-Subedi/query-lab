@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as PublicRouteImport } from './routes/_public'
+import { Route as SiteRouteImport } from './routes/_site'
 import { Route as DesignRouteImport } from './routes/design'
 import { Route as AppAskRouteImport } from './routes/_app/ask'
 import { Route as AppHistoryRouteImport } from './routes/_app/history'
@@ -18,6 +19,8 @@ import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppWorkbenchRouteImport } from './routes/_app/workbench'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
+import { Route as SitePrivacyRouteImport } from './routes/_site/privacy'
+import { Route as SiteTermsRouteImport } from './routes/_site/terms'
 import { Route as AppWorkbenchIndexRouteImport } from './routes/_app/workbench.index'
 import { Route as AppWorkspacesIndexRouteImport } from './routes/_app/workspaces.index'
 import { Route as AppWorkspacesIdRouteImport } from './routes/_app/workspaces.$id'
@@ -37,6 +40,10 @@ const AppRoute = AppRouteImport.update({
 } as any)
 const PublicRoute = PublicRouteImport.update({
   id: '/_public',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SiteRoute = SiteRouteImport.update({
+  id: '/_site',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DesignRoute = DesignRouteImport.update({
@@ -73,6 +80,16 @@ const PublicLoginRoute = PublicLoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => PublicRoute,
+} as any)
+const SitePrivacyRoute = SitePrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteTermsRoute = SiteTermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => SiteRoute,
 } as any)
 const AppWorkbenchIndexRoute = AppWorkbenchIndexRouteImport.update({
   id: '/',
@@ -144,6 +161,8 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/workbench': typeof AppWorkbenchRouteWithChildren
   '/login': typeof PublicLoginRoute
+  '/privacy': typeof SitePrivacyRoute
+  '/terms': typeof SiteTermsRoute
   '/workspaces/$id': typeof AppWorkspacesIdRoute
   '/auth/callback': typeof PublicAuthCallbackRoute
   '/workbench/': typeof AppWorkbenchIndexRoute
@@ -164,6 +183,8 @@ export interface FileRoutesByTo {
   '/history': typeof AppHistoryRoute
   '/settings': typeof AppSettingsRoute
   '/login': typeof PublicLoginRoute
+  '/privacy': typeof SitePrivacyRoute
+  '/terms': typeof SiteTermsRoute
   '/workspaces/$id': typeof AppWorkspacesIdRoute
   '/auth/callback': typeof PublicAuthCallbackRoute
   '/workbench': typeof AppWorkbenchIndexRoute
@@ -181,12 +202,15 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/_public': typeof PublicRouteWithChildren
+  '/_site': typeof SiteRouteWithChildren
   '/design': typeof DesignRoute
   '/_app/ask': typeof AppAskRoute
   '/_app/history': typeof AppHistoryRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/workbench': typeof AppWorkbenchRouteWithChildren
   '/_public/login': typeof PublicLoginRoute
+  '/_site/privacy': typeof SitePrivacyRoute
+  '/_site/terms': typeof SiteTermsRoute
   '/_public/': typeof PublicIndexRoute
   '/_app/workspaces/$id': typeof AppWorkspacesIdRoute
   '/_public/auth/callback': typeof PublicAuthCallbackRoute
@@ -211,6 +235,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/workbench'
     | '/login'
+    | '/privacy'
+    | '/terms'
     | '/workspaces/$id'
     | '/auth/callback'
     | '/workbench/'
@@ -231,6 +257,8 @@ export interface FileRouteTypes {
     | '/history'
     | '/settings'
     | '/login'
+    | '/privacy'
+    | '/terms'
     | '/workspaces/$id'
     | '/auth/callback'
     | '/workbench'
@@ -247,12 +275,15 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/_public'
+    | '/_site'
     | '/design'
     | '/_app/ask'
     | '/_app/history'
     | '/_app/settings'
     | '/_app/workbench'
     | '/_public/login'
+    | '/_site/privacy'
+    | '/_site/terms'
     | '/_public/'
     | '/_app/workspaces/$id'
     | '/_public/auth/callback'
@@ -271,6 +302,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   PublicRoute: typeof PublicRouteWithChildren
+  SiteRoute: typeof SiteRouteWithChildren
   DesignRoute: typeof DesignRoute
 }
 
@@ -288,6 +320,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof PublicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_site': {
+      id: '/_site'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof SiteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/design': {
@@ -338,6 +377,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/login'
       preLoaderRoute: typeof PublicLoginRouteImport
       parentRoute: typeof PublicRoute
+    }
+    '/_site/privacy': {
+      id: '/_site/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof SitePrivacyRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/terms': {
+      id: '/_site/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof SiteTermsRouteImport
+      parentRoute: typeof SiteRoute
     }
     '/_app/workbench/': {
       id: '/_app/workbench/'
@@ -489,9 +542,22 @@ const PublicRouteChildren: PublicRouteChildren = {
 const PublicRouteWithChildren =
   PublicRoute._addFileChildren(PublicRouteChildren)
 
+interface SiteRouteChildren {
+  SitePrivacyRoute: typeof SitePrivacyRoute
+  SiteTermsRoute: typeof SiteTermsRoute
+}
+
+const SiteRouteChildren: SiteRouteChildren = {
+  SitePrivacyRoute: SitePrivacyRoute,
+  SiteTermsRoute: SiteTermsRoute,
+}
+
+const SiteRouteWithChildren = SiteRoute._addFileChildren(SiteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   PublicRoute: PublicRouteWithChildren,
+  SiteRoute: SiteRouteWithChildren,
   DesignRoute: DesignRoute,
 }
 export const routeTree = rootRouteImport

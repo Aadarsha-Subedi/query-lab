@@ -129,6 +129,8 @@ const ANSWERS: Record<string, () => Response> = {
 const SCREENS: [string, string][] = [
   ['landing', '/'],
   ['sign in', '/login'],
+  ['privacy, signed out', '/privacy'],
+  ['terms, signed out', '/terms'],
   ['ask', '/ask'],
   ['ask with a run', '/ask?run=5'],
   ['ask schema tab', '/ask?tab=schema'],
@@ -181,7 +183,7 @@ afterEach(() => {
 
 describe.each(SCREENS)('%s', (_name, path) => {
   it('has no accessibility violations axe can find', async () => {
-    const publicScreen = ['/', '/login', '/nowhere'].includes(path)
+    const publicScreen = ['/', '/login', '/privacy', '/terms', '/nowhere'].includes(path)
     stub(!publicScreen)
     initApi(TEST_BASE_URL)
     const queryClient = createQueryClient(0)

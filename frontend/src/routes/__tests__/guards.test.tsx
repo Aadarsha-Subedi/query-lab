@@ -1,6 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router'
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 
 import { initApi } from '@/lib/api'
 import { createQueryClient } from '@/lib/query-client'
@@ -45,5 +45,23 @@ describe('route guards', () => {
     const router = await openAt('/login')
     expect(router.state.location.pathname).toBe('/login')
     expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
+  })
+
+  it.each([
+    ['/privacy', 'Privacy Policy'],
+    ['/terms', 'Terms'],
+  ])('keeps %s open signed in and signed out', async (path, title) => {
+    mockFetch({ '/api/me': signedOut })
+    const signedOutRouter = await openAt(path)
+    expect(signedOutRouter.state.location.pathname).toBe(path)
+    expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/login')
+    cleanup()
+
+    mockFetch({ '/api/me': signedIn })
+    const signedInRouter = await openAt(path)
+    expect(signedInRouter.state.location.pathname).toBe(path)
+    expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Open the app' })).toHaveAttribute('href', '/ask')
   })
 })

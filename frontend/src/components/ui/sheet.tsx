@@ -50,7 +50,7 @@ function SheetContent({
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:outline-hidden">
+        <SheetPrimitive.Close className="absolute top-3 right-3 flex size-8 items-center justify-center rounded-md opacity-70 transition-opacity duration-fast outline-none hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background pointer-coarse:size-11">
           <Icon icon={Cancel01Icon} size="sm" />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>
