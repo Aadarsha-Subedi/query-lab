@@ -14,13 +14,16 @@ boundary (see test_isolation.py).
 - refuse: everything else, with a message that says why.
 
 `public.` is removed from names so the objects land in the workspace schema (the
-connection's search_path is only that schema). Any other qualifier is left alone
-and Postgres refuses it, because the role has no access to another schema.
+connection's search_path is only that schema). So is the name of a schema the dump
+creates itself (`CREATE SCHEMA app;` is skipped, then `app.` is removed). Any other
+qualifier is left alone and Postgres refuses it, because the role has no access to
+another schema.
 """
 
 import re
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Literal
 
 from workspaces import sqltext
@@ -83,23 +86,33 @@ SELECT_SKIPPED = re.compile(
     r"^select\s+(?:pg_catalog\.)?(?:setval|set_config)\s*\(", re.I
 )
 
-# What must be left untouched while removing `public.`: strings, quoted names,
-# dollar quotes and comments. Anything else named public. loses the prefix.
-_PUBLIC = re.compile(
-    r"""
-    (?P<keep>
-        (?P<regclass>'(?:[^']|'')*')(?=::regclass)
-      | '(?:[^']|'')*'
-      | "public"\s*\.\s*(?P<quoted>)
-      | "(?:[^"]|"")*"
-      | (?P<tag>\$[A-Za-z_0-9]*\$).*?(?P=tag)
-      | --[^\n]*
-      | /\*.*?\*/
-    )
-    | \bpublic\s*\.
-    """,
-    re.I | re.S | re.X,
+CREATE_SCHEMA = re.compile(
+    r"""^create\s+schema\s+(?:if\s+not\s+exists\s+)?("(?:[^"]|"")+"|[A-Za-z_][A-Za-z_0-9$]*)""",
+    re.I,
 )
+COMMENT_ON_SCHEMA = re.compile(r"^comment\s+on\s+schema\b", re.I)
+
+
+@lru_cache(maxsize=32)
+def _prefix_pattern(schemas: frozenset[str]) -> re.Pattern[str]:
+    """What must be left untouched while removing `<schema>.`: strings, quoted
+    names, dollar quotes and comments. Any other `<schema>.` loses the prefix."""
+    names = "|".join(re.escape(name) for name in sorted(schemas, key=len, reverse=True))
+    return re.compile(
+        rf"""
+        (?P<keep>
+            (?P<regclass>'(?:[^']|'')*')(?=::regclass)
+          | '(?:[^']|'')*'
+          | "(?:{names})"\s*\.\s*(?P<quoted>)
+          | "(?:[^"]|"")*"
+          | (?P<tag>\$[A-Za-z_0-9]*\$).*?(?P=tag)
+          | --[^\n]*
+          | /\*.*?\*/
+        )
+        | \b(?:{names})\s*\.
+        """,
+        re.I | re.S | re.X,
+    )
 
 
 class DumpRefused(Exception):
@@ -124,17 +137,30 @@ class Item:
     data: Iterator[str] = field(default_factory=lambda: iter(()))
 
 
-def strip_public(text: str) -> str:
+def strip_schemas(text: str, schemas: Iterable[str] = ("public",)) -> str:
+    """Remove `public.` and the dump's own schema names from object names, so
+    everything lands in the workspace schema (the connection's search_path)."""
+    names = frozenset(schemas) | {"public"}
+    pattern = _prefix_pattern(names)
+
     def replace(match: re.Match[str]) -> str:
         if match.group("keep") is None:
-            return ""  # bare `public.`
-        if match.group("regclass") is not None:  # nextval('public.t_id_seq'::regclass)
-            return re.sub(r"^'(?:\"?public\"?\.)", "'", match.group(0))
+            return ""  # bare `schema.`
         if match.group("quoted") is not None:
-            return ""  # `"public".`
+            return ""  # `"schema".`
+        if match.group("regclass") is not None:  # nextval('schema.t_id_seq'::regclass)
+            return re.sub(
+                rf"""^'(?:"?(?:{"|".join(re.escape(n) for n in names)})"?\.)""",
+                "'",
+                match.group(0),
+                flags=re.I,
+            )
         return match.group(0)
 
-    return _PUBLIC.sub(replace, text)
+    return pattern.sub(replace, text)
+
+
+strip_public = strip_schemas
 
 
 def classify(statement: str, number: int, line: int) -> Kind:
@@ -196,6 +222,7 @@ def read(lines: Iterable[str]) -> Iterator[Item]:
     """Statements of a dump, one at a time, each already classified. Raises
     DumpRefused at the first statement that may not run, before yielding it."""
     source = iter(lines)
+    schemas = {"public"}
     buffer = ""
     buffer_line = 1
     line_no = 0
@@ -221,9 +248,22 @@ def read(lines: Iterable[str]) -> Iterator[Item]:
             if not sqltext.first_word(text):
                 continue
             number += 1
+            plain = re.sub(r"--[^\n]*|/\*.*?\*/", " ", text, flags=re.S).strip()
+            created = CREATE_SCHEMA.match(plain)
+            if created:  # the dump's own schema: its objects go into the workspace
+                name = created.group(1)
+                schemas.add(
+                    name[1:-1].replace('""', '"') if name[0] == '"' else name.lower()
+                )
+                continue
+            if COMMENT_ON_SCHEMA.match(plain):
+                continue
             kind = classify(text, number, buffer_line)
             item = Item(
-                kind=kind, text=strip_public(text), number=number, line=buffer_line
+                kind=kind,
+                text=strip_schemas(text, schemas),
+                number=number,
+                line=buffer_line,
             )
             if kind == "copy":
 

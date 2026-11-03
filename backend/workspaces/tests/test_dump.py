@@ -60,7 +60,6 @@ def test_unread_copy_data_is_drained() -> None:
             "CREATE TRIGGER t BEFORE INSERT ON x FOR EACH ROW EXECUTE FUNCTION f();",
             "Triggers",
         ),
-        ("CREATE SCHEMA other;", "Schemas"),
         ("CREATE TEMP TABLE t (a int);", "Temporary"),
         ("COPY t FROM PROGRAM 'id';", "COPY"),
         ("COPY t TO '/tmp/x';", "COPY"),
@@ -143,3 +142,28 @@ def test_public_prefix_inside_a_regclass_cast_is_removed() -> None:
     assert dump.strip_public("INSERT INTO t VALUES ('public.x');") == (
         "INSERT INTO t VALUES ('public.x');"
     )
+
+
+def test_a_schema_the_dump_creates_is_folded_into_the_workspace() -> None:
+    result = items(
+        "CREATE SCHEMA shop;\n"
+        "ALTER SCHEMA shop OWNER TO postgres;\n"
+        "COMMENT ON SCHEMA shop IS 'x';\n"
+        "CREATE TABLE shop.orders (id integer NOT NULL);\n"
+        "ALTER TABLE ONLY shop.orders ALTER COLUMN id SET DEFAULT nextval('shop.orders_id_seq'::regclass);\n"
+        "INSERT INTO shop.orders VALUES (1);\n"
+        "INSERT INTO shop.orders VALUES ('shop.keep');\n"
+        'CREATE VIEW "shop".v AS SELECT * FROM "shop"."orders";\n'
+    )
+    assert [i.number for i in result] == [4, 5, 6, 7, 8]
+    assert result[0].text == "CREATE TABLE orders (id integer NOT NULL)"
+    assert "nextval('orders_id_seq'::regclass)" in result[1].text
+    assert result[3].text == "INSERT INTO orders VALUES ('shop.keep')"
+    assert result[4].text == 'CREATE VIEW v AS SELECT * FROM "orders"'
+
+
+def test_a_schema_that_was_not_created_by_the_dump_is_left_for_postgres_to_refuse() -> (
+    None
+):
+    result = items("CREATE TABLE other.t (a int);\n")
+    assert result[0].text == "CREATE TABLE other.t (a int)"

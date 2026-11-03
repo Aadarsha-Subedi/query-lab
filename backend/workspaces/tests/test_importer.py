@@ -262,3 +262,18 @@ def test_a_modern_pg_dump_with_restrict_and_sequences_imports(
     job = run_dump(MODERN_DUMP)
     assert job.status == ImportJob.SUCCEEDED, (job.error_message, job.error_line)
     assert rows(workspace, "SELECT email FROM users") == [("a@example.com",)]
+
+
+def test_a_dump_of_a_non_public_schema_lands_in_the_workspace(
+    run_dump: Callable[..., ImportJob], workspace: Workspace
+) -> None:
+    job = run_dump(
+        "CREATE SCHEMA shop;\n"
+        "CREATE TABLE shop.orders (id integer NOT NULL, note text);\n"
+        "COPY shop.orders (id, note) FROM stdin;\n1\tfirst\n\\.\n"
+        "ALTER TABLE ONLY shop.orders ADD CONSTRAINT orders_pkey PRIMARY KEY (id);\n"
+        "CREATE VIEW shop.recent AS SELECT * FROM shop.orders;\n"
+    )
+    assert job.status == ImportJob.SUCCEEDED, (job.error_message, job.error_line)
+    assert tables(workspace) == ["orders", "recent"]
+    assert rows(workspace, "SELECT note FROM recent") == [("first",)]
