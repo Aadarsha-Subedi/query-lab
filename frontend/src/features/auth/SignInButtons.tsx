@@ -3,6 +3,7 @@ import { GithubIcon, GoogleIcon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import { type IconSvgElement } from '@/components/ui/icon'
 import { api } from '@/lib/api'
+import { cn } from '@/lib/utils'
 
 import { ALLAUTH_PROVIDER_REDIRECT, AUTH_CALLBACK_PATH, type Provider } from './api'
 
@@ -20,9 +21,9 @@ function csrfToken(): string {
  * allauth starts a social sign-in with a plain form POST (the browser must follow
  * the redirect to the provider), so these are real forms, not fetch calls.
  */
-export function SignInButtons() {
+export function SignInButtons({ className }: { className?: string }) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className={cn('flex flex-col gap-3', className)}>
       {PROVIDERS.map(({ provider, label, icon }) => (
         <form key={provider} method="post" action={api.url(ALLAUTH_PROVIDER_REDIRECT)}>
           <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken()} />

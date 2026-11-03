@@ -61,7 +61,7 @@ describe('landing page', () => {
     mockFetch({ '/api/me': signedOut })
     await openAt('/')
     expect(await screen.findByRole('heading', { name: 'How it works' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Sign in to start' })).toHaveAttribute('href', '/login')
+    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/login')
     expect(screen.getByRole('link', { name: 'CC BY-NC-SA 4.0' })).toBeInTheDocument()
   })
 })
