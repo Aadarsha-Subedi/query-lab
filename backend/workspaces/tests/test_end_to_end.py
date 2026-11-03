@@ -1,5 +1,5 @@
 """The whole workspace story through the HTTP API with the fake LLM: create a
-workspace, fill a table through the row API, edit a row, describe a column, ask
+workspace, import a dump (R2 faked), read it with the query runner, ask
 a question in the workspace (pending, approve, result), see that the run is kept
 out of evals, ask in the demo and not see the table, delete the workspace and
 replay the old run."""
@@ -8,13 +8,14 @@ import json
 from typing import Any
 
 import pytest
-from django.test import Client
+from django.test import Client, override_settings
 
 from accounts.models import User
 from agent.models import AgentRun
 from agent.tests.conftest import plan_reply, tool_reply
 from ask import keys
 from common.llm.fake import FakeProvider
+from workspaces import storage
 
 pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("data_connections")]
 
@@ -39,7 +40,10 @@ def call(client: Client, method: str, path: str, body: Any = None) -> Any:
 
 
 def test_the_whole_workspace_flow(
-    client: Client, user: User, llm: FakeProvider
+    client: Client,
+    user: User,
+    llm: FakeProvider,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     client.force_login(user)
 
@@ -49,41 +53,45 @@ def test_the_whole_workspace_flow(
     kinds = [w["kind"] for w in client.get("/api/workspaces").json()["data"]]
     assert kinds == ["demo", "user"]
 
-    # 2. create a table and fill it through the row API
-    base = f"/api/workspaces/{ws}/tables"
-    spec = {
-        "name": "trips",
-        "columns": [
-            {"name": "city", "type": "text"},
-            {"name": "visits", "type": "integer"},
-        ],
-    }
-    assert call(client, "post", base, spec).status_code == 200
-    data = {
-        "rows": [
-            {"city": "Oslo", "visits": 10},
-            {"city": "Bergen", "visits": 25},
-            {"city": "Tromso", "visits": 5},
-        ]
-    }
-    assert (
-        call(client, "post", f"{base}/trips/rows", data).json()["data"]["inserted"] == 3
+    # 2. import a pg_dump: the file goes to R2 (faked here), a job loads it
+    dump = (
+        "CREATE TABLE public.trips (city text, visits integer);\n"
+        "COMMENT ON COLUMN public.trips.visits IS 'Visits per year';\n"
+        "COPY public.trips (city, visits) FROM stdin;\n"
+        "Oslo\t12\nBergen\t25\nTromso\t5\n\\.\n"
     )
+    monkeypatch.setattr(storage, "stored_size", lambda key: len(dump))
+    monkeypatch.setattr(storage, "delete", lambda key: None)
+    monkeypatch.setattr(
+        storage,
+        "read_lines",
+        lambda key, max_text_bytes: iter(dump.splitlines(keepends=True)),
+    )
+    with override_settings(
+        HUEY_IMMEDIATE=True,
+        R2_ENDPOINT_URL="https://acct.r2.cloudflarestorage.com",
+        R2_ACCESS_KEY_ID="AKIATEST",
+        R2_SECRET_ACCESS_KEY="secret",
+        R2_BUCKET_NAME="dumps-test",
+    ):
+        job = call(
+            client,
+            "post",
+            f"/api/workspaces/{ws}/imports",
+            {"filename": "trips.sql", "size": len(dump)},
+        ).json()["data"]
+        base = f"/api/workspaces/{ws}/imports/{job['id']}"
+        assert call(client, "post", f"{base}/start").status_code == 200
+        done = call(client, "get", base).json()["data"]
+    assert done["status"] == "succeeded" and done["tables_created"] == 1, done
 
-    # 3. edit a row, describe a column
-    base = f"/api/workspaces/{ws}/tables/trips"
-    rows = call(client, "get", f"{base}/rows?order_by=visits").json()["data"]
-    oslo = next(r for r in rows["rows"] if r[1] == "Oslo")
+    # 3. the query runner reads, and cannot write
+    sql_url = f"/api/workspaces/{ws}/sql"
+    counted = call(client, "post", sql_url, {"sql": "SELECT count(*) FROM trips"})
+    assert counted.json()["data"]["statements"][0]["rows"] == [[3]]
     assert (
-        call(
-            client, "patch", f"{base}/rows/{oslo[0]}", {"values": {"visits": 12}}
-        ).status_code
-        == 200
+        call(client, "post", sql_url, {"sql": "DELETE FROM trips"}).status_code == 400
     )
-    described = call(
-        client, "patch", f"{base}/columns/visits", {"description": "Visits per year"}
-    )
-    assert described.status_code == 200
 
     # 4. the schema panel shows the description, not the hidden key
     panel = client.get(f"/api/schema?workspace={ws}").json()["data"]
@@ -91,7 +99,6 @@ def test_the_whole_workspace_flow(
     assert table["name"] == "trips" and "Visits per year" in {
         c["comment"] for c in table["columns"]
     }
-    assert "_row_id" not in {c["name"] for c in table["columns"]}
 
     # 5. ask in the workspace: the run pauses with SQL, the user approves
     llm.answers = [
@@ -118,9 +125,7 @@ def test_the_whole_workspace_flow(
     ]
     assert approved["status"] == "succeeded"
     result = client.get(f"/api/agent/runs/{run['id']}/result").json()["data"]
-    assert (
-        result["rows"][0] == ["Bergen", 25] and ["Oslo", 12] in result["rows"]
-    )  # the edit shows
+    assert result["rows"][0] == ["Bergen", 25] and ["Oslo", 12] in result["rows"]
 
     # 6. the run is flagged out of eval data; the demo run is not
     stored = AgentRun.objects.get(pk=run["id"])

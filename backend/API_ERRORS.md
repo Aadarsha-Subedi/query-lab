@@ -71,27 +71,19 @@ Every error answers in the envelope `{success: false, status_code, message, code
 | `workspace_not_ready` | 409 | The workspace is still being created, or is being deleted. | Retry in a moment. |
 | `demo_workspace_read_only` | 409 | Rename or delete on the shared demo workspace. | Hide those actions for the demo. |
 | `workspace_gone` | 404 | A run's workspace was deleted: its trace can still be replayed, but its result can no longer be fetched. | Show the trace only. |
-| `invalid_spec` | 422 | A table or column spec is unusable (no columns, the last column, a bad `on_delete`). | Show the message. |
-| `table_name_taken` | 409 | The workspace already has a table with this name. | Ask for another name. |
-| `column_name_taken` | 409 | The table already has a column with this name. | Ask for another name. |
-| `table_limit_reached` | 409 | The workspace has the maximum number of tables. | Offer to drop one. |
-| `column_limit_reached` | 409 | The table has the maximum number of columns. | Offer to drop one. |
-| `relation_limit_reached` | 409 | The workspace has the maximum number of relations. | Offer to remove one. |
-| `column_not_found` | 404 | No such column (the hidden `_row_id` cannot be addressed either). | Refresh the table. |
-| `relation_not_found` | 404 | No such relation. | Refresh the relation list. |
-| `relation_invalid` | 422 | The parent columns are not a primary key or unique, or the types differ. | Show the message; pick other columns. |
-| `cast_failed` | 422 | A value cannot be converted to the new column type. `errors[0].message` names the first bad row id. Nothing changed. | Show the row; offer to fix the value or pick `text`. |
-| `constraint_violation` | 409 | Existing rows break the key, relation or NOT NULL being added (or a row edit would break one). `errors[0].message` names the first row. Nothing changed. | Show the row; fix the data first. |
-| `sql_invalid` | 400 | The SQL console refused the request before running it (empty, too long, too many statements, BEGIN/COMMIT/ROLLBACK, COPY). | Show the message. |
+| `sql_invalid` | 400 | The query runner refused the request before running it (empty, too long, too many statements, or anything other than SELECT / WITH / EXPLAIN / SHOW). | Show the message. |
 | `sql_failed` | 422 | A statement failed; the whole request was rolled back. `errors[0].message` is `Statement N: <SQLSTATE>: <message>`. | Show it under the editor. |
 | `sql_busy` | 429 | Another SQL request of the user is still running. `retry_after_seconds` is null. | Wait for it, then run again. |
-| `workspace_full` | 409 | The write would take the workspace over its size cap (and it was rolled back). | Offer to delete data or tables. |
-| `user_storage_full` | 409 | The write would take the user's workspaces over their total size cap. | Offer to delete data or a workspace. |
-| `row_not_found` | 404 | No row with this `_row_id` in the table (also another user's row: the workspace itself is a 404). | Refresh the rows. |
-| `row_invalid` | 422 | A value does not fit its column. `errors[0].field` is `rows[i].column`. Nothing was written. | Mark the cell. |
-| `too_many_rows` | 422 | More rows in one request than the per-request cap. | Send fewer rows. |
-| `invalid_name` | 422 | A workspace, table or column name or a column type cannot be used. | Show the message next to the field. |
+| `workspace_full` | 409 | The dump would take the workspace over its size cap (the import is rolled back; also shown as an import error code). | Offer to delete the workspace data or use a smaller dump. |
+| `user_storage_full` | 409 | The dump would take the user's workspaces over their total size cap. | Offer to delete a workspace. |
+| `invalid_name` | 422 | A workspace name cannot be used, or the dump file is empty or not `.sql` / `.sql.gz`. | Show the message next to the field. |
 | `workspace_provisioning_failed` | 503 | The schema and roles could not be created; everything was cleaned up. | Retry later. |
+| `dump_too_large` | 422 | The dump is over `DUMP_MAX_FILE_BYTES` (50 MB), or unzips to more than the allowed text size. | Ask for a smaller dump. |
+| `dump_upload_missing` | 422 | `start` was called before the file reached the bucket. | Upload again, then start. |
+| `import_in_progress` | 409 | The user already has an import that is waiting for an upload, queued or running. | Wait for it to finish. |
+| `import_not_found` | 404 | No such import in this workspace. | Go back to the workspace. |
+| `import_not_ready` | 409 | `start` on an import that is not waiting for an upload. | Reload the import's status. |
+| `workspace_not_empty` | 409 | The workspace already has tables and the import was not a replace (shown as an import error code). | Offer Replace data. |
 
 ## Run error codes (`error_code` on a failed or expired run, and on a step)
 
@@ -114,3 +106,18 @@ These are not HTTP errors: they sit in `RunOut.error_code` of a run with status 
 | `llm_key_changed` | The user's key was removed or changed mid-run. | Ask again. |
 | `run_expired` | Status `expired`: nobody approved in time. | Offer to ask again. |
 | `tool_error` | On a step: a tool call failed and the model was told. Not a run failure by itself. | Show it in the trace. |
+
+
+## Import error codes (`error.code` on a failed import)
+
+These are not HTTP errors: they sit in `ImportOut.error` of an import with status `failed`, with `statement` (the dump's statement number) and `line` (the file line) when known. A failed import changes nothing in the workspace.
+
+| Code | Meaning | What the screen should do |
+|------|---------|---------------------------|
+| `dump_refused` | A statement is not allowed in a dump (roles, extensions, functions, triggers, DROP, COPY PROGRAM, transaction control, and so on). | Show the message with the statement and line; ask for a new `pg_dump` without it. |
+| `dump_failed` | Postgres refused a statement; the message is `<SQLSTATE>: <message>`. | Show it with the statement and line. |
+| `dump_timeout` | The import ran past `DUMP_STATEMENT_TIMEOUT_MS`. | Suggest a smaller dump. |
+| `dump_encoding` | The dump is not UTF-8 text. | Ask for a UTF-8 dump. |
+| `dump_too_many_statements` / `dump_too_many_tables` / `dump_too_many_columns` / `dump_too_many_relations` | A cap was hit. The message gives the limit. | Show the message. |
+| `dump_interrupted` | The worker stopped before the import finished. | Upload the dump again. |
+| `dump_too_large`, `dump_upload_missing`, `workspace_full`, `user_storage_full`, `workspace_not_empty` | As in the table above. | As above. |

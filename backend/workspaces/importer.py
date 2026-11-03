@@ -41,6 +41,19 @@ from workspaces.sql import _scrub
 
 logger = logging.getLogger(__name__)
 
+# Error codes stored on a failed ImportJob (documented in API_ERRORS.md).
+CODE_REFUSED = "dump_refused"
+CODE_FAILED = "dump_failed"
+CODE_TIMEOUT = "dump_timeout"
+CODE_ENCODING = "dump_encoding"
+CODE_INTERRUPTED = "dump_interrupted"
+CODE_TOO_MANY_STATEMENTS = "dump_too_many_statements"
+CODE_TOO_MANY_TABLES = "dump_too_many_tables"
+CODE_TOO_MANY_COLUMNS = "dump_too_many_columns"
+CODE_TOO_MANY_RELATIONS = "dump_too_many_relations"
+CODE_NOT_EMPTY = "workspace_not_empty"
+CODE_NOT_READY = "workspace_not_ready"
+
 # A running job that has not been touched for this long is taken for dead (the
 # worker was killed) and shown as failed when someone looks at it.
 STALE_AFTER_SECONDS = 30 * 60
@@ -119,17 +132,17 @@ def _check_shape(connection: psycopg.Connection, schema_name: str) -> int:
     ).fetchone() or (0, 0, 0)
     if tables > settings.WORKSPACE_MAX_TABLES:
         raise Failure(
-            "dump_too_many_tables",
+            CODE_TOO_MANY_TABLES,
             f"The dump has {tables} tables; the limit is {settings.WORKSPACE_MAX_TABLES}.",
         )
     if widest > settings.WORKSPACE_MAX_COLUMNS:
         raise Failure(
-            "dump_too_many_columns",
+            CODE_TOO_MANY_COLUMNS,
             f"A table has {widest} columns; the limit is {settings.WORKSPACE_MAX_COLUMNS}.",
         )
     if foreign_keys > settings.WORKSPACE_MAX_RELATIONS:
         raise Failure(
-            "dump_too_many_relations",
+            CODE_TOO_MANY_RELATIONS,
             f"The dump has {foreign_keys} foreign keys; "
             f"the limit is {settings.WORKSPACE_MAX_RELATIONS}.",
         )
@@ -148,7 +161,7 @@ def _execute(
             connection.execute(item.text)
     except pg_errors.QueryCanceled:
         raise Failure(
-            "dump_timeout",
+            CODE_TIMEOUT,
             "The import took too long and was stopped. Nothing was changed.",
             item.number,
             item.line,
@@ -160,7 +173,7 @@ def _execute(
             workspace.schema_name,
         )
         raise Failure(
-            "dump_failed", f"{code}: {message}", item.number, item.line
+            CODE_FAILED, f"{code}: {message}", item.number, item.line
         ) from None
 
 
@@ -178,7 +191,7 @@ def _load(job: ImportJob, workspace: Workspace) -> tuple[int, int]:
             _clear(connection, workspace.schema_name)
         elif _existing_objects(connection, workspace.schema_name):
             raise Failure(
-                "workspace_not_empty",
+                CODE_NOT_EMPTY,
                 "This workspace already has tables. Use Replace data.",
             )
         try:
@@ -186,7 +199,7 @@ def _load(job: ImportJob, workspace: Workspace) -> tuple[int, int]:
                 ran += 1
                 if ran > settings.DUMP_MAX_STATEMENTS:
                     raise Failure(
-                        "dump_too_many_statements",
+                        CODE_TOO_MANY_STATEMENTS,
                         f"At most {settings.DUMP_MAX_STATEMENTS} statements.",
                         item.number,
                         item.line,
@@ -196,10 +209,10 @@ def _load(job: ImportJob, workspace: Workspace) -> tuple[int, int]:
                     _check_size(connection, workspace, final=False)
         except dump.DumpRefused as refused:
             raise Failure(
-                "dump_refused", refused.message, refused.number, refused.line
+                CODE_REFUSED, refused.message, refused.number, refused.line
             ) from None
         except UnicodeDecodeError:
-            raise Failure("dump_encoding", "The dump must be UTF-8 text.") from None
+            raise Failure(CODE_ENCODING, "The dump must be UTF-8 text.") from None
         tables = _check_shape(connection, workspace.schema_name)
         _check_size(connection, workspace, final=True)
     return ran, tables
@@ -225,7 +238,7 @@ def run(job_id: int) -> None:
     started = time.monotonic()
     try:
         if workspace.status != Workspace.STATUS_READY:
-            raise Failure("workspace_not_ready", "This workspace is not ready.")
+            raise Failure(CODE_NOT_READY, "This workspace is not ready.")
         ran, tables = _load(job, workspace)
     except Failure as failure:
         _fail(job, failure)
@@ -239,7 +252,7 @@ def run(job_id: int) -> None:
         logger.exception("Import job %s crashed", job.pk)
         _fail(
             job,
-            Failure("dump_failed", "The import failed unexpectedly. Try again."),
+            Failure(CODE_FAILED, "The import failed unexpectedly. Try again."),
         )
     else:
         job.status = ImportJob.SUCCEEDED
@@ -272,7 +285,7 @@ def expire_if_stale(job: ImportJob) -> ImportJob:
         if age > STALE_AFTER_SECONDS:
             ImportJob.objects.filter(pk=job.pk, status=ImportJob.RUNNING).update(
                 status=ImportJob.FAILED,
-                error_code="dump_interrupted",
+                error_code=CODE_INTERRUPTED,
                 error_message="The import was interrupted. Upload the dump again.",
                 updated_at=F("updated_at"),
             )

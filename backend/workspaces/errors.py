@@ -64,68 +64,6 @@ class TableNotFound(NotFoundException):
     error_code = "table_not_found"
 
 
-class ColumnNotFound(NotFoundException):
-    message = "Column not found."
-    error_code = "column_not_found"
-
-
-class RelationNotFound(NotFoundException):
-    message = "Relation not found."
-    error_code = "relation_not_found"
-
-
-class InvalidSpec(UnprocessableEntityException):
-    message = "The request does not describe a usable table or column."
-    error_code = "invalid_spec"
-
-
-class TableNameTaken(ConflictException):
-    message = "This workspace already has a table with this name."
-    error_code = "table_name_taken"
-
-
-class ColumnNameTaken(ConflictException):
-    message = "This table already has a column with this name."
-    error_code = "column_name_taken"
-
-
-class TableLimitReached(ConflictException):
-    message = "This workspace has the maximum number of tables."
-    error_code = "table_limit_reached"
-
-
-class ColumnLimitReached(ConflictException):
-    message = "This table has the maximum number of columns."
-    error_code = "column_limit_reached"
-
-
-class RelationLimitReached(ConflictException):
-    message = "This workspace has the maximum number of relations."
-    error_code = "relation_limit_reached"
-
-
-class CastFailed(UnprocessableEntityException):
-    """Retyping a column found a value that does not convert. Nothing changed;
-    `errors[0]` names the first bad row id."""
-
-    message = "A value in this column cannot be converted to the new type."
-    error_code = "cast_failed"
-
-
-class ConstraintViolated(ConflictException):
-    """A key, relation or NOT NULL cannot be added or kept because of existing
-    rows, or a row edit would break one. `errors[0]` names the constraint and,
-    when there is one, the first row id involved. Nothing changed."""
-
-    message = "The data does not satisfy this constraint."
-    error_code = "constraint_violation"
-
-
-class RelationInvalid(UnprocessableEntityException):
-    message = "These columns cannot be related."
-    error_code = "relation_invalid"
-
-
 # ── storage (5.8) ─────────────────────────────────────────────────────────
 
 
@@ -164,25 +102,6 @@ class SqlBusy(ThrottledException):
 
 
 # ── rows (5.6) ────────────────────────────────────────────────────────────
-
-
-class RowNotFound(NotFoundException):
-    message = "Row not found."
-    error_code = "row_not_found"
-
-
-class RowInvalid(UnprocessableEntityException):
-    """A value cannot be stored in its column. `errors[0].field` is
-    `rows[<index>].<column>` and the message says what was expected. All or
-    nothing: no row of the request was written."""
-
-    message = "A value does not fit its column."
-    error_code = "row_invalid"
-
-
-class RowRequestTooBig(UnprocessableEntityException):
-    message = "Too many rows in one request."
-    error_code = "too_many_rows"
 
 
 # ── dump import ───────────────────────────────────────────────────────────

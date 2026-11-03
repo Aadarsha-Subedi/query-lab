@@ -2,11 +2,12 @@ import json
 from typing import Any
 
 import pytest
-from django.test import Client, override_settings
+from django.test import Client
 
 from accounts.models import User
 from workspaces import service
 from workspaces.models import Workspace
+from workspaces.tests.conftest import connect
 
 pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("data_connections")]
 
@@ -25,13 +26,11 @@ def test_limits_report_what_is_used_and_allowed(client: Client, user: User) -> N
     assert empty["workspaces"] == {"used": 0, "allowed": 3}
     assert empty["bytes"]["used"] == 0
     ws = post(client, "/api/workspaces", {"name": "L"}).json()["data"]["id"]
-    post(
-        client,
-        f"/api/workspaces/{ws}/sql",
-        {
-            "sql": "CREATE TABLE t (v text); INSERT INTO t SELECT repeat('x', 1000) FROM generate_series(1, 100)"
-        },
-    )
+    with connect(ws, "rw") as rw:  # what an import does
+        rw.execute("CREATE TABLE t (v text)")
+        rw.execute(
+            "INSERT INTO t SELECT repeat('x', 1000) FROM generate_series(1, 100)"
+        )
     data = client.get("/api/workspaces/limits").json()["data"]
     assert data["workspaces"]["used"] == 1
     assert data["bytes"]["used"] > 50_000
@@ -43,8 +42,9 @@ def test_limits_report_what_is_used_and_allowed(client: Client, user: User) -> N
         "max_tables",
         "max_columns",
         "max_relations",
-        "max_rows_per_edit",
+        "max_dump_bytes",
     } <= set(data)
+    assert data["max_dump_bytes"] == 52428800
     listed = client.get("/api/workspaces").json()["data"][1]
     assert (
         listed["bytes_used"] == data["bytes"]["used"]
@@ -60,35 +60,6 @@ def test_limits_are_per_user(client: Client, user: User, other_user: User) -> No
     assert (
         client.get("/api/workspaces/limits").json()["data"]["workspaces"]["used"] == 0
     )
-
-
-@override_settings(WORKSPACE_MAX_BYTES=100_000)
-def test_the_full_errors_have_the_error_shape(client: Client, user: User) -> None:
-    client.force_login(user)
-    ws = post(client, "/api/workspaces", {"name": "F"}).json()["data"]["id"]
-    post(
-        client,
-        f"/api/workspaces/{ws}/tables",
-        {"name": "t", "columns": [{"name": "v", "type": "text"}]},
-    )
-    with override_settings(WORKSPACE_MAX_BYTES=10**9):
-        post(
-            client,
-            f"/api/workspaces/{ws}/sql",
-            {
-                "sql": "INSERT INTO t (v) SELECT repeat('x', 1000) FROM generate_series(1, 300)"
-            },
-        )
-    body = post(
-        client, f"/api/workspaces/{ws}/tables/t/rows", {"rows": [{"v": "x"}]}
-    ).json()
-    assert body["success"] is False and body["status_code"] == 409
-    assert body["code"] == "workspace_full" and body["message"] and body["errors"] == []
-    with override_settings(USER_MAX_BYTES=100_000, WORKSPACE_MAX_BYTES=10**9):
-        body = post(
-            client, f"/api/workspaces/{ws}/tables/t/rows", {"rows": [{"v": "x"}]}
-        ).json()
-    assert body["code"] == "user_storage_full"
 
 
 def test_the_delete_service_removes_the_workspace(user: User) -> None:

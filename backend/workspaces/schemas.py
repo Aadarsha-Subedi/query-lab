@@ -79,4 +79,4 @@ class LimitsOut(Schema):
     max_tables: int
     max_columns: int
     max_relations: int
-    max_rows_per_edit: int
+    max_dump_bytes: int

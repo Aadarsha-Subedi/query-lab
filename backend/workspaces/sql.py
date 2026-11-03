@@ -1,20 +1,17 @@
-"""The user's own SQL on their own workspace: full control inside the schema.
+"""The user's read-only SQL on their own workspace (the query runner).
 
-It runs as `ws_<id>_rw` on the primary and can do anything a schema owner can:
-CREATE / ALTER / DROP, INSERT / UPDATE / DELETE, views, indexes, functions,
-constraints, SELECT, several statements. The agent's guard is not used here; the
-role is the boundary (see test_isolation.py). What this module adds is limits:
+It runs as `ws_<id>_ro` (SELECT only, `default_transaction_read_only`) on the
+reader connection, in one read-only transaction. Writes are impossible twice
+over: the role has no write privilege, and a script is refused up front unless
+every statement starts with SELECT, WITH, EXPLAIN, SHOW or VALUES. Structure and
+data change only through a dump import (`importer.py`). Limits:
 
-- one transaction per request: any failing statement rolls everything back;
-- transaction control (BEGIN, COMMIT, ...) and COPY are refused, so the one
-  transaction cannot be split or hijacked;
-- a statement timeout, plus a deadline enforced from outside: the user's SQL can
+- one transaction per request: any failing statement fails the whole request;
+- transaction control and COPY are refused;
+- a statement timeout, plus a deadline enforced from outside: the user can
   `SET statement_timeout = 0`, so a watchdog cancels the running statement when
   the request's total time is up;
-- caps on script length, statement count and returned rows, and the workspace /
-  user size caps, checked after the writes in the same transaction;
-- the structural statements are written to the DDL audit log, data statements are
-  only counted, and the schema version moves so the agent sees the change.
+- caps on script length, statement count and returned rows.
 """
 
 import contextlib
@@ -31,12 +28,13 @@ from accounts.models import User
 from ask.errors import QueryTimeout
 from ask.runner import to_json_safe
 from common.redis import get_redis
-from workspaces import connections, ddl_log, quota, schema_version, sqltext
+from workspaces import connections, sqltext
 from workspaces.errors import SqlBusy, SqlFailed, SqlInvalid
 from workspaces.models import Workspace
 
 OTHER_WORKSPACE = re.compile(r"\bws_\d+(?:_ro|_rw)?\b")
-FORBIDDEN_WORDS = {"copy": "COPY is not available here. Use the CSV import."}
+READ_WORDS = frozenset(["select", "with", "explain", "show", "values", "table"])
+HINT = "Only reading is allowed here (SELECT, WITH, EXPLAIN, SHOW). To change the data, import a new dump."
 
 
 def _running_key(user: User) -> str:
@@ -94,8 +92,8 @@ def _check(script: str) -> list[sqltext.Statement]:
             raise SqlInvalid(
                 "Each request is one transaction. BEGIN, COMMIT and ROLLBACK are not needed."
             )
-        if statement.keyword in FORBIDDEN_WORDS:
-            raise SqlInvalid(FORBIDDEN_WORDS[statement.keyword])
+        if statement.keyword not in READ_WORDS:
+            raise SqlInvalid(HINT)
     return statements
 
 
@@ -105,15 +103,10 @@ def _cell(value: Any) -> Any:
     return to_json_safe(value)
 
 
-def _result(cursor: psycopg.Cursor, index: int, statement: sqltext.Statement) -> dict:
+def _result(cursor: psycopg.Cursor, index: int) -> dict:
     result: dict[str, Any] = {
         "index": index,
         "command": cursor.statusmessage or "",
-        "kind": "ddl"
-        if statement.is_ddl
-        else "query"
-        if cursor.description
-        else "data",
         "row_count": max(cursor.rowcount, 0),
         "columns": [],
         "rows": [],
@@ -137,7 +130,7 @@ def run_script(workspace: Workspace, actor: User, script: str) -> dict[str, Any]
     with _Slot(actor):
         try:
             with connections.workspace_connection(
-                workspace.pk, "rw", workspace.credential_version
+                workspace.pk, "ro", workspace.credential_version
             ) as connection:
                 watchdog = threading.Timer(deadline, _cancel, args=(connection,))
                 watchdog.start()
@@ -146,7 +139,6 @@ def run_script(workspace: Workspace, actor: User, script: str) -> dict[str, Any]
                         "SELECT set_config('statement_timeout', %s, true)",
                         [str(settings.WORKSPACE_STATEMENT_TIMEOUT_MS)],
                     )
-                    size_before = quota.measure(connection, workspace.schema_name)
                     for index, statement in enumerate(statements, start=1):
                         try:
                             cursor = connection.execute(statement.text)
@@ -154,30 +146,14 @@ def run_script(workspace: Workspace, actor: User, script: str) -> dict[str, Any]
                             raise
                         except psycopg.Error as error:
                             raise _failed(error, index, workspace) from None
-                        results.append(_result(cursor, index, statement))
-                    if any(r["kind"] != "query" for r in results):
-                        quota.ensure_within(
-                            connection, workspace, grew_from=size_before
-                        )
+                        results.append(_result(cursor, index))
                 finally:
                     watchdog.cancel()
         except pg_errors.QueryCanceled:
-            raise QueryTimeout(
-                "The SQL took too long and was stopped. Nothing was changed."
-            ) from None
-    for statement in statements:
-        if statement.is_ddl:
-            ddl_log.record(workspace.pk, actor, statement.text)
-    if any(s.is_ddl for s in statements):
-        schema_version.bump(workspace.pk)
+            raise QueryTimeout("The SQL took too long and was stopped.") from None
     return {
         "statements": results,
         "elapsed_ms": int((time.monotonic() - started) * 1000),
-        "counts": {
-            "ddl": sum(r["kind"] == "ddl" for r in results),
-            "data": sum(r["kind"] == "data" for r in results),
-            "query": sum(r["kind"] == "query" for r in results),
-        },
     }
 
 
