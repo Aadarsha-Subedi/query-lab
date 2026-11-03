@@ -35,11 +35,12 @@ SELECT pg_catalog.setval('public.customer_id_seq', 2, true);
 INSERT INTO public.customer VALUES (3, 'public.x');
 """
     )
-    assert [i.kind for i in result] == ["run", "copy", "run", "run"]
+    assert [i.kind for i in result] == ["run", "copy", "run", "run", "run"]
     assert "public." not in result[0].text
     assert result[0].number == 4 and result[0].line == 7
     assert "customer_pkey" in result[2].text
-    assert "'public.x'" in result[3].text  # inside a string, untouched
+    assert "setval('customer_id_seq', 2, true)" in result[3].text
+    assert "'public.x'" in result[4].text  # inside a string, untouched
 
 
 def test_unread_copy_data_is_drained() -> None:
@@ -48,39 +49,52 @@ def test_unread_copy_data_is_drained() -> None:
 
 
 @pytest.mark.parametrize(
-    ("sql", "fragment"),
+    "sql",
     [
-        ("CREATE ROLE evil LOGIN;", "ROLE"),
-        ("CREATE EXTENSION dblink;", "Extensions"),
-        (
-            "CREATE FUNCTION f() RETURNS int AS $$ select 1 $$ LANGUAGE sql;",
-            "Functions",
-        ),
-        (
-            "CREATE TRIGGER t BEFORE INSERT ON x FOR EACH ROW EXECUTE FUNCTION f();",
-            "Triggers",
-        ),
-        ("CREATE TEMP TABLE t (a int);", "Temporary"),
-        ("COPY t FROM PROGRAM 'id';", "COPY"),
-        ("COPY t TO '/tmp/x';", "COPY"),
-        ("COPY t FROM '/etc/passwd';", "COPY"),
-        ("DO $$ BEGIN PERFORM 1; END $$;", "DO"),
-        ("DROP TABLE t;", "DROP"),
-        ("BEGIN;", "transaction"),
-        ("ALTER TABLE t DISABLE TRIGGER ALL;", "ALTER"),
-        ("ALTER SYSTEM SET x = 1;", "ALTER"),
-        ("SELECT pg_read_file('/etc/passwd');", "SELECT"),
-        ("VACUUM;", "VACUUM"),
-        ("CREATE MATERIALIZED VIEW m AS SELECT 1;", "Materialized"),
+        "CREATE ROLE evil LOGIN;",
+        "ALTER ROLE evil SUPERUSER;",
+        "CREATE EXTENSION dblink;",
+        "COMMENT ON EXTENSION dblink IS 'x';",
+        "CREATE PUBLICATION p FOR ALL TABLES;",
+        "CREATE POLICY p ON t TO someone USING (true);",
+        "ALTER TABLE t ENABLE ROW LEVEL SECURITY;",
+        "ALTER TABLE ONLY t DROP CONSTRAINT k;",
+        "ALTER TABLE t OWNER TO postgres;",
+        "ALTER FUNCTION f() OWNER TO postgres;",
+        "ALTER DEFAULT PRIVILEGES GRANT SELECT ON TABLES TO x;",
+        "DROP TABLE t;",
+        "BEGIN;",
+        "COMMIT;",
+        "ROLLBACK;",
+        "SET search_path = ws_9;",
+        "GRANT ALL ON t TO x;",
     ],
 )
-def test_dangerous_statements_are_refused_with_position(
-    sql: str, fragment: str
-) -> None:
-    with pytest.raises(dump.DumpRefused) as error:
-        items("CREATE TABLE ok (a int);\n\n" + sql + "\n")
-    assert fragment in error.value.message
-    assert (error.value.number, error.value.line) == (2, 3)
+def test_what_belongs_to_the_source_server_is_set_aside(sql: str) -> None:
+    result = items("CREATE TABLE ok (a int);\n" + sql + "\n")
+    assert [i.text for i in result] == ["CREATE TABLE ok (a int)"]
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "CREATE FUNCTION f() RETURNS int AS $$ select 1 $$ LANGUAGE sql;",
+        "CREATE TRIGGER t BEFORE INSERT ON x FOR EACH ROW EXECUTE FUNCTION f();",
+        "CREATE TYPE s AS ENUM ('a');",
+        "CREATE DOMAIN d AS text;",
+        "CREATE MATERIALIZED VIEW m AS SELECT 1;",
+        "ALTER TABLE t ATTACH PARTITION p FOR VALUES IN (1);",
+        "ALTER TYPE s ADD VALUE 'b';",
+        "UPDATE t SET a = 1;",
+        "DELETE FROM t;",
+        "DO $$ BEGIN PERFORM 1; END $$;",
+        "COPY t FROM PROGRAM 'id';",
+        "COPY t FROM '/etc/passwd';",
+        "VALUES (1);",
+    ],
+)
+def test_everything_else_goes_to_postgres(sql: str) -> None:
+    assert [i.kind for i in items(sql + "\n")] == ["run"]
 
 
 def test_set_search_path_is_skipped_not_run() -> None:
@@ -96,10 +110,12 @@ def test_semicolons_in_strings_comments_and_dollar_quotes_do_not_split() -> None
 
 
 def test_quoted_public_prefix_is_removed() -> None:
-    assert dump.strip_public('CREATE TABLE "public"."Odd" (a int);') == (
+    assert dump.strip_schemas('CREATE TABLE "public"."Odd" (a int);') == (
         'CREATE TABLE "Odd" (a int);'
     )
-    assert dump.strip_public("SELECT 1 FROM publicity.t") == "SELECT 1 FROM publicity.t"
+    assert (
+        dump.strip_schemas("SELECT 1 FROM publicity.t") == "SELECT 1 FROM publicity.t"
+    )
 
 
 def test_truncated_dump_is_refused() -> None:
@@ -127,19 +143,30 @@ def test_pg_dump_restrict_lines_are_skipped() -> None:
     assert [(i.kind, i.number, i.line) for i in result] == [("run", 1, 2)]
 
 
-def test_other_psql_commands_are_refused() -> None:
-    with pytest.raises(dump.DumpRefused) as error:
-        items("CREATE TABLE t (a int);\n\\connect other\n")
-    assert "psql command" in error.value.message
-    assert (error.value.number, error.value.line) == (2, 2)
+def test_other_psql_commands_are_skipped() -> None:
+    assert len(items("\\connect other\nCREATE TABLE t (a int);\n")) == 1
+
+
+def test_a_routine_body_and_its_search_path_are_folded_too() -> None:
+    result = items(
+        "CREATE SCHEMA app;\n"
+        "CREATE FUNCTION app.c() RETURNS bigint\n"
+        "    LANGUAGE sql\n"
+        "    SET search_path TO 'app'\n"
+        "    AS $$ SELECT count(*) FROM app.orders $$;\n"
+        "SELECT pg_catalog.setval('app.s', 2, true);\n"
+    )
+    assert "search_path" not in result[0].text
+    assert "FUNCTION c()" in result[0].text and "FROM orders" in result[0].text
+    assert "setval('s', 2, true)" in result[1].text
 
 
 def test_public_prefix_inside_a_regclass_cast_is_removed() -> None:
     text = "ALTER TABLE ONLY public.t ALTER COLUMN id SET DEFAULT nextval('public.t_id_seq'::regclass);"
-    assert dump.strip_public(text) == (
+    assert dump.strip_schemas(text) == (
         "ALTER TABLE ONLY t ALTER COLUMN id SET DEFAULT nextval('t_id_seq'::regclass);"
     )
-    assert dump.strip_public("INSERT INTO t VALUES ('public.x');") == (
+    assert dump.strip_schemas("INSERT INTO t VALUES ('public.x');") == (
         "INSERT INTO t VALUES ('public.x');"
     )
 

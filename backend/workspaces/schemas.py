@@ -76,7 +76,4 @@ class BytesLimit(Schema):
 class LimitsOut(Schema):
     workspaces: CountLimit
     bytes: BytesLimit
-    max_tables: int
-    max_columns: int
-    max_relations: int
     max_dump_bytes: int

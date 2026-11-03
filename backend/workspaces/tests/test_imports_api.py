@@ -85,13 +85,13 @@ def test_full_flow_upload_start_poll(
 def test_a_bad_dump_reports_where(
     client: Client, ws: int, fake_r2: dict[str, Any]
 ) -> None:
-    fake_r2["text"] = "CREATE TABLE a (x int);\nCREATE EXTENSION dblink;\n"
+    fake_r2["text"] = "CREATE TABLE a (x int);\nINSERT INTO nope VALUES (1);\n"
     created = create(client, ws, size=len(fake_r2["text"])).json()["data"]
     base = f"/api/workspaces/{ws}/imports/{created['id']}"
     call(client, "post", f"{base}/start")
     failed = call(client, "get", base).json()["data"]
     assert failed["status"] == "failed"
-    assert failed["error"]["code"] == "dump_refused"
+    assert failed["error"]["code"] == "dump_failed"
     assert (failed["error"]["statement"], failed["error"]["line"]) == (2, 2)
 
 

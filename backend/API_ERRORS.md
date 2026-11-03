@@ -114,11 +114,10 @@ These are not HTTP errors: they sit in `ImportOut.error` of an import with statu
 
 | Code | Meaning | What the screen should do |
 |------|---------|---------------------------|
-| `dump_refused` | A statement is not allowed in a dump (roles, extensions, functions, triggers, DROP, COPY PROGRAM, transaction control, and so on). | Show the message with the statement and line; ask for a new `pg_dump` without it. |
-| `dump_failed` | Postgres refused a statement; the message is `<SQLSTATE>: <message>`. | Show it with the statement and line. |
+| `dump_refused` | The dump ends in the middle of a statement. | Ask for the whole file. |
+| `dump_failed` | Postgres refused a statement (for example it reaches outside the workspace, or needs an extension that was left out); the message is `<SQLSTATE>: <message>`. | Show it with the statement and line. |
 | `dump_timeout` | The import ran past `DUMP_STATEMENT_TIMEOUT_MS`. | Suggest a smaller dump. |
 | `dump_encoding` | The dump is not UTF-8 text. | Ask for a UTF-8 dump. |
-| `dump_too_many_statements` / `dump_too_many_tables` / `dump_too_many_columns` / `dump_too_many_relations` | A cap was hit. The message gives the limit. | Show the message. |
 | `dump_interrupted` | The worker stopped before the import finished. | Upload the dump again. |
 | `dump_replaced` | An upload that never finished was replaced by the user's next import. | Nothing; show the newer import. |
 | `dump_too_large`, `dump_upload_missing`, `workspace_full`, `user_storage_full`, `workspace_not_empty` | As in the table above. | As above. |

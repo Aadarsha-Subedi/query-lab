@@ -95,7 +95,7 @@ def delete_demo_workspace(request: HttpRequest) -> dict:
 def get_workspace_limits(request: HttpRequest) -> dict:
     """What the caller may still do with workspaces: how many workspaces, how many
     bytes (per workspace and together), and
-    the dump size and per-table caps. Read only."""
+    the largest dump. Read only."""
     user = _user(request)
     return success(
         LimitsOut(
@@ -108,9 +108,6 @@ def get_workspace_limits(request: HttpRequest) -> dict:
                 allowed=settings.USER_MAX_BYTES,
                 per_workspace=settings.WORKSPACE_MAX_BYTES,
             ),
-            max_tables=settings.WORKSPACE_MAX_TABLES,
-            max_columns=settings.WORKSPACE_MAX_COLUMNS,
-            max_relations=settings.WORKSPACE_MAX_RELATIONS,
             max_dump_bytes=settings.DUMP_MAX_FILE_BYTES,
         ).model_dump(mode="json")
     )

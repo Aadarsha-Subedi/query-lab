@@ -1,4 +1,5 @@
 from collections.abc import Callable, Iterator
+from pathlib import Path
 
 import psycopg
 import pytest
@@ -105,10 +106,10 @@ def test_a_pg_dump_lands_in_the_workspace_schema(
     ).exists()
 
 
-def test_a_refused_statement_changes_nothing_and_says_where(
+def test_a_truncated_dump_changes_nothing_and_says_where(
     run_dump: Callable[..., ImportJob], workspace: Workspace
 ) -> None:
-    job = run_dump("CREATE TABLE a (x int);\n\nCREATE ROLE evil LOGIN;\n")
+    job = run_dump("CREATE TABLE a (x int);\n\nINSERT INTO a VALUES (1\n")
     assert job.status == ImportJob.FAILED
     assert job.error_code == "dump_refused"
     assert (job.error_statement, job.error_line) == (2, 3)
@@ -161,23 +162,12 @@ def test_a_failed_replace_keeps_the_old_data(
     run_dump: Callable[..., ImportJob], workspace: Workspace
 ) -> None:
     run_dump("CREATE TABLE old (x int);\nINSERT INTO old VALUES (1);\n")
-    failed = run_dump("CREATE TABLE new (x int);\nDROP TABLE x;\n", replace=True)
+    failed = run_dump(
+        "CREATE TABLE new (x int);\nINSERT INTO nope VALUES (1);\n", replace=True
+    )
     assert failed.status == ImportJob.FAILED
     assert tables(workspace) == ["old"]
     assert rows(workspace, "SELECT x FROM old") == [(1,)]
-
-
-@override_settings(WORKSPACE_MAX_TABLES=1)
-def test_table_cap(run_dump: Callable[..., ImportJob], workspace: Workspace) -> None:
-    job = run_dump("CREATE TABLE a (x int);\nCREATE TABLE b (x int);\n")
-    assert job.error_code == "dump_too_many_tables"
-    assert tables(workspace) == []
-
-
-@override_settings(WORKSPACE_MAX_COLUMNS=2)
-def test_column_cap(run_dump: Callable[..., ImportJob], workspace: Workspace) -> None:
-    job = run_dump("CREATE TABLE a (x int, y int, z int);\n")
-    assert job.error_code == "dump_too_many_columns"
 
 
 @override_settings(WORKSPACE_MAX_BYTES=30_000)
@@ -188,16 +178,6 @@ def test_size_cap_rolls_back(
     job = run_dump(big)
     assert job.error_code == "workspace_full"
     assert tables(workspace) == []
-
-
-@override_settings(DUMP_MAX_STATEMENTS=2)
-def test_statement_cap(
-    run_dump: Callable[..., ImportJob], workspace: Workspace
-) -> None:
-    job = run_dump(
-        "CREATE TABLE a (x int);\nINSERT INTO a VALUES (1);\nINSERT INTO a VALUES (2);\n"
-    )
-    assert job.error_code == "dump_too_many_statements" and job.error_statement == 3
 
 
 def test_the_workspace_cannot_be_written_by_its_reader_afterwards(
@@ -277,3 +257,91 @@ def test_a_dump_of_a_non_public_schema_lands_in_the_workspace(
     assert job.status == ImportJob.SUCCEEDED, (job.error_message, job.error_line)
     assert tables(workspace) == ["orders", "recent"]
     assert rows(workspace, "SELECT note FROM recent") == [("first",)]
+
+
+REAL_DUMP = (Path(__file__).parent / "fixtures" / "real_pg_dump.sql").read_text()
+
+
+def test_an_unedited_pg_dump_of_a_real_schema_imports(
+    run_dump: Callable[..., ImportJob], workspace: Workspace
+) -> None:
+    """The file is `pg_dump` output with no flags: a schema, enum, composite type,
+    domain, identity, generated column, partitions, inheritance, a function with its
+    own search_path, a trigger, views, a materialized view, row security, a policy
+    for a role that does not exist here, grants, comments and an extension."""
+    job = run_dump(REAL_DUMP)
+    assert job.status == ImportJob.SUCCEEDED, (job.error_message, job.error_line)
+    assert {"customers", "orders", "events", "big_orders"} <= set(tables(workspace))
+    # row security is gone, so the reading role sees the rows
+    assert rows(workspace, "SELECT count(*) FROM orders") == [(2,)]
+    assert rows(workspace, "SELECT order_count(1)") == [(1,)]
+    assert rows(workspace, "SELECT email FROM big_orders") == [("a@x.io",)]
+    assert rows(workspace, "SELECT total FROM order_totals ORDER BY 1 LIMIT 1")
+
+
+def test_replacing_a_real_dump_with_itself_works(
+    run_dump: Callable[..., ImportJob], workspace: Workspace
+) -> None:
+    assert run_dump(REAL_DUMP).status == ImportJob.SUCCEEDED
+    second = run_dump(REAL_DUMP, replace=True)
+    assert second.status == ImportJob.SUCCEEDED, (
+        second.error_message,
+        second.error_line,
+    )
+    assert rows(workspace, "SELECT count(*) FROM orders") == [(2,)]
+
+
+def test_a_function_left_behind_counts_as_not_empty(
+    run_dump: Callable[..., ImportJob], workspace: Workspace
+) -> None:
+    run_dump("CREATE FUNCTION f() RETURNS int AS $$ SELECT 1 $$ LANGUAGE sql;\n")
+    assert run_dump("CREATE TABLE t (a int);\n").error_code == "workspace_not_empty"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "SELECT * FROM demo.orders;\n",
+        "COPY (SELECT 1) TO PROGRAM 'id';\n",
+        "SELECT pg_read_file('/etc/passwd');\n",
+        "DO $$ BEGIN CREATE ROLE evil SUPERUSER; END $$;\n",
+        "SET ROLE querylab;\nDO $$ BEGIN SET ROLE querylab; END $$;\n",
+    ],
+)
+def test_a_dump_cannot_reach_outside_its_workspace(
+    run_dump: Callable[..., ImportJob], workspace: Workspace, text: str
+) -> None:
+    job = run_dump(text)
+    assert job.status == ImportJob.FAILED
+    assert job.error_message.startswith("42501"), job.error_message
+
+
+def test_a_definer_function_cannot_write_through_the_read_only_role(
+    run_dump: Callable[..., ImportJob], workspace: Workspace
+) -> None:
+    run_dump(
+        "CREATE TABLE t (a int);\n"
+        "CREATE FUNCTION w() RETURNS int LANGUAGE plpgsql SECURITY DEFINER AS "
+        "$$ BEGIN INSERT INTO t VALUES (1); RETURN 1; END $$;\n"
+    )
+    with (
+        pytest.raises(psycopg.errors.ReadOnlySqlTransaction),
+        connections.workspace_connection(
+            workspace.pk, "ro", workspace.credential_version
+        ) as connection,
+    ):
+        connection.execute("SELECT w()")
+
+
+def test_a_workspace_a_dump_damaged_can_still_be_deleted(
+    run_dump: Callable[..., ImportJob], workspace: Workspace, user: User
+) -> None:
+    """The worst a dump can do is to its own workspace, and deleting cleans it up."""
+    job = run_dump(
+        "DO $$ BEGIN EXECUTE format('ALTER ROLE %I PASSWORD ''x''', current_user); "
+        f"EXECUTE 'DROP SCHEMA {workspace.schema_name} CASCADE'; END $$;\n"
+    )
+    assert job.status in {ImportJob.SUCCEEDED, ImportJob.FAILED}
+    service.delete(workspace, user)
+    assert not Workspace.objects.filter(pk=workspace.pk).exists()
+    workspace.pk = service.create(user, "Again").pk  # the fixture deletes it again

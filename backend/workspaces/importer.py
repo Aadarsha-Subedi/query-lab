@@ -3,10 +3,11 @@
 Everything happens in ONE transaction on the workspace's own `_rw` login, so a
 dump either lands completely or leaves the workspace as it was (with `replace`,
 the old tables are dropped inside that same transaction). The dump is read from
-R2 as a stream and checked statement by statement (see `dump.py`). Caps are
-checked before the commit: statements, tables, columns, foreign keys, and the
-workspace and user size. The `_rw` role is the real boundary, as in the SQL
-console; nothing here connects as the platform owner.
+R2 as a stream (see `dump.py`) and every statement runs as that role: it is the
+boundary, so a dump may do anything inside its own schema and nothing outside it.
+The only limits are the ones that protect the container and the database: the
+workspace and user size (checked as it loads and before the commit), the unzipped
+size and the total time. Nothing here connects as the platform owner.
 
 The job's result is stored on its `ImportJob` row (code, message, statement
 number and file line), which is what the API and the screen show.
@@ -48,10 +49,6 @@ CODE_TIMEOUT = "dump_timeout"
 CODE_ENCODING = "dump_encoding"
 CODE_INTERRUPTED = "dump_interrupted"
 CODE_REPLACED = "dump_replaced"
-CODE_TOO_MANY_STATEMENTS = "dump_too_many_statements"
-CODE_TOO_MANY_TABLES = "dump_too_many_tables"
-CODE_TOO_MANY_COLUMNS = "dump_too_many_columns"
-CODE_TOO_MANY_RELATIONS = "dump_too_many_relations"
 CODE_NOT_EMPTY = "workspace_not_empty"
 CODE_NOT_READY = "workspace_not_ready"
 
@@ -65,19 +62,24 @@ SIZE_CHECK_EVERY = 500
 TABLES_SQL = """
 SELECT c.relname, c.relkind FROM pg_class c
 JOIN pg_namespace n ON n.oid = c.relnamespace
-WHERE n.nspname = %s AND c.relkind IN ('r', 'p', 'v', 'f', 'S') AND NOT EXISTS (
-    SELECT 1 FROM pg_depend d WHERE d.objid = c.oid AND d.deptype IN ('a', 'i')
-)
+WHERE n.nspname = %s AND c.relkind IN ('r', 'p', 'f', 'm', 'v', 'S')
+-- Tables first: a sequence a table owns goes with it, and cannot be dropped alone.
+ORDER BY array_position(ARRAY['r', 'p', 'f', 'm', 'v', 'S']::"char"[], c.relkind)
 """
-COUNTS_SQL = """
-SELECT
-  (SELECT count(*) FROM pg_class c WHERE c.relnamespace = n.oid AND c.relkind IN ('r','p')),
-  (SELECT coalesce(max(cnt), 0) FROM (
-      SELECT count(*) AS cnt FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid
-      WHERE c.relnamespace = n.oid AND c.relkind IN ('r','p')
-        AND a.attnum > 0 AND NOT a.attisdropped GROUP BY a.attrelid) t),
-  (SELECT count(*) FROM pg_constraint k WHERE k.connamespace = n.oid AND k.contype = 'f')
-FROM pg_namespace n WHERE n.nspname = %s
+ROUTINES_SQL = """
+SELECT p.oid::regprocedure::text FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = %s
+"""
+TYPES_SQL = """
+SELECT t.typname, t.typtype FROM pg_type t
+JOIN pg_namespace n ON n.oid = t.typnamespace
+LEFT JOIN pg_class c ON c.oid = t.typrelid
+WHERE n.nspname = %s
+  AND (t.typtype IN ('e', 'd', 'r') OR (t.typtype = 'c' AND c.relkind = 'c'))
+"""
+TABLE_COUNT_SQL = """
+SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = %s AND c.relkind IN ('r', 'p')
 """
 
 
@@ -95,6 +97,8 @@ def _set_limits(connection: psycopg.Connection) -> None:
     value = str(settings.DUMP_STATEMENT_TIMEOUT_MS)
     for name in ("statement_timeout", "idle_in_transaction_session_timeout"):
         connection.execute("SELECT set_config(%s, %s, true)", [name, value])
+    # As pg_dump itself asks: a routine may refer to something created after it.
+    connection.execute("SELECT set_config('check_function_bodies', 'off', true)")
 
 
 def _existing_objects(
@@ -106,13 +110,42 @@ def _existing_objects(
     ]
 
 
+def _is_empty(connection: psycopg.Connection, schema_name: str) -> bool:
+    return not (
+        _existing_objects(connection, schema_name)
+        or connection.execute(ROUTINES_SQL, [schema_name]).fetchone()
+        or connection.execute(TYPES_SQL, [schema_name]).fetchone()
+    )
+
+
 def _clear(connection: psycopg.Connection, schema_name: str) -> None:
-    """Drop every table, view and sequence of the workspace (replace mode)."""
+    """Drop everything in the workspace schema (replace mode). The role cannot make
+    a new schema, so the objects go one by one; CASCADE takes what depends on them."""
+    nouns = {
+        "v": "VIEW",
+        "m": "MATERIALIZED VIEW",
+        "S": "SEQUENCE",
+        "f": "FOREIGN TABLE",
+    }
     for name, kind in _existing_objects(connection, schema_name):
-        noun = {"v": "VIEW", "S": "SEQUENCE", "f": "FOREIGN TABLE"}.get(kind, "TABLE")
         connection.execute(
             sql.SQL("DROP {} IF EXISTS {}.{} CASCADE").format(
-                sql.SQL(noun), sql.Identifier(schema_name), sql.Identifier(name)
+                sql.SQL(nouns.get(kind, "TABLE")),
+                sql.Identifier(schema_name),
+                sql.Identifier(name),
+            )
+        )
+    for (routine,) in connection.execute(ROUTINES_SQL, [schema_name]).fetchall():
+        # regprocedure text comes from Postgres, already quoted.
+        connection.execute(
+            sql.SQL("DROP ROUTINE IF EXISTS {} CASCADE").format(sql.SQL(routine))
+        )
+    for name, kind in connection.execute(TYPES_SQL, [schema_name]).fetchall():
+        connection.execute(
+            sql.SQL("DROP {} IF EXISTS {}.{} CASCADE").format(
+                sql.SQL("DOMAIN" if kind == "d" else "TYPE"),
+                sql.Identifier(schema_name),
+                sql.Identifier(name),
             )
         )
 
@@ -127,27 +160,9 @@ def _check_size(
         quota.ensure_within(connection, workspace)
 
 
-def _check_shape(connection: psycopg.Connection, schema_name: str) -> int:
-    tables, widest, foreign_keys = connection.execute(
-        COUNTS_SQL, [schema_name]
-    ).fetchone() or (0, 0, 0)
-    if tables > settings.WORKSPACE_MAX_TABLES:
-        raise Failure(
-            CODE_TOO_MANY_TABLES,
-            f"The dump has {tables} tables; the limit is {settings.WORKSPACE_MAX_TABLES}.",
-        )
-    if widest > settings.WORKSPACE_MAX_COLUMNS:
-        raise Failure(
-            CODE_TOO_MANY_COLUMNS,
-            f"A table has {widest} columns; the limit is {settings.WORKSPACE_MAX_COLUMNS}.",
-        )
-    if foreign_keys > settings.WORKSPACE_MAX_RELATIONS:
-        raise Failure(
-            CODE_TOO_MANY_RELATIONS,
-            f"The dump has {foreign_keys} foreign keys; "
-            f"the limit is {settings.WORKSPACE_MAX_RELATIONS}.",
-        )
-    return int(tables)
+def _table_count(connection: psycopg.Connection, schema_name: str) -> int:
+    row = connection.execute(TABLE_COUNT_SQL, [schema_name]).fetchone()
+    return int(row[0]) if row else 0
 
 
 def _execute(
@@ -190,7 +205,7 @@ def _load(job: ImportJob, workspace: Workspace) -> tuple[int, int]:
         _set_limits(connection)
         if job.replace:
             _clear(connection, workspace.schema_name)
-        elif _existing_objects(connection, workspace.schema_name):
+        elif not _is_empty(connection, workspace.schema_name):
             raise Failure(
                 CODE_NOT_EMPTY,
                 "This workspace already has tables. Use Replace data.",
@@ -198,13 +213,6 @@ def _load(job: ImportJob, workspace: Workspace) -> tuple[int, int]:
         try:
             for item in dump.read(lines):
                 ran += 1
-                if ran > settings.DUMP_MAX_STATEMENTS:
-                    raise Failure(
-                        CODE_TOO_MANY_STATEMENTS,
-                        f"At most {settings.DUMP_MAX_STATEMENTS} statements.",
-                        item.number,
-                        item.line,
-                    )
                 _execute(connection, item, workspace)
                 if item.kind == "copy" or ran % SIZE_CHECK_EVERY == 0:
                     _check_size(connection, workspace, final=False)
@@ -214,7 +222,7 @@ def _load(job: ImportJob, workspace: Workspace) -> tuple[int, int]:
             ) from None
         except UnicodeDecodeError:
             raise Failure(CODE_ENCODING, "The dump must be UTF-8 text.") from None
-        tables = _check_shape(connection, workspace.schema_name)
+        tables = _table_count(connection, workspace.schema_name)
         _check_size(connection, workspace, final=True)
     return ran, tables
 

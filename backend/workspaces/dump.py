@@ -1,23 +1,25 @@
-"""Read a plain-SQL `pg_dump` and decide, statement by statement, what may run.
+"""Read a plain-SQL `pg_dump` and prepare it to run in a workspace.
 
-The reader streams (a dump can be far bigger than memory on a 1 GiB container):
-it takes lines, builds one statement at a time and yields an `Item`. The allowlist
-here is a friendly first line, so a bad dump is refused with its statement number
-and line before anything is written; the workspace role is still the real
-boundary (see test_isolation.py).
+The reader streams (a dump can be far bigger than memory on a 1 GiB container): it
+takes lines, builds one statement at a time and yields an `Item`. It does not judge
+what a dump may do: every statement runs as the workspace's own `_rw` role, and that
+role is the boundary (see test_isolation.py). What Postgres refuses is reported with
+its statement number and line.
 
-- run:   CREATE TABLE / INDEX / SEQUENCE / VIEW, ALTER TABLE ... ADD / SET DEFAULT
-         / SET NOT NULL, ALTER SEQUENCE ... OWNED BY, COMMENT ON, INSERT;
-- copy:  COPY ... FROM STDIN, with the data lines that follow up to `\\.`;
-- skip:  SET, GRANT, REVOKE, OWNER TO, SELECT setval / set_config (a dump's
-         preamble and tail; they are counted by `classify` but never yielded);
-- refuse: everything else, with a message that says why.
+The reader only sets aside what belongs to the source server, or would break the
+copy, and could never work here:
 
-`public.` is removed from names so the objects land in the workspace schema (the
-connection's search_path is only that schema). So is the name of a schema the dump
-creates itself (`CREATE SCHEMA app;` is skipped, then `app.` is removed). Any other
-qualifier is left alone and Postgres refuses it, because the role has no access to
-another schema.
+- preamble and server-level statements: SET, GRANT, REVOKE, OWNER TO, roles,
+  databases, extensions, publications, tablespaces, psql `\\` commands;
+- transaction control: the import is one transaction, and a COMMIT inside the dump
+  would end it before the size check;
+- DROP (`pg_dump --clean`): the workspace is empty, or was just cleared;
+- row security and policies: they name roles that do not exist here, and would hide
+  the rows from the role that reads them. This is a private copy for analysis.
+
+`public.` and the name of any schema the dump creates are removed from object names
+(also in function bodies, `::regclass` casts and `setval`), so everything lands in
+the workspace schema. Any other qualifier is left alone and Postgres refuses it.
 """
 
 import re
@@ -30,82 +32,50 @@ from workspaces import sqltext
 
 Kind = Literal["run", "skip", "copy"]
 
-SKIP_WORDS = frozenset(["set", "grant", "revoke", "reset"])
-# Newer pg_dump wraps its output in these (a guard for psql, harmless to skip).
-PSQL_SKIPPED = frozenset(["\\restrict", "\\unrestrict"])
-REFUSED = {
-    "drop": "DROP is not allowed in a dump import.",
-    "delete": "DELETE is not allowed in a dump import.",
-    "update": "UPDATE is not allowed in a dump import.",
-    "truncate": "TRUNCATE is not allowed in a dump import.",
-    "do": "DO blocks are not allowed in a dump import.",
-    "begin": "Leave out BEGIN and COMMIT. The import is one transaction.",
-    "start": "Leave out BEGIN and COMMIT. The import is one transaction.",
-    "commit": "Leave out BEGIN and COMMIT. The import is one transaction.",
-    "end": "Leave out BEGIN and COMMIT. The import is one transaction.",
-    "rollback": "Leave out BEGIN and COMMIT. The import is one transaction.",
-}
-CREATE_ALLOWED = re.compile(
-    r"^create\s+(?:unique\s+)?(table|index|sequence|(?:or\s+replace\s+)?view)\b",
-    re.I,
+SKIPPED = re.compile(
+    r"""^(?:
+        set | reset | grant | revoke | drop | vacuum | security \s+ label
+      | begin | start \s+ transaction | commit | end | rollback | abort
+      | alter \s+ default \s+ privileges
+      | select \s+ (?:pg_catalog \. )? set_config \s* \(
+      | (?:create | alter | comment \s+ on) \s+ (?:
+            extension | schema | role | user | group | database | policy
+          | publication | subscription | tablespace | event \s+ trigger
+        ) \b
+    )""",
+    re.I | re.X,
 )
-CREATE_REFUSED = {
-    "role": "CREATE ROLE is not allowed.",
-    "user": "CREATE USER is not allowed.",
-    "extension": "Extensions are not allowed. Dump without them or remove them.",
-    "function": "Functions are not allowed in a dump import.",
-    "procedure": "Procedures are not allowed in a dump import.",
-    "trigger": "Triggers are not allowed in a dump import.",
-    "schema": "Schemas are not allowed. Everything goes into your workspace.",
-    "type": "Custom types are not allowed. Use the built-in types.",
-    "domain": "Domains are not allowed. Use the built-in types.",
-    "database": "CREATE DATABASE is not allowed.",
-    "policy": "Row security policies are not allowed.",
-    "rule": "Rules are not allowed.",
-    "publication": "Publications are not allowed.",
-    "subscription": "Subscriptions are not allowed.",
-    "server": "Foreign servers are not allowed.",
-    "foreign": "Foreign tables are not allowed.",
-    "materialized": "Materialized views are not allowed. Use a view.",
-}
-ALTER_ALLOWED = re.compile(
-    r"^alter\s+(?:table|sequence)\s+(?:only\s+)?(?:if\s+exists\s+)?\S+\s+"
-    r"(?:add\s|alter\s+column\s|owner\s+to\s|owned\s+by\s)",
-    re.I,
-)
-ALTER_REFUSED = re.compile(
-    r"\b(trigger|rule|policy|security|tablespace|inherit|of\s+type|attach|detach)\b",
-    re.I,
-)
-COMMENT_ALLOWED = re.compile(
-    r"^comment\s+on\s+(table|column|index|view|sequence|constraint)\b", re.I
+OWNER_TO = re.compile(r"\bowner\s+to\b", re.I)
+ALTER_SKIPPED = re.compile(
+    r"^alter\s+table\b.*\b(?:row\s+level\s+security|drop\s+constraint)\b", re.I | re.S
 )
 COPY_FROM_STDIN = re.compile(r"^copy\s+.+\s+from\s+stdin\b", re.I | re.S)
-TEMP_WORDS = re.compile(r"^create\s+(?:global\s+|local\s+)?(?:temp|temporary)\b", re.I)
-SELECT_SKIPPED = re.compile(
-    r"^select\s+(?:pg_catalog\.)?(?:setval|set_config)\s*\(", re.I
-)
-
 CREATE_SCHEMA = re.compile(
     r"""^create\s+schema\s+(?:if\s+not\s+exists\s+)?("(?:[^"]|"")+"|[A-Za-z_][A-Za-z_0-9$]*)""",
     re.I,
 )
-COMMENT_ON_SCHEMA = re.compile(r"^comment\s+on\s+schema\b", re.I)
+CREATE_ROUTINE = re.compile(
+    r"^create\s+(?:or\s+replace\s+)?(?:function|procedure)\b", re.I
+)
+ROUTINE_SEARCH_PATH = re.compile(
+    r"^\s*SET\s+search_path\s+(?:TO|=)\s+.*\n", re.I | re.M
+)
 
 
 @lru_cache(maxsize=32)
 def _prefix_pattern(schemas: frozenset[str]) -> re.Pattern[str]:
-    """What must be left untouched while removing `<schema>.`: strings, quoted
-    names, dollar quotes and comments. Any other `<schema>.` loses the prefix."""
+    """What must be left untouched while removing `<schema>.`: strings, other quoted
+    names and comments. Any other `<schema>.` loses the prefix. A string that names
+    an object (a regclass cast, setval) and a dollar-quoted body are rewritten too."""
     names = "|".join(re.escape(name) for name in sorted(schemas, key=len, reverse=True))
     return re.compile(
         rf"""
         (?P<keep>
-            (?P<regclass>'(?:[^']|'')*')(?=::regclass)
+            (?P<named>(?<=setval\()'(?:[^']|'')*'|'(?:[^']|'')*'(?=::regclass))
           | '(?:[^']|'')*'
           | "(?:{names})"\s*\.\s*(?P<quoted>)
           | "(?:[^"]|"")*"
-          | (?P<tag>\$[A-Za-z_0-9]*\$).*?(?P=tag)
+          | (?P<tag>\$[A-Za-z_0-9]*\$)(?P<body>.*?)(?P=tag)
           | --[^\n]*
           | /\*.*?\*/
         )
@@ -116,8 +86,8 @@ def _prefix_pattern(schemas: frozenset[str]) -> re.Pattern[str]:
 
 
 class DumpRefused(Exception):
-    """A statement the import will not run. `number` counts from 1 across the file
-    and `line` is the file line where the statement starts."""
+    """The dump cannot be read (it ends in the middle of a statement). `number` counts
+    from 1 across the file and `line` is the file line where the statement starts."""
 
     def __init__(self, number: int, line: int, message: str):
         super().__init__(message)
@@ -132,7 +102,7 @@ class Item:
     text: str
     number: int
     line: int
-    # For `copy`: the data lines (without the `\.` end). Must be read before the
+    # For `copy`: the data lines (without the `\\.` end). Must be read before the
     # next Item is asked for; the reader drains whatever the caller left.
     data: Iterator[str] = field(default_factory=lambda: iter(()))
 
@@ -142,85 +112,48 @@ def strip_schemas(text: str, schemas: Iterable[str] = ("public",)) -> str:
     everything lands in the workspace schema (the connection's search_path)."""
     names = frozenset(schemas) | {"public"}
     pattern = _prefix_pattern(names)
+    in_string = re.compile(
+        rf"""^'(?:"?(?:{"|".join(re.escape(n) for n in names)})"?\.)""", re.I
+    )
 
     def replace(match: re.Match[str]) -> str:
-        if match.group("keep") is None:
-            return ""  # bare `schema.`
-        if match.group("quoted") is not None:
-            return ""  # `"schema".`
-        if match.group("regclass") is not None:  # nextval('schema.t_id_seq'::regclass)
-            return re.sub(
-                rf"""^'(?:"?(?:{"|".join(re.escape(n) for n in names)})"?\.)""",
-                "'",
-                match.group(0),
-                flags=re.I,
-            )
+        if match.group("keep") is None or match.group("quoted") is not None:
+            return ""  # `schema.` or `"schema".`
+        if match.group("named") is not None:
+            return in_string.sub("'", match.group(0))
+        if match.group("tag") is not None:
+            tag = match.group("tag")
+            return f"{tag}{strip_schemas(match.group('body'), names)}{tag}"
         return match.group(0)
 
     return pattern.sub(replace, text)
 
 
-strip_public = strip_schemas
+def _plain(statement: str) -> str:
+    return re.sub(r"--[^\n]*|/\*.*?\*/", " ", statement, flags=re.S).strip()
 
 
-def classify(statement: str, number: int, line: int) -> Kind:
-    """`run`, `skip` or `copy` for the statement, or DumpRefused with a reason."""
-    text = re.sub(r"--[^\n]*|/\*.*?\*/", " ", statement, flags=re.S).strip()
-    word = sqltext.first_word(text)
-    if word in SKIP_WORDS:
+def classify(statement: str) -> Kind:
+    """`copy` for COPY ... FROM STDIN, `skip` for what is set aside (module docstring),
+    `run` for everything else."""
+    text = _plain(statement)
+    if SKIPPED.match(text) or OWNER_TO.search(text) or ALTER_SKIPPED.match(text):
         return "skip"
-    if word in REFUSED:
-        raise DumpRefused(number, line, REFUSED[word])
-    if word == "select":
-        if SELECT_SKIPPED.match(text):
-            return "skip"
-        raise DumpRefused(
-            number, line, "Only setval and set_config SELECTs are skipped."
-        )
-    if word == "insert":
-        return "run"
-    if word == "copy":
-        if COPY_FROM_STDIN.match(text):
-            return "copy"
-        raise DumpRefused(
-            number, line, "Only COPY ... FROM STDIN is allowed (no files, no PROGRAM)."
-        )
-    if word == "comment":
-        if COMMENT_ALLOWED.match(text):
-            return "run"
-        raise DumpRefused(
-            number,
-            line,
-            "Only comments on tables, columns, indexes, views, sequences and constraints.",
-        )
-    if word == "alter":
-        if re.search(r"\bowner\s+to\b", text, re.I):
-            return "skip"
-        if ALTER_REFUSED.search(text) or not ALTER_ALLOWED.match(text):
-            raise DumpRefused(
-                number,
-                line,
-                "This ALTER is not allowed. Only ADD, ALTER COLUMN and OWNED BY on tables and sequences.",
-            )
-        return "run"
-    if word == "create":
-        if TEMP_WORDS.match(text):
-            raise DumpRefused(number, line, "Temporary tables are not allowed.")
-        if CREATE_ALLOWED.match(text):
-            return "run"
-        target = re.sub(r"^create\s+(?:or\s+replace\s+)?", "", text, flags=re.I)
-        noun = sqltext.first_word(target)
-        raise DumpRefused(
-            number,
-            line,
-            CREATE_REFUSED.get(noun, f"CREATE {noun.upper()} is not allowed."),
-        )
-    raise DumpRefused(number, line, f"{word.upper()} is not allowed in a dump import.")
+    return "copy" if COPY_FROM_STDIN.match(text) else "run"
+
+
+def _prepare(text: str, schemas: Iterable[str]) -> str:
+    """The statement as it runs here. A routine's own `SET search_path` would point it
+    away from the workspace schema, so it goes."""
+    if CREATE_ROUTINE.match(_plain(text)):
+        header, dollar, rest = text.partition("$")
+        text = ROUTINE_SEARCH_PATH.sub("", header) + dollar + rest
+    return strip_schemas(text, schemas)
 
 
 def read(lines: Iterable[str]) -> Iterator[Item]:
-    """Statements of a dump, one at a time, each already classified. Raises
-    DumpRefused at the first statement that may not run, before yielding it."""
+    """The statements to run, one at a time. Raises DumpRefused if the dump ends in
+    the middle of a statement."""
     source = iter(lines)
     schemas = {"public"}
     buffer = ""
@@ -231,16 +164,8 @@ def read(lines: Iterable[str]) -> Iterator[Item]:
         line_no += 1
         if not sqltext.first_word(buffer):  # blank or only comments so far
             buffer, buffer_line = "", line_no
-            command = raw.strip()
-            if command.startswith("\\"):  # a psql meta-command, not SQL
-                word = command.split(None, 1)[0]
-                if word in PSQL_SKIPPED:
-                    continue
-                raise DumpRefused(
-                    number + 1,
-                    line_no,
-                    f"{word} is a psql command, not SQL. Dump with plain pg_dump output only.",
-                )
+            if raw.lstrip().startswith("\\"):  # a psql meta-command, not SQL
+                continue
         buffer += raw if raw.endswith("\n") else raw + "\n"
         statements, rest = sqltext.split_partial(buffer)
         for text in statements:
@@ -248,20 +173,17 @@ def read(lines: Iterable[str]) -> Iterator[Item]:
             if not sqltext.first_word(text):
                 continue
             number += 1
-            plain = re.sub(r"--[^\n]*|/\*.*?\*/", " ", text, flags=re.S).strip()
-            created = CREATE_SCHEMA.match(plain)
+            created = CREATE_SCHEMA.match(_plain(text))
             if created:  # the dump's own schema: its objects go into the workspace
                 name = created.group(1)
                 schemas.add(
                     name[1:-1].replace('""', '"') if name[0] == '"' else name.lower()
                 )
                 continue
-            if COMMENT_ON_SCHEMA.match(plain):
-                continue
-            kind = classify(text, number, buffer_line)
+            kind = classify(text)
             item = Item(
                 kind=kind,
-                text=strip_schemas(text, schemas),
+                text=_prepare(text, schemas),
                 number=number,
                 line=buffer_line,
             )

@@ -38,12 +38,6 @@ def test_limits_report_what_is_used_and_allowed(client: Client, user: User) -> N
         data["bytes"]["per_workspace"] == 52428800
         and data["bytes"]["allowed"] == 262144000
     )
-    assert {
-        "max_tables",
-        "max_columns",
-        "max_relations",
-        "max_dump_bytes",
-    } <= set(data)
     assert data["max_dump_bytes"] == 52428800
     listed = client.get("/api/workspaces").json()["data"][1]
     assert (
