@@ -113,6 +113,8 @@ The user's own SQL is not the agent's. It runs as `ws_<id>_rw` on the primary an
 
 ## 5.7 CSV import (Huey job + SSE) — DROPPED
 
+> **Superseded 2026-11-02:** a workspace is now a read-only copy of a SQL dump uploaded through R2; see [05a-dump-import.md](05a-dump-import.md). Sections 5.5 and 5.6 (tables, columns, relations, row edits) and the user-writable SQL console of 5.6a were removed with it.
+>
 > **Dropped by the owner on 2026-10-31.** The import was built, tested and measured (see git history before the commit that drops it), then removed: the spool-to-container-disk design ties uploads to one container's disk and an unrelated restart loses them. It may return later with uploads going to Cloudflare R2 object storage (the file lives in the bucket, the job reads it from there, no shared local disk, no upload size middleware). Until then users fill tables with the row API or the SQL console. Everything below is kept as the design record; 5.5.8 (key and relations in an import) and the import parts of 5.2.6, 5.8 and 5.9.1 went with it.
 
 - [-] **5.7.1** `ImportJob` model in `querylab_app`: workspace, table name, status `queued | running | succeeded | failed | cancelled`, progress counters (bytes read, rows loaded), error code and message, timestamps, temp file path.

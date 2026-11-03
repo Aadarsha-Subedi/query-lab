@@ -32,7 +32,7 @@ step 9 on the approved design system, just before deployment.
 - [x] 2. Eval harness skeleton
 - [x] 3. Agent (your live-Gemini checks remain: 3.9.2 confidence analysis, 3.10.3 Olist agent run; [plan](docs/plan/03-agent.md))
 - [x] 4. Analyst API (your real-browser CORS check, 4.7.5, remains; [plan](docs/plan/04-analyst-api.md))
-- [x] 5. User workspaces (CSV import, 5.7, dropped for now: it may return with R2 object storage; your real-Neon checks, 5.9.7, remain; [plan](docs/plan/05-user-workspaces.md))
+- [x] 5. User workspaces (now read-only copies of a `pg_dump`: [dump import plan](docs/plan/05a-dump-import.md) replaces CSV import and all table / row editing; your real-Neon checks, 5.9.7, and a real R2 round trip remain; [plan](docs/plan/05-user-workspaces.md))
 - [x] 6. Trace-driven evals (backend only; your review of the first drafted batch and the live Olist agent eval, 6.9.2, remain, then 6.9.3; [plan](docs/plan/06-trace-driven-evals.md))
 - [ ] 7. LoRA fine-tune (stretch; code done, data built; your remaining steps: finish the Colab training (7.3.5-7.3.6), run the prediction notebook (7.4.4), score base and tuned with `run_eval --predictions` (7.6), record the result in `DECISION.md` (7.8.1); [plan](docs/plan/07-lora-fine-tune.md))
 - [ ] 8. Schema-RAG + semantic cache (optional)

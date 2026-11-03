@@ -465,27 +465,44 @@ How a request reaches a workspace schema (nothing from the request or the model 
    │      introspection as ws_7_ro (bound schema name); `_row_id` is hidden from it
    ├─ agent SQL ─> guard.check(sql, schema ws_7)  (only that qualifier; SET/RESET refused)
    │              ─> runner.run(sql, ref) ─> connection opened AS ws_7_ro (read-only txn, statement timeout, row/byte caps)
-   ├─ table / column / key / relation / row APIs and the SQL console ─> connection AS ws_7_rw, one transaction,
-   │      DDL logged to workspace_ddl_log, schema version bumped, size caps checked before and after
+   ├─ the query runner (POST /workspaces/7/sql) ─> read-only statements only, connection AS ws_7_ro, one read-only txn
+   ├─ the dump import (imports_api -> Huey -> importer) ─> connection AS ws_7_rw, one transaction (the ONLY write path)
    └─ the demo (no workspace) ─> querylab_reader as before
 ```
 
 A run remembers its workspace: `AgentRun.workspace_id` (null = demo), `excluded_from_evals` (true for any user workspace).
 `GET /runs/{id}/result` and the loop resolve it again; a deleted workspace ends a run `workspace_gone`.
 
-### Changing a workspace
+### Filling a workspace: the dump import (2026-11-03)
 
-| Call                                            | What happens                                                                                       | Errors you will see                                                                               |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `POST /workspaces/{id}/tables`                  | `CREATE TABLE` with hidden `_row_id` identity key, `COMMENT ON` for descriptions                   | `table_name_taken`, `table_limit_reached`, `column_limit_reached`, `invalid_spec`, `invalid_name` |
-| `PATCH/DELETE .../tables/{t}`, `.../columns`    | rename, describe, add, drop; retype = `ALTER ... TYPE ... USING` after a `pg_input_is_valid` check | `cast_failed` (names the row), `constraint_violation`, `column_name_taken`                        |
-| `PUT .../primary-key`, `POST/DELETE /relations` | real constraints; existing rows checked first                                                      | `constraint_violation` (names the row), `relation_invalid`, `relation_limit_reached`              |
-| `GET/POST/PATCH/DELETE .../rows`                | by `_row_id`, values coerced and bound, all or nothing, size guard                                 | `row_invalid` (`rows[i].col`), `constraint_violation`, `workspace_full`                           |
-| `POST /workspaces/{id}/sql`                     | the user's own SQL as `_rw`, one transaction, watchdog deadline                                    | `sql_failed` (SQLSTATE), `sql_invalid`, `sql_busy`, `query_timeout`, `workspace_full`             |
+A workspace is a read-only copy of the user's database. Tables and data come only from a plain-SQL `pg_dump`
+(`--no-owner --no-privileges`, `.sql` or `.sql.gz`, up to `DUMP_MAX_FILE_BYTES`, 50 MB). There are no endpoints to
+create, alter or drop tables, columns, keys or relations, or to insert, update or delete rows (removed 2026-11-02).
 
-### Filling a workspace
+```
+POST /workspaces/{id}/imports {filename, size, replace}   (WorkspaceImportThrottle; one active import per user)
+  checks name (.sql / .sql.gz), size <= cap, room left (quota.ensure_room) ─> ImportJob(awaiting_upload)
+  ─> storage.presign_put: a URL valid DUMP_PRESIGN_SECONDS for exactly `size` bytes at dumps/<user>/<ws>/<token>
+the browser PUTs the file straight to R2                  (never through this container)
+POST /workspaces/{id}/imports/{job}/start
+  storage.stored_size (404 -> dump_upload_missing, over cap -> dump_too_large) ─> queued ─> Huey run_import(job)
+  importer.run:
+    workspace_connection(AS ws_<id>_rw): set statement and idle timeouts (DUMP_STATEMENT_TIMEOUT_MS)
+    replace ? drop the workspace's tables/views/sequences : refuse if it already has any (workspace_not_empty)
+    storage.read_lines (stream, gunzip, strict UTF-8, DUMP_MAX_TEXT_BYTES) ─> dump.read:
+        one statement at a time; run / copy / skip / refuse (statement number + file line); `public.` removed
+        COPY ... FROM STDIN is fed to psycopg copy(); size checked after each COPY and every 500 statements
+    after the last statement: table / column / foreign-key caps, then quota.ensure_within  ─> COMMIT
+    any failure rolls everything back (a failed replace keeps the old tables)
+  finally: delete the R2 object, forget the cached size, bump the schema version
+  job -> succeeded (statements_run, tables_created) or failed (error code, message, statement, line); a DDL log row
+GET /workspaces/{id}/imports/{job}   status (a running job silent for 30 min shows failed: dump_interrupted)
+GET /workspaces/{id}/imports         the last ten
+```
 
-CSV import was planned (5.7) and dropped; see DECISION.md. A user fills tables through `POST .../rows` (up to `WORKSPACE_MAX_ROWS_PER_EDIT` rows per call) or the SQL console (`INSERT`, or `INSERT ... SELECT`).
+The query runner: `POST /workspaces/{id}/sql` takes SELECT / WITH / EXPLAIN / SHOW / VALUES only (400 `sql_invalid`
+otherwise), runs them in one read-only transaction as `ws_<id>_ro`, with a statement timeout, a watchdog deadline,
+and caps on length, statements and returned rows. Writes also fail in the database (`_ro` has no privilege).
 
 ## Fine-tuning and scoring a model from a file (step 7)
 
