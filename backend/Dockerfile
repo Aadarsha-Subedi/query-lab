@@ -44,6 +44,9 @@ RUN find /opt/venv/lib/python3.12/site-packages -type d -path '*/locale/*' -prun
 RUN cd /opt/venv/lib/python3.12/site-packages/botocore/data \
     && find . -mindepth 1 -maxdepth 1 -type d ! -name s3 -exec rm -rf {} +
 COPY . .
+# The app's own bytecode, so a cold start does not compile it (PYTHONDONTWRITEBYTECODE
+# means it would do so on every start). The image never changes, so no source checks.
+RUN /opt/venv/bin/python -m compileall -q --invalidation-mode unchecked-hash .
 
 # ── prod: the virtualenv and the code, run as a non-root user ────────────
 FROM python:3.12-slim AS prod

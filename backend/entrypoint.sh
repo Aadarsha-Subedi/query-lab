@@ -12,6 +12,10 @@ gunicorn -c config/gunicorn.py &
 # built by `make deploy-first`; a plain `make deploy` removes it and skips all of this.
 # A failed step ends the subshell, which stops the container (see wait -n below).
 (
+    # Huey loads the whole app too. On 1/4 vCPU that would slow the first request, so
+    # it waits for the gunicorn hook in config/gunicorn.py. If gunicorn dies, wait -n
+    # below stops the container.
+    until [ -f /tmp/querylab-web-ready ]; do sleep 1; done
     if [ -d .first-deploy ]; then
         python manage.py migrate --noinput
         python manage.py bootstrap_data_db
