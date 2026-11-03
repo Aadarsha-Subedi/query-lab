@@ -1,4 +1,11 @@
-import { ArrowLeft01Icon, ArrowRight01Icon, Clock01Icon, Search01Icon } from '@hugeicons/core-free-icons'
+import {
+  ArrowLeft01Icon,
+  ArrowReloadHorizontalIcon,
+  ArrowRight01Icon,
+  Clock01Icon,
+  PlayIcon,
+  Search01Icon,
+} from '@hugeicons/core-free-icons'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useState, type SyntheticEvent } from 'react'
@@ -65,7 +72,7 @@ function Filters({
             })
           }}
         >
-          <SelectTrigger aria-label="Status">
+          <SelectTrigger aria-label="Status" className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -85,7 +92,7 @@ function Filters({
             onChange({ ...filters, ordering: value as (typeof ORDERINGS)[number], offset: undefined })
           }}
         >
-          <SelectTrigger aria-label="Order">
+          <SelectTrigger aria-label="Order" className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -166,21 +173,17 @@ export function HistoryTable({ filters }: { filters: HistoryFilters }) {
                         <TableCell>{formatDuration(run.latency_ms / 1000)}</TableCell>
                         <TableCell>{formatRelative(run.created_at)}</TableCell>
                         <TableCell>
-                          <div className="flex gap-4">
-                            <Link
-                              to="/runs/$runId/replay"
-                              params={{ runId: String(run.id) }}
-                              className="underline-offset-4 hover:underline"
-                            >
-                              Replay
-                            </Link>
-                            <Link
-                              to="/ask"
-                              search={{ question: run.question }}
-                              className="underline-offset-4 hover:underline"
-                            >
-                              Ask again
-                            </Link>
+                          <div className="flex gap-2">
+                            <Button asChild variant="secondary" size="sm" icon={PlayIcon}>
+                              <Link to="/runs/$runId/replay" params={{ runId: String(run.id) }}>
+                                Replay
+                              </Link>
+                            </Button>
+                            <Button asChild variant="secondary" size="sm" icon={ArrowReloadHorizontalIcon}>
+                              <Link to="/ask" search={{ question: run.question }}>
+                                Ask again
+                              </Link>
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>

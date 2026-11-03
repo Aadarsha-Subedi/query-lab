@@ -105,6 +105,35 @@ def test_me_shows_the_provider(client: Client) -> None:
 
 
 @pytest.mark.django_db
+def test_me_returns_the_provider_avatar(client: Client) -> None:
+    google_user = sign_in_with(
+        GoogleProvider.id,
+        {**google("g-9", "g9@example.com"), "picture": "https://example.com/g.png"},
+    )
+    client.force_login(google_user)
+    assert (
+        client.get("/api/me").json()["data"]["avatar_url"]
+        == "https://example.com/g.png"
+    )
+    github_user = sign_in_with(
+        GitHubProvider.id,
+        {**github(77, "gh77@example.com"), "avatar_url": "https://example.com/h.png"},
+    )
+    client.force_login(github_user)
+    assert (
+        client.get("/api/me").json()["data"]["avatar_url"]
+        == "https://example.com/h.png"
+    )
+
+
+@pytest.mark.django_db
+def test_me_has_no_avatar_when_the_provider_sent_none(client: Client) -> None:
+    user = sign_in_with(GoogleProvider.id, google("g-10", "g10@example.com"))
+    client.force_login(user)
+    assert client.get("/api/me").json()["data"]["avatar_url"] is None
+
+
+@pytest.mark.django_db
 def test_me_tells_the_screens_who_is_staff(client: Client) -> None:
     staff = sign_in_with(GitHubProvider.id, github(43, SHARED_EMAIL))
     staff.is_staff = True

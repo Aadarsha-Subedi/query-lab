@@ -91,7 +91,7 @@ describe('app shell', () => {
     })
   })
 
-  it('cycles the theme from the header', async () => {
+  it('cycles the theme on one line in the account menu, above Sign out', async () => {
     mockFetch({
       '/api/me': signedIn,
       '/api/health': () => ({ status: 200, body: {} }),
@@ -101,10 +101,48 @@ describe('app shell', () => {
       }),
     })
     await openAt('/ask')
-    const toggle = await screen.findByRole('button', { name: /^Theme:/ })
-    const before = toggle.getAttribute('aria-label')
-    await userEvent.click(toggle)
-    expect(screen.getByRole('button', { name: /^Theme:/ }).getAttribute('aria-label')).not.toBe(before)
+    expect(screen.queryByRole('button', { name: /^Theme:/ })).not.toBeInTheDocument()
+    await userEvent.click(await screen.findByRole('button', { name: 'Account menu' }))
+    const theme = await screen.findByRole('menuitem', { name: /^Theme/ })
+    expect(theme).toHaveTextContent('System')
+    await userEvent.click(theme)
+    expect(screen.getByRole('menuitem', { name: /^Theme/ })).toHaveTextContent('Light')
+    await userEvent.click(screen.getByRole('menuitem', { name: /^Theme/ }))
+    expect(screen.getByRole('menuitem', { name: /^Theme/ })).toHaveTextContent('Dark')
+    expect(document.documentElement).toHaveClass('dark')
+    await userEvent.click(screen.getByRole('menuitem', { name: /^Theme/ }))
+    expect(screen.getByRole('menuitem', { name: /^Theme/ })).toHaveTextContent('System')
+    // One line, directly above Sign out.
+    expect(screen.queryAllByRole('menuitemradio')).toHaveLength(0)
+    const signOut = screen.getByRole('menuitem', { name: 'Sign out' })
+    expect(
+      screen.getByRole('menuitem', { name: /^Theme/ }).compareDocumentPosition(signOut) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('shows the provider avatar in the account button and before the email in the menu', async () => {
+    const withAvatar = () => {
+      const base = signedIn()
+      return {
+        ...base,
+        body: { ...base.body, data: { ...base.body.data, avatar_url: 'https://example.com/a.png' } },
+      }
+    }
+    mockFetch({
+      '/api/me': withAvatar,
+      '/api/health': () => ({ status: 200, body: {} }),
+      '/api/agent/limits': () => ({
+        status: 500,
+        body: { success: false, message: 'x', code: 'internal_error' },
+      }),
+    })
+    await openAt('/ask')
+    const button = await screen.findByRole('button', { name: 'Account menu' })
+    // jsdom never loads images, so the avatar shows its initials until the image does.
+    expect(button).toBeVisible()
+    await userEvent.click(button)
+    expect(await screen.findByText('ada@example.com')).toBeVisible()
   })
 })
 

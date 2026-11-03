@@ -1,11 +1,20 @@
-import { Cancel01Icon, CheckmarkCircle02Icon, Edit02Icon } from '@hugeicons/core-free-icons'
+import { Cancel01Icon, CheckmarkCircle02Icon, DatabaseIcon, Edit02Icon } from '@hugeicons/core-free-icons'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { CodeBlock } from '@/components/typography/Code'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Icon } from '@/components/ui/icon'
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemFooter,
+  ItemMedia,
+  ItemTitle,
+} from '@/components/ui/item'
 import { Textarea } from '@/components/ui/textarea'
 import { ApiError } from '@/lib/api'
 import { formatDateTime } from '@/lib/format'
@@ -60,15 +69,84 @@ export function ApprovalCard({ runId, pending, onDecided }: ApprovalCardProps) {
       : null
 
   return (
-    <Card aria-label="Approve the SQL">
-      <CardHeader>
-        <CardTitle>Approve this SQL before it runs</CardTitle>
-        <CardDescription>{pending.rationale}</CardDescription>
-        <p className="text-small text-muted-foreground">
-          This is the SQL the agent wrote for your question. It reads your data and never changes it. Nothing
-          runs until you approve.
-        </p>
-        <div className="flex flex-wrap items-center gap-2">
+    <section aria-label="Approve the SQL" className="flex flex-col gap-3">
+      {/* shadcn Confirmation: the question, with the answers beside it, before the tool runs. */}
+      <Item variant="outline">
+        <ItemMedia variant="icon">
+          <Icon icon={DatabaseIcon} size="sm" />
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle>Approve this SQL before it runs</ItemTitle>
+          <ItemDescription className="line-clamp-none">{pending.rationale}</ItemDescription>
+          <p className="text-small text-muted-foreground">
+            This is the SQL the agent wrote for your question. It reads your data and never changes it.
+            Nothing runs until you approve.
+          </p>
+        </ItemContent>
+        <ItemActions className="basis-full flex-wrap">
+          {editing ? (
+            <Button
+              icon={CheckmarkCircle02Icon}
+              loading={edit.isPending}
+              disabled={busy || !text.trim()}
+              onClick={() => {
+                edit.mutate()
+              }}
+            >
+              Run my edited SQL
+            </Button>
+          ) : (
+            <Button
+              icon={CheckmarkCircle02Icon}
+              loading={approve.isPending}
+              disabled={busy}
+              onClick={() => {
+                approve.mutate()
+              }}
+            >
+              Approve and run
+            </Button>
+          )}
+          {!editing && (
+            <Button
+              variant="secondary"
+              icon={Edit02Icon}
+              disabled={busy}
+              onClick={() => {
+                setEditing(true)
+                setDraft(runId, pending.sql)
+              }}
+            >
+              Edit SQL
+            </Button>
+          )}
+          {editing && (
+            <Button
+              variant="secondary"
+              icon={Cancel01Icon}
+              disabled={busy}
+              onClick={() => {
+                clearDraft(runId)
+                setEditing(false)
+                edit.reset()
+              }}
+            >
+              Discard my edit
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            icon={Cancel01Icon}
+            loading={cancel.isPending}
+            disabled={busy}
+            onClick={() => {
+              cancel.mutate()
+            }}
+          >
+            Cancel run
+          </Button>
+        </ItemActions>
+        <ItemFooter className="flex-wrap justify-start">
           {pending.guard.map((code) => (
             <Badge key={code} variant="info">
               {GUARD_LABEL[code] ?? code}
@@ -78,126 +156,61 @@ export function ApprovalCard({ runId, pending, onDecided }: ApprovalCardProps) {
           <span className="inline-flex items-center gap-1 text-small text-muted-foreground">
             Expires {formatDateTime(pending.expires_at)}
           </span>
-        </div>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        {editing ? (
-          <>
-            <Textarea
-              aria-label="SQL"
-              className="min-h-40 font-mono text-code"
-              value={text}
-              onChange={(event) => {
-                setDraft(runId, event.target.value)
-              }}
-              aria-invalid={sqlError ? true : undefined}
-              aria-describedby={sqlError ? 'sql-error' : undefined}
-              spellCheck={false}
-            />
-            {sqlError && (
-              <p id="sql-error" role="alert" className="text-small text-danger-foreground">
-                {sqlError}
-              </p>
-            )}
-          </>
-        ) : (
-          <CodeBlock code={pending.sql} />
-        )}
-        {(pending.guard.length > 0 || pending.revision > 0) && (
+        </ItemFooter>
+      </Item>
+      {editing ? (
+        <>
+          <Textarea
+            aria-label="SQL"
+            className="min-h-40 font-mono text-code"
+            value={text}
+            onChange={(event) => {
+              setDraft(runId, event.target.value)
+            }}
+            aria-invalid={sqlError ? true : undefined}
+            aria-describedby={sqlError ? 'sql-error' : undefined}
+            spellCheck={false}
+          />
+          {sqlError && (
+            <p id="sql-error" role="alert" className="text-small text-danger-foreground">
+              {sqlError}
+            </p>
+          )}
+        </>
+      ) : (
+        <CodeBlock code={pending.sql} />
+      )}
+      {(pending.guard.length > 0 || pending.revision > 0) && (
+        <ul className="list-disc pl-5 text-small text-muted-foreground">
+          {pending.guard.map((code) => (
+            <li key={code}>
+              <span className="font-medium text-foreground">{GUARD_LABEL[code] ?? code}.</span>{' '}
+              {GUARD_HELP[code] ?? 'A safety check changed this query.'}
+            </li>
+          ))}
+          {pending.revision > 0 && (
+            <li>
+              <span className="font-medium text-foreground">Revision {pending.revision}.</span> You have
+              edited this SQL {pending.revision === 1 ? 'once' : `${pending.revision} times`}.
+            </li>
+          )}
+        </ul>
+      )}
+      {pending.assumptions.length > 0 && (
+        <div>
+          <p className="text-small font-medium">Assumptions</p>
           <ul className="list-disc pl-5 text-small text-muted-foreground">
-            {pending.guard.map((code) => (
-              <li key={code}>
-                <span className="font-medium text-foreground">{GUARD_LABEL[code] ?? code}.</span>{' '}
-                {GUARD_HELP[code] ?? 'A safety check changed this query.'}
-              </li>
+            {pending.assumptions.map((assumption) => (
+              <li key={assumption}>{assumption}</li>
             ))}
-            {pending.revision > 0 && (
-              <li>
-                <span className="font-medium text-foreground">Revision {pending.revision}.</span> You have
-                edited this SQL {pending.revision === 1 ? 'once' : `${pending.revision} times`}.
-              </li>
-            )}
           </ul>
-        )}
-        {pending.assumptions.length > 0 && (
-          <div>
-            <p className="text-small font-medium">Assumptions</p>
-            <ul className="list-disc pl-5 text-small text-muted-foreground">
-              {pending.assumptions.map((assumption) => (
-                <li key={assumption}>{assumption}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {failure && !sqlError && (
-          <p role="alert" className="text-small text-danger-foreground">
-            {errorText(failure).message} {errorText(failure).hint}
-          </p>
-        )}
-      </CardContent>
-      <CardFooter className="flex flex-wrap gap-2">
-        {editing ? (
-          <Button
-            icon={CheckmarkCircle02Icon}
-            loading={edit.isPending}
-            disabled={busy || !text.trim()}
-            onClick={() => {
-              edit.mutate()
-            }}
-          >
-            Run my edited SQL
-          </Button>
-        ) : (
-          <Button
-            icon={CheckmarkCircle02Icon}
-            loading={approve.isPending}
-            disabled={busy}
-            onClick={() => {
-              approve.mutate()
-            }}
-          >
-            Approve and run
-          </Button>
-        )}
-        {!editing && (
-          <Button
-            variant="secondary"
-            icon={Edit02Icon}
-            disabled={busy}
-            onClick={() => {
-              setEditing(true)
-              setDraft(runId, pending.sql)
-            }}
-          >
-            Edit SQL
-          </Button>
-        )}
-        {editing && (
-          <Button
-            variant="secondary"
-            icon={Cancel01Icon}
-            disabled={busy}
-            onClick={() => {
-              clearDraft(runId)
-              setEditing(false)
-              edit.reset()
-            }}
-          >
-            Discard my edit
-          </Button>
-        )}
-        <Button
-          variant="ghost"
-          icon={Cancel01Icon}
-          loading={cancel.isPending}
-          disabled={busy}
-          onClick={() => {
-            cancel.mutate()
-          }}
-        >
-          Cancel run
-        </Button>
-      </CardFooter>
-    </Card>
+        </div>
+      )}
+      {failure && !sqlError && (
+        <p role="alert" className="text-small text-danger-foreground">
+          {errorText(failure).message} {errorText(failure).hint}
+        </p>
+      )}
+    </section>
   )
 }

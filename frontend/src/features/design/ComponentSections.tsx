@@ -527,7 +527,7 @@ function MoreInputs() {
         <Textarea aria-label="Question" placeholder="Ask a question about your data" />
         <Textarea aria-label="Question with an error" aria-invalid defaultValue="Too short" />
         <Select defaultValue="all">
-          <SelectTrigger aria-label="Status">
+          <SelectTrigger aria-label="Status" className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

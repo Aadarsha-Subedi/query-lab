@@ -30,7 +30,14 @@ const base = (source: 'querylab' | 'own', saved: unknown[] = []) => ({
   'GET /api/llm-settings': () => ok({ source, querylab_model: 'gem-a' }),
   'GET /api/llm-keys': () => ok(saved),
   'GET /api/llm-keys-models': () => ok(MODELS),
-  'GET /api/agent/limits': () => ok({}),
+  'GET /api/agent/limits': () =>
+    ok({
+      default_key: { used: 0, allowed: 20, remaining: 20, resets_at: '2026-11-02T00:00:00Z' },
+      has_own_key: false,
+      streams: { open: 0, allowed: 5 },
+      unfinished_runs: { count: 0, allowed: 3 },
+      workspace_id: null,
+    }),
 })
 
 afterEach(() => {
@@ -167,6 +174,18 @@ describe('KeysPage', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
     expect(sent).toEqual({ api_key: 'secret-key-1234', model: 'gpt-a' })
+  })
+
+  it('opens the provider and model lists inside the dialog, so its focus trap does not close them', async () => {
+    serveApi(base('own', []))
+    show()
+    await userEvent.click(await screen.findByRole('button', { name: 'Add new API key' }))
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.click(within(dialog).getByRole('combobox', { name: 'Provider' }))
+    expect(dialog).toContainElement(await screen.findByRole('option', { name: 'Google Gemini' }))
+    await userEvent.click(screen.getByRole('option', { name: 'Google Gemini' }))
+    await userEvent.click(within(dialog).getByRole('combobox', { name: 'Model' }))
+    expect(dialog).toContainElement(await screen.findByRole('option', { name: 'gem-b' }))
   })
 
   it('shows the provider refusing a key and keeps the field for correction', async () => {

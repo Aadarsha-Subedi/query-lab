@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/data-state'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { WorkspaceMenu } from '@/features/workspaces/WorkspaceMenu'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -68,7 +69,7 @@ function Tables({
             {/* On a phone a list this long would push the data away: a dropdown instead. */}
             <div className="lg:hidden">
               <Select value={selected?.name} onValueChange={onSelect}>
-                <SelectTrigger aria-label="Table" className="font-mono">
+                <SelectTrigger aria-label="Table" className="w-full font-mono">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -133,7 +134,13 @@ export function SchemaPanel({
 }) {
   const query = useQuery(schemaQuery(workspace))
   return (
-    <section aria-label="Schema" className="flex flex-col gap-3">
+    <section aria-label="Schema" className="flex flex-col gap-6">
+      {/* A private workspace: storage, import a dump, run a query. The demo is fixed. */}
+      {workspace !== undefined && (
+        <div className="flex justify-end">
+          <WorkspaceMenu workspaceId={workspace} />
+        </div>
+      )}
       <QueryBoundary
         query={query}
         errorTitle="Couldn't load the schema."
@@ -142,7 +149,7 @@ export function SchemaPanel({
           <EmptyState
             icon={DatabaseIcon}
             title="No tables yet"
-            description="This workspace has no tables. Create one in the workspace editor."
+            description="This workspace has no tables yet. Open the menu at the top right and choose Import dump."
           />
         }
         loading={

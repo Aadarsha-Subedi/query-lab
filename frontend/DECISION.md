@@ -287,3 +287,74 @@ in lands on `/ask`, the brand link goes there, and the nav starts with Ask. Hist
 link and `<main id="main">` convention stay. The Workspaces card is one big link (the workspace name, stretched over the card)
 that opens that workspace's Schema tab (`/ask?tab=schema&workspace=<id>`, no `workspace` for the demo); the actions menu stays
 clickable above it.
+
+**Select is shadcn base-nova (Base UI) (2026-11-02).** The owner pointed out that our Select was the Radix "new-york" one and looked
+out of place beside shadcn's current Select. `components/ui/select.tsx` is now the base-nova source (Base UI, new dependency
+`@base-ui/react`), with Hugeicons (up/down chevrons, check) and our tokens, heights (36 px, 44 px on touch) and focus ring. Base UI
+shows the raw value in the trigger unless it is given `items`, so our `<Select>` derives them from its `<SelectItem>` children and
+passes `onValueChange` the string only; the 19 call sites did not change. Input and textarea moved to the same `rounded-lg`
+radius. The other components are still Radix (new-york); `components.json` was left on new-york. Moving them to base-nova is a
+separate, larger change.
+
+**Stock shadcn fields, no extra styling (2026-11-02).** The Select still showed a dark border: it came from our own `--input` token (the
+3:1 contrast fix). The owner asked for plain shadcn, so `select.tsx`, `input.tsx` and `textarea.tsx` are now the base-nova sources
+verbatim (only the icons are Hugeicons, plus the `<Select>` root's label and string-value convenience), and `--input` is shadcn's own:
+`n-200` in light, white at 15% in dark. This undoes my earlier WCAG 1.4.11 border fix and the 44 px touch height for fields
+(stock is 32 px, `rounded-lg`, transparent fill); the owner accepted that trade. Select triggers that sat in a fixed-width box
+got `w-full` at the call site, because the stock trigger is `w-fit`.
+
+**Top bar, profile menu and usage (2026-11-02).** The workspace picker moved into the top bar (on the Ask page only: that is where
+`?workspace=` applies; it shows nowhere else, and changing it drops the open run and table). The theme choice moved into the
+profile menu (Light, Dark, System as radio items, above Sign out) and the theme button left the bar. The usage chip left the bar
+too: its details are a Usage section on the AI settings page (`UsageSection`). The avatar button and the line before the email show
+the provider's picture (`avatar_url` from `/api/me`, loaded from the provider directly, initials as the fallback).
+
+**shadcn AI elements (2026-11-02).** At the owner's request the Ask page is built from the shadcn AI elements (base-nova, Base UI), added as
+`components/ui/{collapsible,trace,message,bubble,message-scroller,input-group,item,code-block}.tsx` (new dependency `@shadcn/react` for the
+Message Scroller). What replaced what: Prompt Input (Input Group) for the question box; Message, Bubble and Message Scroller for the thread;
+Suggestion for the example questions; Reasoning (on Trace) for the live "thinking" line; Confirmation (on Item) for the SQL approval, with
+our SQL editor kept inside; Chain of Thought and Tool (on Trace) for `RunTimeline` in Replay and the staff trace view; Code Block for SQL.
+Left out on purpose: Context (it counts tokens; our Usage counts questions), Model Selector (maybe later), Sources, Checkpoint, File Tree,
+Inline Citation, Queue, Stack Trace, Subagent, Task, Terminal, Test Results. Adaptations: Hugeicons instead of the placeholder icons; the Input
+Group has no `InputGroupButton` (our `<Button icon>` is used directly, because every button has an icon); the Code Block copy button has no
+two-second timer (this app has none): the check clears when the pointer or focus leaves it; the `shimmer`, `scrollbar-thin`,
+`scrollbar-gutter-stable` and `scroll-fade-*` utilities the components expect are defined in `index.css`, and the shimmer holds still under
+reduced motion. The Message Scroller package follows the reply with its own animation frames; that is scrolling, not a retry or a poll.
+
+**Selects inside dialogs (2026-11-02).** The provider and model lists in "Add new API key" closed the moment they opened: the Radix
+dialog traps focus and treats anything outside itself as an outside click, and the Base UI Select list was portalled to the page body.
+`DialogContent` now hands its own element to the Select through `PortalContainerContext` (`components/ui/portal-container.ts`), so the
+list renders inside the dialog, and inside a dialog the list uses normal placement (`alignItemWithTrigger` off), because the
+align-over-trigger maths assumes page coordinates and the dialog is a transformed box. Every dialog with a select (AI keys, create
+table, columns, row editor) gets this for free.
+
+**Usage as shadcn Progress; suggestions wrap (2026-11-02).** shadcn has no "usage limit" component of its own: its AI Elements "Context"
+shows usage with Progress, so the Usage section on AI settings uses `components/ui/progress.tsx` (Base UI Progress, base-nova source): one row
+each for questions on the shared key today, open questions and live views, with a label, "used of allowed" and a bar that turns red at 90%.
+The daily reset time sits under its row, and a custom-AI user sees "No daily limit from us". The example questions on Ask are no longer
+a sideways-scrolling row: they wrap onto new lines and each one wraps its own text, so none is cut off.
+
+**Sticky sidebar (2026-11-02).** The desktop sidebar is `sticky top-14` with the height of the screen under the top bar, so it stays in view when a long page scrolls (the top bar was already sticky). On phones the nav is a sheet, unchanged.
+
+**Workspace editor layout (2026-11-02).** The editor was a loose column of controls on the left edge of the page. It is now centred (`--content-max`) and
+arranged like a database console (Neon's, for example) from our shadcn components: a breadcrumb back to Workspaces, the workspace name and
+description with its storage as a shadcn Progress on the right, line tabs (Tables, Relations, SQL console), and for Tables one bordered panel split
+in two: the table list with New table on the left, and the selected table on the right (name and description fields with Save and Drop in the header,
+then Columns and Rows as line tabs). Relations and the SQL console sit in a bordered panel too. No behaviour or API changed.
+
+**The workspace editor lives in Ask (2026-11-02).** Editing a private workspace needed Workspaces, then the card, then Edit tables. Now the workspace picker in the top bar
+chooses it and the Ask page grows the editor as tabs: Ask, Tables, Relations, SQL console (the shared demo keeps Ask and Schema). Tables is the editable
+version of the Schema view (columns, keys, rows), so a private workspace has no separate Schema tab (an old `?tab=schema` link opens Tables, and an editor tab on the
+demo opens Schema). Storage is a Progress at the right of the tab row. The Workspaces page is the list (create, open, delete); its card and "Edit tables" open the
+Tables tab. `/workspaces/$id` stays as a redirect so old links work; `WorkspaceDetail` is gone. The editor tabs scroll with the page and are centred at `--content-max`;
+only the Ask tab (the chat) fills the screen and scrolls inside itself.
+
+**History row actions (2026-11-02).** Replay and Ask again are secondary small buttons with icons (Play, Reload) instead of text links, like every other action. They are still links underneath, so open-in-new-tab and middle-click work.
+
+**Dump import UI (2026-11-03).** Owner decision: users analyse, they do not edit. The Tables and Relations tabs and every editor (create table, columns, rows, keys, relations) were removed; the Import tab and a read-only Query tab replace them. The Import tab is a panel, not a dialog (it is a task, not an interruption). Uploads use `XMLHttpRequest` because `fetch` cannot report upload progress; this is not a timer or a poll. The job status is read once after `start` and again only when the user presses "Check progress", because the owner's rule forbids polling (`no-retry.test.ts`). The size limit comes from `GET /workspaces/limits` (`max_dump_bytes`), never a constant. Types come from the regenerated `schema.gen.ts`.
+
+**Import and Query moved into Schema (2026-11-03, owner).** The Import and Query tabs are gone. A private workspace's Schema page has an Import dump button (a popup with the upload form and a table of past imports) and the read-only Query terminal under the tables. Ask and Schema are the only tabs for every workspace; old `?tab=import` / `?tab=sql` links open Schema. Private workspace storage is 50 MB (`WORKSPACE_MAX_BYTES`).
+
+**Workspace menu (2026-11-03, owner).** The Schema page of a private workspace has one three-dots menu instead of loose buttons: View storage capacity (a modal; the inline storage bar in the tab row is gone), Import dump (the existing popup) and Run query (a right-hand sheet, wide on desktop). The query text lives in a persisted Zustand store keyed by workspace id (UI-only state, not server data), so closing the sheet or reloading keeps it; the results are not kept.
+
+**No statement restrictions on a dump (2026-11-03, owner).** The Import popup's command is plain `pg_dump mydb | gzip`, with no required flags, and its copy no longer lists refused statement types. See backend DECISION.md.

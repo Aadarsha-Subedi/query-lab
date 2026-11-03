@@ -33,24 +33,6 @@
       "enabled": true
     },
     {
-      "key": "tableName",
-      "value": "",
-      "type": "default",
-      "enabled": true
-    },
-    {
-      "key": "relationName",
-      "value": "",
-      "type": "default",
-      "enabled": true
-    },
-    {
-      "key": "rowId",
-      "value": "",
-      "type": "default",
-      "enabled": true
-    },
-    {
       "key": "traceRunId",
       "value": "",
       "type": "default",
@@ -70,6 +52,12 @@
     },
     {
       "key": "evalRunOtherId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "importId",
       "value": "",
       "type": "default",
       "enabled": true

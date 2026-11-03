@@ -815,7 +815,7 @@ export interface paths {
          * Get Workspace Limits
          * @description What the caller may still do with workspaces: how many workspaces, how many
          *     bytes (per workspace and together), and
-         *     the per-table and per-request caps. Read only.
+         *     the largest dump. Read only.
          */
         get: operations["get_workspace_limits"];
         put?: never;
@@ -853,30 +853,54 @@ export interface paths {
         patch: operations["rename_workspace"];
         trace?: never;
     };
-    "/api/workspaces/{workspace_id}/relations": {
+    "/api/workspaces/{workspace_id}/imports": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List Workspace Relations */
-        get: operations["list_workspace_relations"];
+        /**
+         * List Imports
+         * @description The workspace's last ten imports, newest first.
+         */
+        get: operations["list_imports"];
         put?: never;
         /**
-         * Create Workspace Relation
-         * @description Relate a child table's column(s) to a parent table's primary key or unique
-         *     column(s), both in this workspace. Existing rows are checked: the first row
-         *     with no parent is named in a 409 `constraint_violation`.
+         * Create Import
+         * @description Start a dump import. Send the file's name (`.sql` or `.sql.gz`) and exact
+         *     size in bytes; PUT the file to `upload_url` with that exact length, then call
+         *     `start`. Fails with `workspace_not_empty` at run time unless `replace` is set
+         *     or the workspace has no tables.
          */
-        post: operations["create_workspace_relation"];
+        post: operations["create_import"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/workspaces/{workspace_id}/relations/{name}": {
+    "/api/workspaces/{workspace_id}/imports/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Import
+         * @description The status of one import; poll until `succeeded` or `failed`.
+         */
+        get: operations["get_import"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspace_id}/imports/{job_id}/start": {
         parameters: {
             query?: never;
             header?: never;
@@ -885,9 +909,13 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        /** Delete Workspace Relation */
-        delete: operations["delete_workspace_relation"];
+        /**
+         * Start Import
+         * @description Say the upload is done. Checks the file is in the bucket and within the
+         *     cap, then queues the job; poll `GET` for the result.
+         */
+        post: operations["start_import"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -904,195 +932,19 @@ export interface paths {
         put?: never;
         /**
          * Run Workspace Sql
-         * @description Run your own SQL on your own workspace: full control inside the schema
-         *     (CREATE, ALTER, DROP, INSERT, UPDATE, DELETE, SELECT, views, indexes, several
-         *     statements). The whole request is one transaction: any failing statement
-         *     rolls everything back and answers 422 `sql_failed` with the Postgres code and
-         *     message. Transaction control and COPY are refused (`sql_invalid`); a request
-         *     that makes the workspace bigger than its cap is rolled back with
-         *     `workspace_full`. Structural statements are logged; the agent sees them on its
-         *     next read.
+         * @description Run your own read-only SQL on your own workspace: `SELECT`, `WITH`,
+         *     `EXPLAIN`, `SHOW` or `VALUES`, one or several statements in one read-only
+         *     transaction. Anything that would change data or structure is refused with
+         *     `sql_invalid` before it runs, and the database role cannot write either.
+         *     A failing statement answers 422 `sql_failed` with the Postgres code and
+         *     message; one that runs too long is stopped (`query_timeout`). To change the
+         *     data, import a new dump.
          */
         post: operations["run_workspace_sql"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/workspaces/{workspace_id}/tables": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Workspace Tables
-         * @description The workspace's tables with their columns, including the hidden `_row_id`.
-         */
-        get: operations["list_workspace_tables"];
-        put?: never;
-        /**
-         * Create Workspace Table
-         * @description Create an empty table from a column spec. It gets a hidden identity key
-         *     `_row_id`. `table_limit_reached` / `column_limit_reached` name the cap.
-         */
-        post: operations["create_workspace_table"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/workspaces/{workspace_id}/tables/{table}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Workspace Table */
-        get: operations["get_workspace_table"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Workspace Table
-         * @description Drop the table and its rows for good, with relations that point at it.
-         */
-        delete: operations["delete_workspace_table"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Workspace Table
-         * @description Rename a table and/or set its description.
-         */
-        patch: operations["update_workspace_table"];
-        trace?: never;
-    };
-    "/api/workspaces/{workspace_id}/tables/{table}/columns": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add Workspace Column
-         * @description Add a column. A NOT NULL column on a table that has rows needs a default.
-         */
-        post: operations["add_workspace_column"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/workspaces/{workspace_id}/tables/{table}/columns/{column}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Delete Workspace Column
-         * @description Drop a column (and the keys and relations that use it). The last column
-         *     cannot be dropped.
-         */
-        delete: operations["delete_workspace_column"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Workspace Column
-         * @description Rename a column, set its description or nullability, or change its type. A
-         *     retype converts every value inside one transaction; a value that does not
-         *     convert is a 422 `cast_failed` naming its row id, and nothing changes.
-         */
-        patch: operations["update_workspace_column"];
-        trace?: never;
-    };
-    "/api/workspaces/{workspace_id}/tables/{table}/primary-key": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Set Workspace Primary Key
-         * @description Make these columns the table's primary key (replacing any earlier one).
-         *     Existing rows are checked: a repeated or empty value is a 409
-         *     `constraint_violation` naming its row id, and nothing changes.
-         */
-        put: operations["set_workspace_primary_key"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/workspaces/{workspace_id}/tables/{table}/rows": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Workspace Rows
-         * @description A page of rows, ordered by `order_by` (default `_row_id`), filtered by
-         *     `filter=column:eq:value` / `column:contains:value`. Read with the workspace's
-         *     read-only role, so a row written a moment ago may take a moment to show when
-         *     reads go to a replica.
-         */
-        get: operations["list_workspace_rows"];
-        put?: never;
-        /**
-         * Insert Workspace Rows
-         * @description Insert up to `WORKSPACE_MAX_ROWS_PER_EDIT` rows. Values are converted to the
-         *     column's type; a bad one is a 422 `row_invalid` naming `rows[i].column`. All or
-         *     nothing. A broken key or relation is a 409 `constraint_violation`; a full
-         *     workspace is `workspace_full`.
-         */
-        post: operations["insert_workspace_rows"];
-        /**
-         * Delete Workspace Rows
-         * @description Delete several rows by `ids=1&ids=2` (capped). There is no way to send a
-         *     WHERE clause.
-         */
-        delete: operations["delete_workspace_rows"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/workspaces/{workspace_id}/tables/{table}/rows/{row_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete Workspace Row */
-        delete: operations["delete_workspace_row"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Workspace Row
-         * @description Change some columns of one row by its `_row_id`.
-         */
-        patch: operations["update_workspace_row"];
         trace?: never;
     };
 }
@@ -1349,25 +1201,6 @@ export interface components {
                 [key: string]: number;
             };
         };
-        /** ColumnIn */
-        ColumnIn: {
-            /** Default */
-            default?: string | null;
-            /**
-             * Description
-             * @default
-             */
-            description: string;
-            /** Name */
-            name: string;
-            /**
-             * Nullable
-             * @default true
-             */
-            nullable: boolean;
-            /** Type */
-            type: string;
-        };
         /** ColumnOut */
         ColumnOut: {
             /** Comment */
@@ -1380,17 +1213,6 @@ export interface components {
             samples: string[];
             /** Type */
             type: string;
-        };
-        /** ColumnPatch */
-        ColumnPatch: {
-            /** Description */
-            description?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Nullable */
-            nullable?: boolean | null;
-            /** Type */
-            type?: string | null;
         };
         /** ComparisonOut */
         ComparisonOut: {
@@ -1654,6 +1476,100 @@ export interface components {
              */
             worker: "ok" | "fail";
         };
+        /**
+         * ImportCreatedOut
+         * @description Returned once, when the import is created: where to PUT the file.
+         */
+        ImportCreatedOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            error: components["schemas"]["ImportFailure"] | null;
+            /** Id */
+            id: number;
+            /** Max Bytes */
+            max_bytes: number;
+            /** Replace */
+            replace: boolean;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Statements Run */
+            statements_run: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "awaiting_upload" | "queued" | "running" | "succeeded" | "failed";
+            /** Tables Created */
+            tables_created: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Upload Expires In */
+            upload_expires_in: number;
+            /** Upload Url */
+            upload_url: string;
+            /** Workspace Id */
+            workspace_id: number;
+        };
+        /** ImportFailure */
+        ImportFailure: {
+            /** Code */
+            code: string;
+            /** Line */
+            line: number | null;
+            /** Message */
+            message: string;
+            /** Statement */
+            statement: number | null;
+        };
+        /** ImportIn */
+        ImportIn: {
+            /** Filename */
+            filename: string;
+            /**
+             * Replace
+             * @default false
+             */
+            replace: boolean;
+            /** Size */
+            size: number;
+        };
+        /** ImportOut */
+        ImportOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            error: components["schemas"]["ImportFailure"] | null;
+            /** Id */
+            id: number;
+            /** Replace */
+            replace: boolean;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Statements Run */
+            statements_run: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "awaiting_upload" | "queued" | "running" | "succeeded" | "failed";
+            /** Tables Created */
+            tables_created: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Workspace Id */
+            workspace_id: number;
+        };
         /** LLMKeyIn */
         LLMKeyIn: {
             /** Api Key */
@@ -1695,14 +1611,8 @@ export interface components {
         /** LimitsOut */
         LimitsOut: {
             bytes: components["schemas"]["BytesLimit"];
-            /** Max Columns */
-            max_columns: number;
-            /** Max Relations */
-            max_relations: number;
-            /** Max Rows Per Edit */
-            max_rows_per_edit: number;
-            /** Max Tables */
-            max_tables: number;
+            /** Max Dump Bytes */
+            max_dump_bytes: number;
             workspaces: components["schemas"]["CountLimit"];
         };
         /** OpenStreamsOut */
@@ -1743,46 +1653,10 @@ export interface components {
             /** Sql */
             sql: string;
         };
-        /** PrimaryKeyIn */
-        PrimaryKeyIn: {
-            /** Columns */
-            columns: string[];
-        };
         /** RejectIn */
         RejectIn: {
             /** Reason */
             reason: string;
-        };
-        /** RelationIn */
-        RelationIn: {
-            /** Child Columns */
-            child_columns: string[];
-            /** Child Table */
-            child_table: string;
-            /**
-             * On Delete
-             * @default NO ACTION
-             */
-            on_delete: string;
-            /** Parent Columns */
-            parent_columns: string[];
-            /** Parent Table */
-            parent_table: string;
-        };
-        /** RelationOut */
-        RelationOut: {
-            /** Child Columns */
-            child_columns: string[];
-            /** Child Table */
-            child_table: string;
-            /** Name */
-            name: string;
-            /** On Delete */
-            on_delete: string;
-            /** Parent Columns */
-            parent_columns: string[];
-            /** Parent Table */
-            parent_table: string;
         };
         /** ResultOut */
         ResultOut: {
@@ -1804,79 +1678,6 @@ export interface components {
             trace_case_id: number | null;
             /** Trace Path */
             trace_path: string | null;
-        };
-        /** RowOut */
-        RowOut: {
-            /** Row */
-            row: {
-                [key: string]: unknown;
-            };
-        };
-        /** RowPatch */
-        RowPatch: {
-            /** Values */
-            values: {
-                [key: string]: unknown;
-            };
-        };
-        /** RowsDeletedOut */
-        RowsDeletedOut: {
-            /** Cascaded */
-            cascaded: number;
-            /** Deleted */
-            deleted: number;
-        };
-        /** RowsIn */
-        RowsIn: {
-            /** Rows */
-            rows: {
-                [key: string]: unknown;
-            }[];
-        };
-        /** RowsInsertedOut */
-        RowsInsertedOut: {
-            /** Ids */
-            ids: number[];
-            /** Inserted */
-            inserted: number;
-        };
-        /** RowsPageColumn */
-        RowsPageColumn: {
-            /** Name */
-            name: string;
-            /** Type */
-            type: string;
-        };
-        /** RowsPageOut */
-        RowsPageOut: {
-            /** Columns */
-            columns: components["schemas"]["RowsPageColumn"][];
-            /** Rows */
-            rows: unknown[][];
-            /** Total */
-            total: number;
-        };
-        /** RowsQuery */
-        RowsQuery: {
-            /**
-             * Descending
-             * @default false
-             */
-            descending: boolean;
-            /**
-             * Filter
-             * @default []
-             */
-            filter: string[];
-            /** Limit */
-            limit?: number | null;
-            /**
-             * Offset
-             * @default 0
-             */
-            offset: number;
-            /** Order By */
-            order_by?: string | null;
         };
         /** RunDetailOut */
         RunDetailOut: {
@@ -2044,15 +1845,6 @@ export interface components {
             /** Tables */
             tables: components["schemas"]["TableOut"][];
         };
-        /** SqlCountsOut */
-        SqlCountsOut: {
-            /** Data */
-            data: number;
-            /** Ddl */
-            ddl: number;
-            /** Query */
-            query: number;
-        };
         /** SqlIn */
         SqlIn: {
             /** Sql */
@@ -2060,7 +1852,6 @@ export interface components {
         };
         /** SqlOut */
         SqlOut: {
-            counts: components["schemas"]["SqlCountsOut"];
             /** Elapsed Ms */
             elapsed_ms: number;
             /** Statements */
@@ -2074,8 +1865,6 @@ export interface components {
             command: string;
             /** Index */
             index: number;
-            /** Kind */
-            kind: string;
             /** Row Count */
             row_count: number;
             /** Rows */
@@ -2304,6 +2093,48 @@ export interface components {
              */
             success: true;
         };
+        /** SuccessEnvelope[ImportCreatedOut] */
+        SuccessEnvelope_ImportCreatedOut_: {
+            data: components["schemas"]["ImportCreatedOut"];
+            /** Message */
+            message: string;
+            /**
+             * Meta
+             * @default {}
+             */
+            meta: {
+                [key: string]: unknown;
+            };
+            /** Status Code */
+            status_code: number;
+            /**
+             * Success
+             * @default true
+             * @constant
+             */
+            success: true;
+        };
+        /** SuccessEnvelope[ImportOut] */
+        SuccessEnvelope_ImportOut_: {
+            data: components["schemas"]["ImportOut"];
+            /** Message */
+            message: string;
+            /**
+             * Meta
+             * @default {}
+             */
+            meta: {
+                [key: string]: unknown;
+            };
+            /** Status Code */
+            status_code: number;
+            /**
+             * Success
+             * @default true
+             * @constant
+             */
+            success: true;
+        };
         /** SuccessEnvelope[LLMKeyOut] */
         SuccessEnvelope_LLMKeyOut_: {
             data: components["schemas"]["LLMKeyOut"];
@@ -2371,111 +2202,6 @@ export interface components {
         SuccessEnvelope_NoneType_: {
             /** Data */
             data: null;
-            /** Message */
-            message: string;
-            /**
-             * Meta
-             * @default {}
-             */
-            meta: {
-                [key: string]: unknown;
-            };
-            /** Status Code */
-            status_code: number;
-            /**
-             * Success
-             * @default true
-             * @constant
-             */
-            success: true;
-        };
-        /** SuccessEnvelope[RelationOut] */
-        SuccessEnvelope_RelationOut_: {
-            data: components["schemas"]["RelationOut"];
-            /** Message */
-            message: string;
-            /**
-             * Meta
-             * @default {}
-             */
-            meta: {
-                [key: string]: unknown;
-            };
-            /** Status Code */
-            status_code: number;
-            /**
-             * Success
-             * @default true
-             * @constant
-             */
-            success: true;
-        };
-        /** SuccessEnvelope[RowOut] */
-        SuccessEnvelope_RowOut_: {
-            data: components["schemas"]["RowOut"];
-            /** Message */
-            message: string;
-            /**
-             * Meta
-             * @default {}
-             */
-            meta: {
-                [key: string]: unknown;
-            };
-            /** Status Code */
-            status_code: number;
-            /**
-             * Success
-             * @default true
-             * @constant
-             */
-            success: true;
-        };
-        /** SuccessEnvelope[RowsDeletedOut] */
-        SuccessEnvelope_RowsDeletedOut_: {
-            data: components["schemas"]["RowsDeletedOut"];
-            /** Message */
-            message: string;
-            /**
-             * Meta
-             * @default {}
-             */
-            meta: {
-                [key: string]: unknown;
-            };
-            /** Status Code */
-            status_code: number;
-            /**
-             * Success
-             * @default true
-             * @constant
-             */
-            success: true;
-        };
-        /** SuccessEnvelope[RowsInsertedOut] */
-        SuccessEnvelope_RowsInsertedOut_: {
-            data: components["schemas"]["RowsInsertedOut"];
-            /** Message */
-            message: string;
-            /**
-             * Meta
-             * @default {}
-             */
-            meta: {
-                [key: string]: unknown;
-            };
-            /** Status Code */
-            status_code: number;
-            /**
-             * Success
-             * @default true
-             * @constant
-             */
-            success: true;
-        };
-        /** SuccessEnvelope[RowsPageOut] */
-        SuccessEnvelope_RowsPageOut_: {
-            data: components["schemas"]["RowsPageOut"];
             /** Message */
             message: string;
             /**
@@ -2704,27 +2430,6 @@ export interface components {
              */
             success: true;
         };
-        /** SuccessEnvelope[WorkspaceTableOut] */
-        SuccessEnvelope_WorkspaceTableOut_: {
-            data: components["schemas"]["WorkspaceTableOut"];
-            /** Message */
-            message: string;
-            /**
-             * Meta
-             * @default {}
-             */
-            meta: {
-                [key: string]: unknown;
-            };
-            /** Status Code */
-            status_code: number;
-            /**
-             * Success
-             * @default true
-             * @constant
-             */
-            success: true;
-        };
         /** SuccessEnvelope[list[CaseOut]] */
         SuccessEnvelope_list_CaseOut__: {
             /** Data */
@@ -2791,10 +2496,10 @@ export interface components {
              */
             success: true;
         };
-        /** SuccessEnvelope[list[LLMKeyOut]] */
-        SuccessEnvelope_list_LLMKeyOut__: {
+        /** SuccessEnvelope[list[ImportOut]] */
+        SuccessEnvelope_list_ImportOut__: {
             /** Data */
-            data: components["schemas"]["LLMKeyOut"][];
+            data: components["schemas"]["ImportOut"][];
             /** Message */
             message: string;
             /**
@@ -2813,10 +2518,10 @@ export interface components {
              */
             success: true;
         };
-        /** SuccessEnvelope[list[RelationOut]] */
-        SuccessEnvelope_list_RelationOut__: {
+        /** SuccessEnvelope[list[LLMKeyOut]] */
+        SuccessEnvelope_list_LLMKeyOut__: {
             /** Data */
-            data: components["schemas"]["RelationOut"][];
+            data: components["schemas"]["LLMKeyOut"][];
             /** Message */
             message: string;
             /**
@@ -2879,40 +2584,6 @@ export interface components {
              */
             success: true;
         };
-        /** SuccessEnvelope[list[WorkspaceTableOut]] */
-        SuccessEnvelope_list_WorkspaceTableOut__: {
-            /** Data */
-            data: components["schemas"]["WorkspaceTableOut"][];
-            /** Message */
-            message: string;
-            /**
-             * Meta
-             * @default {}
-             */
-            meta: {
-                [key: string]: unknown;
-            };
-            /** Status Code */
-            status_code: number;
-            /**
-             * Success
-             * @default true
-             * @constant
-             */
-            success: true;
-        };
-        /** TableIn */
-        TableIn: {
-            /** Columns */
-            columns: components["schemas"]["ColumnIn"][];
-            /**
-             * Description
-             * @default
-             */
-            description: string;
-            /** Name */
-            name: string;
-        };
         /** TableOut */
         TableOut: {
             /** Columns */
@@ -2927,13 +2598,6 @@ export interface components {
             primary_key: string[];
             /** Row Estimate */
             row_estimate: number | null;
-        };
-        /** TablePatch */
-        TablePatch: {
-            /** Description */
-            description?: string | null;
-            /** Name */
-            name?: string | null;
         };
         /** TableRowsOut */
         TableRowsOut: {
@@ -3059,6 +2723,8 @@ export interface components {
         };
         /** UserOut */
         UserOut: {
+            /** Avatar Url */
+            avatar_url: string | null;
             /** Email */
             email: string;
             /** First Name */
@@ -3081,19 +2747,6 @@ export interface components {
              * @default 0
              */
             offset: number;
-        };
-        /** WorkspaceColumnOut */
-        WorkspaceColumnOut: {
-            /** Description */
-            description: string;
-            /** Hidden */
-            hidden: boolean;
-            /** Name */
-            name: string;
-            /** Nullable */
-            nullable: boolean;
-            /** Type */
-            type: string;
         };
         /** WorkspaceIn */
         WorkspaceIn: {
@@ -3131,19 +2784,6 @@ export interface components {
         WorkspaceRename: {
             /** Name */
             name: string;
-        };
-        /** WorkspaceTableOut */
-        WorkspaceTableOut: {
-            /** Columns */
-            columns: components["schemas"]["WorkspaceColumnOut"][];
-            /** Description */
-            description: string;
-            /** Name */
-            name: string;
-            /** Primary Key */
-            primary_key: string[];
-            /** Row Estimate */
-            row_estimate: number | null;
         };
     };
     responses: never;
@@ -5859,7 +5499,7 @@ export interface operations {
             };
         };
     };
-    list_workspace_relations: {
+    list_imports: {
         parameters: {
             query?: never;
             header?: never;
@@ -5876,7 +5516,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_list_RelationOut__"];
+                    "application/json": components["schemas"]["SuccessEnvelope_list_ImportOut__"];
                 };
             };
             /** @description Unauthorized */
@@ -5897,24 +5537,6 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
             /** @description Too Many Requests */
             429: {
                 headers: {
@@ -5924,18 +5546,9 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
-            /** @description Gateway Timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
         };
     };
-    create_workspace_relation: {
+    create_import: {
         parameters: {
             query?: never;
             header?: never;
@@ -5946,7 +5559,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RelationIn"];
+                "application/json": components["schemas"]["ImportIn"];
             };
         };
         responses: {
@@ -5956,7 +5569,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_RelationOut_"];
+                    "application/json": components["schemas"]["SuccessEnvelope_ImportCreatedOut_"];
                 };
             };
             /** @description Unauthorized */
@@ -6004,24 +5617,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
-            /** @description Gateway Timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
         };
     };
-    delete_workspace_relation: {
+    get_import: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 workspace_id: number;
-                name: string;
+                job_id: number;
             };
             cookie?: never;
         };
@@ -6033,7 +5637,57 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_NoneType_"];
+                    "application/json": components["schemas"]["SuccessEnvelope_ImportOut_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    start_import: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: number;
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessEnvelope_ImportOut_"];
                 };
             };
             /** @description Unauthorized */
@@ -6074,15 +5728,6 @@ export interface operations {
             };
             /** @description Too Many Requests */
             429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Gateway Timeout */
-            504: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6123,1122 +5768,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Gateway Timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-        };
-    };
-    list_workspace_tables: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_list_WorkspaceTableOut__"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Gateway Timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-        };
-    };
-    create_workspace_table: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TableIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_WorkspaceTableOut_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Gateway Timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-        };
-    };
-    get_workspace_table: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: number;
-                table: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_WorkspaceTableOut_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Gateway Timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-        };
-    };
-    delete_workspace_table: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: number;
-                table: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_NoneType_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Gateway Timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-        };
-    };
-    update_workspace_table: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: number;
-                table: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TablePatch"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_WorkspaceTableOut_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Gateway Timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-        };
-    };
-    add_workspace_column: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: number;
-                table: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ColumnIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_WorkspaceTableOut_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Gateway Timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-        };
-    };
-    delete_workspace_column: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: number;
-                table: string;
-                column: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_WorkspaceTableOut_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Gateway Timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-        };
-    };
-    update_workspace_column: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: number;
-                table: string;
-                column: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ColumnPatch"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_WorkspaceTableOut_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Gateway Timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-        };
-    };
-    set_workspace_primary_key: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: number;
-                table: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PrimaryKeyIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_WorkspaceTableOut_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Gateway Timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-        };
-    };
-    list_workspace_rows: {
-        parameters: {
-            query?: {
-                limit?: number | null;
-                offset?: number;
-                order_by?: string | null;
-                descending?: boolean;
-                filter?: string[];
-            };
-            header?: never;
-            path: {
-                workspace_id: number;
-                table: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_RowsPageOut_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Gateway Timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-        };
-    };
-    insert_workspace_rows: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: number;
-                table: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RowsIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_RowsInsertedOut_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Gateway Timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-        };
-    };
-    delete_workspace_rows: {
-        parameters: {
-            query: {
-                ids: number[];
-            };
-            header?: never;
-            path: {
-                workspace_id: number;
-                table: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_RowsDeletedOut_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Gateway Timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-        };
-    };
-    delete_workspace_row: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: number;
-                table: string;
-                row_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_RowsDeletedOut_"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Gateway Timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-        };
-    };
-    update_workspace_row: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: number;
-                table: string;
-                row_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RowPatch"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessEnvelope_RowOut_"];
                 };
             };
             /** @description Unauthorized */

@@ -51,7 +51,7 @@ function Filters({ filters, onChange }: { filters: TraceFilters; onChange: (next
             })
           }}
         >
-          <SelectTrigger aria-label="Status">
+          <SelectTrigger aria-label="Status" className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -75,7 +75,7 @@ function Filters({ filters, onChange }: { filters: TraceFilters; onChange: (next
             })
           }}
         >
-          <SelectTrigger aria-label="Feedback">
+          <SelectTrigger aria-label="Feedback" className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -92,7 +92,7 @@ function Filters({ filters, onChange }: { filters: TraceFilters; onChange: (next
             onChange({ ...filters, edited: value === ANY ? undefined : value === 'true', offset: undefined })
           }}
         >
-          <SelectTrigger aria-label="Edited">
+          <SelectTrigger aria-label="Edited" className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

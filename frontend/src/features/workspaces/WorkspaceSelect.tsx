@@ -11,12 +11,15 @@ const DEMO = 'demo'
 export function WorkspaceSelect({
   workspace,
   onChange,
+  className = 'w-56',
 }: {
   workspace?: number
   onChange: (workspace: number | undefined) => void
+  className?: string
 }) {
   const query = useQuery(workspacesQuery)
-  if (query.isPending || (query.isError && query.isFetching)) return <Skeleton className="h-9 w-56" />
+  if (query.isPending || (query.isError && query.isFetching))
+    return <Skeleton className={`h-8 ${className}`} />
   if (query.isError) {
     return <span className="text-small text-muted-foreground">Workspaces unavailable. Using the demo.</span>
   }
@@ -27,7 +30,7 @@ export function WorkspaceSelect({
         onChange(value === DEMO ? undefined : Number(value))
       }}
     >
-      <SelectTrigger aria-label="Workspace" className="w-56">
+      <SelectTrigger aria-label="Workspace" className={className}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

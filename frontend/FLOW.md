@@ -25,13 +25,13 @@ _public           beforeLoad: signed in -> redirect /ask
   /                 landing: what it is, ask / approve / measure, dataset licence
   /login            Continue with Google / GitHub (real form POSTs to allauth)
   /auth/callback    only seen when a sign-in did not finish (a finished one is moved on to /ask by the guard)
-_app              beforeLoad: signed out -> redirect /; adds { me }; renders AppShell (header, nav, limits chip)
-  /ask              ?tab=ask|schema&table=&run=&workspace=&question=   workspace picker above two sub-tabs. Ask is a chat: the run (or a short prompt) fills the page, and the composer sits at the bottom (example questions above it, send icon inside the box, Enter sends, Shift+Enter new line; question pre-fills the box: Ask again). Schema: table list on the left (a dropdown on phones); for the chosen table its name and description, then the data as a table whose headers carry the column's name, type and PK/FK badges plus an info button (popover: the column's notes, primary key, foreign key target); rows from GET /schema/tables/{name}/rows, manual Previous/Next
-  /settings         AI settings (no visible page header; the nav item names it): a row with title and description on the left and a QueryLab AI / Custom AI dropdown on the right (GET/PUT /llm-settings). With QueryLab AI chosen, a second row (same pattern) picks the Gemini model used on the shared key (`querylab_model`). Only for Custom AI: a table of saved keys (provider, in-use radio, model dropdown, replace, remove) or an empty state whose Add new API key button opens a modal (provider dropdown with logos from src/assets/providers, key, model)
-  /history          ?status=&q=&ordering=&offset=&workspace=   your runs; rows link to /ask?run= and the replay
+_app              beforeLoad: signed out -> redirect /; adds { me }; renders AppShell (header: logo, workspace picker on Ask only, avatar menu with theme and sign out; side nav)
+  /ask              ?tab=ask|schema|import|sql&table=&run=&workspace=&question=   tabs (the workspace picker is in the top bar): the shared demo has Ask and Schema; every workspace has Ask and Schema; on a private workspace the Schema page also has a three-dots menu (`WorkspaceMenu`) with View storage capacity (modal), Import dump (popup: upload form and a table of past imports) and Run query (a side sheet with the read-only SQL box; the last query is kept per workspace in `stores/query-draft.ts`, localStorage). Tables and rows are not editable in the app. Old `?tab=import` / `?tab=sql` links open Schema. A tab that does not exist for the chosen workspace falls back to its nearest one. Ask is a chat built from the shadcn AI elements: Message Scroller (keeps your place while the reply streams, with a scroll-to-end button) around one run, the question as a Message with a muted Bubble, the agent's side as a Message (Reasoning on Trace while it works, Confirmation on Item for the SQL approval, then the result and the thumbs), and below it Suggestions (they wrap onto new lines) and the Prompt Input (Input Group: textarea with the send icon inside; Enter sends, Shift+Enter new line; `?question=` pre-fills it). One centred column (`--chat-max`); the page itself does not scroll on this tab. Schema: table list on the left (a dropdown on phones); for the chosen table its name and description, then the data as a table whose headers carry the column's name, type and PK/FK badges plus an info button (popover: the column's notes, primary key, foreign key target); rows from GET /schema/tables/{name}/rows, manual Previous/Next
+  /settings         AI settings (no visible page header; the nav item names it): a row with title and description on the left and a QueryLab AI / Custom AI dropdown on the right (GET/PUT /llm-settings). With QueryLab AI chosen, a second row (same pattern) picks the Gemini model used on the shared key (`querylab_model`). A Usage section at the end shows what is left before a limit, as shadcn Progress bars (questions today on the shared key, open questions, live views). Only for Custom AI: a table of saved keys (provider, in-use radio, model dropdown, replace, remove) or an empty state whose Add new API key button opens a modal (provider dropdown with logos from src/assets/providers, key, model)
+  /history          ?status=&q=&ordering=&offset=&workspace=   your runs; rows link to /ask?run=; each row has Replay and Ask again as icon buttons
   /runs/$runId/replay   stored trace, one step at a time
-  /workspaces       the demo and your private workspaces (no visible page header); create; per-card actions menu: Ask, Edit tables, Delete (typed name)
-  /workspaces/$id   ?tab=tables|relations|sql &table=   tables, columns, key, rows, relations, SQL console
+  /workspaces       the demo and your private workspaces (no visible page header); create; the card opens its workspace in Ask on Schema; per-card actions menu: Ask, Import a dump (the Import tab), Delete (typed name)
+  /workspaces/$id   old link only: redirects to /ask?workspace=<id>&tab=tables|relations|sql&table=
   /workbench        staff only (beforeLoad: me.is_staff, else a 403 "Not available" page)
     /runs, /runs/$runId        traces and one trace (proposed vs approved SQL)
     /cases, /cases/$caseId     clusters, cases, the review form
@@ -104,7 +104,7 @@ RunView(runId)
   status awaiting_approval -> ApprovalCard(pending)
       Approve | Edit SQL (400 guard_rejected: reason under the editor, run stays paused) | Cancel
       success -> invalidate the run, reopen the stream (Last-Event-ID = last step seen)
-  status succeeded -> ResultTable (rows first, SQL in a collapsible block; GET /result runs the SQL again), Feedback (icon-only thumbs, says what a vote does). The question is a right-aligned message bubble with no status tag; the steps list and the follow-up buttons are gone from Ask (History has the replay and an Ask again link). When the stream ends the limits chip is invalidated (an event, not a timer)
+  status succeeded -> ResultTable (rows first, SQL in a collapsible block; GET /result runs the SQL again), Feedback (icon-only thumbs, says what a vote does). The question is a right-aligned message bubble with no status tag; the steps list and the follow-up buttons are gone from Ask (History has the replay and an Ask again link). When the stream ends the usage numbers are invalidated (an event, not a timer)
   failed / expired / cancelled -> the error_code in plain words (describeError)
 ```
 
@@ -125,3 +125,20 @@ Every query that depends on a workspace puts its id in the key (`['schema', id]`
 `['workspace', id, ...]`). After any change `invalidateWorkspace` marks its tables, rows, schema panel
 and the workspace list (sizes) stale once; nothing polls. The rows grid page size is the API's
 `max_rows_per_edit` from `GET /workspaces/limits`.
+
+## Dump import (2026-11-03; replaces the table and row editors)
+
+Workspaces are read-only copies of a `pg_dump`. The Import dump popup (`ImportDialog` in `ImportPanel.tsx`, opened from the Schema page) is the only way to add or change tables:
+
+```
+choose file (.sql / .sql.gz, <= limits.max_dump_bytes, checked before upload)
+Import ─> POST /workspaces/{id}/imports {filename, size, replace}  -> upload_url
+       ─> XMLHttpRequest PUT the file to upload_url (progress bar; straight to R2)
+       ─> POST .../imports/{job}/start                            -> status queued
+       ─> GET  .../imports/{job} once; the user presses "Check progress" to look again (no polling, owner rule)
+status succeeded -> "Imported N tables" and the workspace queries are invalidated; failed -> the server message with
+"Statement N, line L." and "Nothing was changed". "Replace the tables already here" shows only when the workspace has tables.
+GET .../imports -> Past imports table in the same popup (own loading / error / empty box)
+```
+
+The Run query sheet (`SqlConsole`) runs `POST /workspaces/{id}/sql`: read-only SELECT / WITH / EXPLAIN / SHOW. Removed: `TablesTab`, `TableEditor`, `ColumnsPanel`, `CreateTableDialog`, `RowsGrid`, `RowDialog`, `RelationsTab`, `contract.ts`. `/workspaces/$id` still redirects old links to Ask on Schema (or Query).

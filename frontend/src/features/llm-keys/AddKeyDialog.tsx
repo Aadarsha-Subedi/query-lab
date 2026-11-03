@@ -89,7 +89,7 @@ export function AddKeyDialog({ trigger, providers, models, replacing = false }: 
                 setModel('')
               }}
             >
-              <SelectTrigger id="key-provider">
+              <SelectTrigger id="key-provider" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -119,7 +119,7 @@ export function AddKeyDialog({ trigger, providers, models, replacing = false }: 
           <div className="grid gap-1.5">
             <Label htmlFor="key-model">Model</Label>
             <Select value={chosenModel} onValueChange={setModel}>
-              <SelectTrigger id="key-model">
+              <SelectTrigger id="key-model" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

@@ -507,6 +507,12 @@ row and size caps), behind `ResultThrottle`, and writes nothing. Page size follo
 `PAGINATION_MAX_LIMIT`, so no new setting. Tables without a primary key are read unordered, because sorting a million-row table
 only to page it is worse than an unstable order.
 
+## Avatar in /api/me (2026-11-02)
+
+allauth already keeps each provider's profile payload (`SocialAccount.extra_data`), so nothing new is stored: `GET /api/me`
+returns `avatar_url` from `SocialAccount.get_avatar_url()` (Google `picture`, GitHub `avatar_url`), first non-empty over the
+user's accounts, else null. The image itself is loaded by the browser straight from the provider; the backend never fetches it.
+
 ## Dump import (steps D.x, planned 2026-11-02)
 
 **Image budget raised from 300 MB to 400 MB (owner, 2026-11-02).** Reason: boto3 (R2 speaks the S3 API) plus botocore, s3transfer, jmespath, python-dateutil and six add about 9 MB even after the Dockerfile drops every botocore service model except `s3` (botocore data 27 MB to 4 MB). Measured with `du -sxm /` in the prod image: **305 MB** (296 before). `IMAGE_SIZE_BUDGET_MB` in CI is now 400. Headroom is about 95 MB, but each new dependency is still checked first.

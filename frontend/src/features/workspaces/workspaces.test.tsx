@@ -4,6 +4,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { initApi } from '@/lib/api'
+import { useQueryDraftStore } from '@/stores/query-draft'
 import { createQueryClient } from '@/lib/query-client'
 import { createAppRouter } from '@/router'
 import { fail, jsonResponse, ok, serveApi, signedIn, TEST_BASE_URL, type ApiRequest } from '@/test/http'
@@ -33,31 +34,8 @@ const MINE = {
 const LIMITS = {
   workspaces: { used: 1, allowed: 3 },
   bytes: { used: 1024, allowed: 30720, per_workspace: 10240 },
-  max_tables: 20,
-  max_columns: 30,
-  max_relations: 20,
-  max_rows_per_edit: 50,
+  max_dump_bytes: 1048576,
 }
-const col = (name: string, type = 'text', over: Record<string, unknown> = {}) => ({
-  name,
-  type,
-  nullable: true,
-  description: '',
-  hidden: false,
-  ...over,
-})
-const PRODUCTS = {
-  name: 'products',
-  description: 'What we sell',
-  row_estimate: 2,
-  primary_key: ['sku'],
-  columns: [
-    col('_row_id', 'bigint', { hidden: true, nullable: false }),
-    col('sku', 'text', { nullable: false }),
-    col('price', 'numeric'),
-  ],
-}
-
 function base(extra: Record<string, (request: ApiRequest) => Response> = {}) {
   return serveApi({
     'GET /api/me': () => jsonResponse(signedIn()),
@@ -65,7 +43,6 @@ function base(extra: Record<string, (request: ApiRequest) => Response> = {}) {
     'GET /api/workspaces': () => ok([DEMO, MINE]),
     'GET /api/workspaces/limits': () => ok(LIMITS),
     'GET /api/workspaces/7': () => ok(MINE),
-    'GET /api/workspaces/7/tables': () => ok([PRODUCTS]),
     ...extra,
   })
 }
@@ -85,6 +62,7 @@ async function openAt(path: string) {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  useQueryDraftStore.setState({ drafts: {} })
 })
 
 describe('workspace list', () => {
@@ -97,15 +75,15 @@ describe('workspace list', () => {
       '1024',
     )
     expect(screen.getByText('1 of 3 private workspaces used.')).toBeVisible()
-    // The card itself opens the workspace's schema.
+    // The card itself opens the workspace: its schema for yours, the schema for the shared demo.
     expect(screen.getByRole('link', { name: 'Shop' })).toHaveAttribute('href', '/ask?tab=schema&workspace=7')
     expect(screen.getByRole('link', { name: /Olist demo/ })).toHaveAttribute('href', '/ask?tab=schema')
-    // Ask, Edit tables and Delete live in one menu per card (the demo only offers Ask).
+    // Ask, Import a dump and Delete live in one menu per card (the demo only offers Ask).
     expect(screen.getAllByRole('button', { name: /^Actions for/ })).toHaveLength(2)
     expect(screen.queryByRole('button', { name: /^Delete/ })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Actions for Shop' }))
     expect(await screen.findByRole('menuitem', { name: 'Ask' })).toHaveAttribute('href', '/ask?workspace=7')
-    expect(screen.getByRole('menuitem', { name: 'Edit tables' })).toBeVisible()
+    expect(screen.getByRole('menuitem', { name: 'Import a dump' })).toBeVisible()
     expect(screen.getByRole('menuitem', { name: 'Delete workspace' })).toBeVisible()
   })
 
@@ -156,114 +134,172 @@ describe('workspace list', () => {
   })
 })
 
-describe('table editor', () => {
-  it('lists columns with the key, and shows the server reason when a type change does not fit', async () => {
-    base({
-      'PATCH /api/workspaces/7/tables/products/columns/price': () =>
-        fail(422, 'cast_failed', 'Cannot convert.', [
-          { field: null, message: 'Row 2 has "abc", which is not an integer.' },
-        ]),
-    })
-    await openAt('/workspaces/7?table=products')
-    const columns = await screen.findByRole('table', { name: 'Columns of products' })
-    expect(within(columns).getByText('PK')).toBeVisible()
-    expect(within(columns).queryByText('_row_id')).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Edit price' }))
-    await userEvent.click(await screen.findByRole('button', { name: 'Save column' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Row 2 has "abc"')
+describe('tabs inside the Ask page', () => {
+  it('gives a private workspace Ask and Schema, with a three-dots menu of storage, import and query', async () => {
+    base({ 'GET /api/schema': () => ok({ name: 'ws_7', tables: [] }) })
+    await openAt('/ask?workspace=7&tab=schema')
+    const tabs = await screen.findAllByRole('tab')
+    expect(tabs.map((tab) => tab.textContent)).toEqual(['Ask', 'Schema'])
+    await userEvent.click(await screen.findByRole('button', { name: 'Workspace actions' }))
+    expect((await screen.findAllByRole('menuitem')).map((item) => item.textContent)).toEqual([
+      'View storage capacity',
+      'Import dump',
+      'Run query',
+    ])
   })
 
-  it('creates a table from the dialog and sends the columns', async () => {
-    let sent: unknown
-    base({
-      'POST /api/workspaces/7/tables': (request) => {
-        sent = request.body
-        return ok({ ...PRODUCTS, name: 'orders' }, {}, 201)
-      },
-    })
-    await openAt('/workspaces/7')
-    await userEvent.click(await screen.findByRole('button', { name: 'New table' }))
-    await userEvent.type(screen.getByRole('textbox', { name: 'Table name' }), 'orders')
-    await userEvent.type(screen.getByRole('textbox', { name: 'Column 1 name' }), 'id')
-    await userEvent.click(screen.getByRole('button', { name: 'Create table' }))
-    await waitFor(() => {
-      expect(sent).toMatchObject({ name: 'orders', columns: [{ name: 'id', type: 'text', nullable: true }] })
-    })
+  it('opens Schema for an old Import or Query link', async () => {
+    base({ 'GET /api/schema': () => ok({ name: 'ws_7', tables: [] }) })
+    await openAt('/ask?workspace=7&tab=import')
+    expect(await screen.findByRole('tab', { name: 'Schema' })).toHaveAttribute('aria-selected', 'true')
   })
 
-  it('validates a missing table name before calling the API', async () => {
-    const calls = base()
-    await openAt('/workspaces/7')
-    await userEvent.click(await screen.findByRole('button', { name: 'New table' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Create table' }))
-    expect(await screen.findByText('Name the table.')).toBeVisible()
-    expect(calls).not.toContain('POST /api/workspaces/7/tables')
+  it('gives the shared demo Ask and Schema with no import or query', async () => {
+    base({ 'GET /api/schema': () => ok({ name: 'demo', tables: [] }) })
+    const router = await openAt('/ask?tab=import')
+    const tabs = await screen.findAllByRole('tab')
+    expect(tabs.map((tab) => tab.textContent)).toEqual(['Ask', 'Schema'])
+    expect(screen.getByRole('tab', { name: 'Schema' })).toHaveAttribute('aria-selected', 'true')
+    expect(router.state.location.pathname).toBe('/ask')
+    expect(screen.queryByRole('button', { name: 'Workspace actions' })).not.toBeInTheDocument()
   })
 
-  it('shows rows without the hidden id, and marks the cell the server rejects', async () => {
-    let patched: unknown
-    base({
-      'GET /api/workspaces/7/tables/products/rows': () =>
-        ok({
-          columns: [
-            { name: '_row_id', type: 'bigint' },
-            { name: 'sku', type: 'text' },
-            { name: 'price', type: 'numeric' },
-          ],
-          rows: [
-            [1, 'A1', '9.5'],
-            [2, 'B2', '3'],
-          ],
-          total: 2,
-        }),
-      'PATCH /api/workspaces/7/tables/products/rows/1': (request) => {
-        patched = request.body
-        return fail(422, 'row_invalid', 'Bad value.', [{ field: 'price', message: '"abc" is not a number.' }])
-      },
-    })
-    await openAt('/workspaces/7?table=products')
-    await userEvent.click(await screen.findByRole('tab', { name: 'Rows' }))
-    const grid = await screen.findByRole('table', { name: 'Rows of products' })
-    expect(within(grid).queryByRole('columnheader', { name: '_row_id' })).not.toBeInTheDocument()
-    expect(within(grid).getByText('A1')).toBeVisible()
-    await userEvent.click(screen.getByRole('button', { name: 'Edit row 1' }))
-    const price = await screen.findByLabelText(/price/)
-    await userEvent.clear(price)
-    await userEvent.type(price, 'abc')
-    await userEvent.click(screen.getByRole('button', { name: 'Save row' }))
-    expect(await screen.findByText('"abc" is not a number.')).toBeVisible()
-    expect(patched).toEqual({ values: { sku: 'A1', price: 'abc' } })
+  it('sends an old edit link to the same workspace on Schema', async () => {
+    base({ 'GET /api/schema': () => ok({ name: 'ws_7', tables: [] }) })
+    const router = await openAt('/workspaces/7?tab=relations')
+    await screen.findByRole('tab', { name: 'Schema' })
+    expect(router.state.location.pathname).toBe('/ask')
+    expect(router.state.location.search).toMatchObject({ workspace: 7, tab: 'schema' })
   })
 })
 
-describe('relations and SQL console', () => {
-  it('lists relations and reports a refused one', async () => {
-    base({
-      'GET /api/workspaces/7/relations': () =>
-        ok([
-          {
-            name: 'fk_1',
-            child_table: 'orders',
-            child_columns: ['sku'],
-            parent_table: 'products',
-            parent_columns: ['sku'],
-            on_delete: 'CASCADE',
-          },
-        ]),
-      'POST /api/workspaces/7/relations': () =>
-        fail(422, 'relation_invalid', 'No.', [
-          { field: null, message: 'The parent columns are not a primary key.' },
-        ]),
-    })
-    await openAt('/workspaces/7?tab=relations')
-    expect(await screen.findByText('orders(sku)')).toBeVisible()
-    expect(screen.getByText('on delete cascade')).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Add relation' })).toBeDisabled()
+class FakeUpload {
+  static puts: { url: string; size: number }[] = []
+  upload: {
+    onprogress: ((event: { lengthComputable: boolean; loaded: number; total: number }) => void) | null
+  } = {
+    onprogress: null,
+  }
+  status = 200
+  onload: (() => void) | null = null
+  onerror: (() => void) | null = null
+  private url = ''
+  open(_method: string, url: string) {
+    this.url = url
+  }
+  send(file: File) {
+    FakeUpload.puts.push({ url: this.url, size: file.size })
+    this.upload.onprogress?.({ lengthComputable: true, loaded: file.size, total: file.size })
+    this.onload?.()
+  }
+}
+
+const JOB = {
+  id: 5,
+  workspace_id: 7,
+  status: 'queued',
+  replace: false,
+  size_bytes: 20,
+  statements_run: 0,
+  tables_created: 0,
+  error: null,
+  created_at: '2026-11-02T00:00:00Z',
+  updated_at: '2026-11-02T00:00:00Z',
+}
+
+async function choosePanel(item: string) {
+  await userEvent.click(await screen.findByRole('button', { name: 'Workspace actions' }))
+  await userEvent.click(await screen.findByRole('menuitem', { name: item }))
+}
+
+describe('dump import', () => {
+  beforeEach(() => {
+    FakeUpload.puts = []
+    vi.stubGlobal('XMLHttpRequest', FakeUpload)
   })
 
-  it('runs SQL and shows each statement, and a failure with its statement text', async () => {
+  async function choose(name: string, content = 'CREATE TABLE t (a int);') {
+    if (!screen.queryByLabelText('SQL dump file')) await choosePanel('Import dump')
+    const input = await screen.findByLabelText('SQL dump file')
+    await userEvent.upload(input, new File([content], name, { type: 'application/sql' }))
+  }
+
+  it('uploads straight to the bucket, starts the job and shows what was imported', async () => {
+    base({
+      'GET /api/workspaces/7/imports': () => ok([]),
+      'POST /api/workspaces/7/imports': (request) => {
+        expect(request.body).toEqual({ filename: 'shop.sql', size: 23, replace: false })
+        return ok({
+          ...JOB,
+          status: 'awaiting_upload',
+          upload_url: 'https://r2.test/put',
+          upload_expires_in: 900,
+          max_bytes: 1048576,
+        })
+      },
+      'POST /api/workspaces/7/imports/5/start': () => ok(JOB),
+      'GET /api/workspaces/7/imports/5': () =>
+        ok({ ...JOB, status: 'succeeded', statements_run: 4, tables_created: 2 }),
+    })
+    await openAt('/ask?workspace=7&tab=schema')
+    await choose('shop.sql')
+    await userEvent.click(screen.getByRole('button', { name: 'Import' }))
+    expect(await screen.findByText(/Imported 2 tables/)).toBeVisible()
+    expect(FakeUpload.puts).toEqual([{ url: 'https://r2.test/put', size: 23 }])
+  })
+
+  it('shows the failing statement and line, and says nothing was changed', async () => {
+    base({
+      'GET /api/workspaces/7/imports': () => ok([]),
+      'POST /api/workspaces/7/imports': () =>
+        ok({
+          ...JOB,
+          status: 'awaiting_upload',
+          upload_url: 'https://r2.test/put',
+          upload_expires_in: 900,
+          max_bytes: 1048576,
+        }),
+      'POST /api/workspaces/7/imports/5/start': () => ok(JOB),
+      'GET /api/workspaces/7/imports/5': () =>
+        ok({
+          ...JOB,
+          status: 'failed',
+          error: { code: 'dump_refused', message: 'Extensions are not allowed.', statement: 12, line: 340 },
+        }),
+    })
+    await openAt('/ask?workspace=7&tab=schema')
+    await choose('shop.sql')
+    await userEvent.click(screen.getByRole('button', { name: 'Import' }))
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Statement 12, line 340.')
+    expect(alert).toHaveTextContent('Extensions are not allowed.')
+    expect(alert).toHaveTextContent('Nothing was changed')
+  })
+
+  it('refuses a file that is not .sql, and one over the limit, before uploading', async () => {
+    base({ 'GET /api/workspaces/7/imports': () => ok([]) })
+    await openAt('/ask?workspace=7&tab=schema')
+    await choose('notes.txt')
+    expect(await screen.findByText(/Choose a .sql or .sql.gz file/)).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Import' })).toBeDisabled()
+    await choose('big.sql', 'x'.repeat(1048577))
+    expect(await screen.findByText(/The limit is 1 MB/)).toBeVisible()
+    expect(FakeUpload.puts).toEqual([])
+  })
+
+  it('offers Replace only when the workspace already has tables', async () => {
+    base({ 'GET /api/workspaces/7/imports': () => ok([]) })
+    await openAt('/ask?workspace=7&tab=schema')
+    await choosePanel('Import dump')
+    expect(await screen.findByLabelText(/Replace the tables already here/)).toBeVisible()
+  })
+})
+
+describe('query runner', () => {
+  it('runs read-only SQL and shows each statement, and a failure with its statement text', async () => {
     let attempt = 0
     base({
+      'GET /api/schema': () => ok({ name: 'ws_7', tables: [] }),
       'POST /api/workspaces/7/sql': () => {
         attempt += 1
         return attempt === 1
@@ -273,26 +309,49 @@ describe('relations and SQL console', () => {
           : ok({
               statements: [
                 {
-                  index: 0,
+                  index: 1,
                   command: 'SELECT 1',
-                  kind: 'query',
                   row_count: 1,
                   columns: ['n'],
                   rows: [[1]],
                   truncated: false,
                 },
               ],
-              counts: { ddl: 0, data: 0, query: 1 },
               elapsed_ms: 12,
             })
       },
     })
-    await openAt('/workspaces/7?tab=sql')
+    await openAt('/ask?workspace=7&tab=schema')
+    await choosePanel('Run query')
     await userEvent.type(await screen.findByRole('textbox', { name: 'SQL' }), 'select 1')
     await userEvent.click(screen.getByRole('button', { name: 'Run' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('42P01')
     await userEvent.click(screen.getByRole('button', { name: 'Run' }))
     expect(await screen.findByRole('region', { name: 'Statement 1' })).toBeVisible()
     expect(screen.getByRole('cell', { name: '1' })).toBeVisible()
+  })
+})
+
+describe('workspace menu', () => {
+  it('shows storage in a modal', async () => {
+    base({ 'GET /api/schema': () => ok({ name: 'ws_7', tables: [] }) })
+    await openAt('/ask?workspace=7&tab=schema')
+    await choosePanel('View storage capacity')
+    const dialog = await screen.findByRole('dialog', { name: 'Storage capacity' })
+    expect(within(dialog).getByText(/All your workspaces/)).toBeVisible()
+    expect(await within(dialog).findByText('1 of 3')).toBeVisible()
+  })
+
+  it('keeps the last query when the sheet is closed and opened again', async () => {
+    base({ 'GET /api/schema': () => ok({ name: 'ws_7', tables: [] }) })
+    await openAt('/ask?workspace=7&tab=schema')
+    await choosePanel('Run query')
+    await userEvent.type(await screen.findByRole('textbox', { name: 'SQL' }), 'select 42')
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => {
+      expect(screen.queryByRole('textbox', { name: 'SQL' })).not.toBeInTheDocument()
+    })
+    await choosePanel('Run query')
+    expect(await screen.findByRole('textbox', { name: 'SQL' })).toHaveValue('select 42')
   })
 })

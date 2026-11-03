@@ -6,20 +6,7 @@ import { initApi } from '@/lib/api'
 import { createQueryClient } from '@/lib/query-client'
 import { mockFetch, TEST_BASE_URL } from '@/test/http'
 
-import { LimitsIndicator } from './LimitsIndicator'
-
-// These render without a router, so a link is just an anchor.
-vi.mock('@tanstack/react-router', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tanstack/react-router')>()
-  return {
-    ...actual,
-    Link: ({ to, children, className }: { to: string; children: React.ReactNode; className?: string }) => (
-      <a href={to} className={className}>
-        {children}
-      </a>
-    ),
-  }
-})
+import { UsageSection } from './UsageSection'
 
 const limits = (over: Record<string, unknown> = {}) => ({
   status: 200,
@@ -43,7 +30,7 @@ function show() {
   initApi(TEST_BASE_URL)
   render(
     <QueryClientProvider client={createQueryClient(0)}>
-      <LimitsIndicator />
+      <UsageSection />
     </QueryClientProvider>,
   )
 }
@@ -52,14 +39,14 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('LimitsIndicator', () => {
-  it('shows what is left and the detail on press', async () => {
+describe('UsageSection', () => {
+  it('shows what is left and the detail', async () => {
     mockFetch({ '/api/agent/limits': () => limits() })
     show()
-    const chip = await screen.findByRole('button', { name: 'Usage limits: 17 left today' })
-    await userEvent.click(chip)
-    expect(await screen.findByText('3 of 20')).toBeVisible()
+    expect(await screen.findByText('17 left today')).toBeVisible()
+    expect(screen.getByText('3 of 20')).toBeVisible()
     expect(screen.getByText('1 of 3')).toBeVisible()
+    expect(screen.getByText('0 of 5')).toBeVisible()
   })
 
   it('warns when the daily limit is used up', async () => {
@@ -74,7 +61,8 @@ describe('LimitsIndicator', () => {
   it('says it has its own key', async () => {
     mockFetch({ '/api/agent/limits': () => limits({ has_own_key: true }) })
     show()
-    expect(await screen.findByRole('button', { name: 'Usage limits: Own key' })).toBeVisible()
+    expect(await screen.findByText('Own key')).toBeVisible()
+    expect(screen.getByText('No daily limit from us')).toBeVisible()
   })
 
   it('has an error state that refetches only itself, once, on press', async () => {
@@ -88,8 +76,8 @@ describe('LimitsIndicator', () => {
       },
     })
     show()
-    await userEvent.click(await screen.findByRole('button', { name: 'Limits unavailable' }))
-    expect(await screen.findByRole('button', { name: /Usage limits/ })).toBeVisible()
+    await userEvent.click(await screen.findByRole('button', { name: /try again/i }))
+    expect(await screen.findByText('3 of 20')).toBeVisible()
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })

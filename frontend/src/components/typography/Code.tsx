@@ -1,7 +1,12 @@
-import { Copy01Icon, Tick02Icon } from '@hugeicons/core-free-icons'
-import { useState, type ComponentProps, type ReactNode } from 'react'
+import type { ComponentProps, ReactNode } from 'react'
 
-import { Button } from '@/components/ui/button'
+import {
+  CodeBlock as UiCodeBlock,
+  CodeBlockActions,
+  CodeBlockContent,
+  CodeBlockCopyButton,
+  CodeBlockLine,
+} from '@/components/ui/code-block'
 import { cn } from '@/lib/utils'
 
 /** Inline code: column names, IDs, values. */
@@ -52,27 +57,18 @@ function highlightSql(sql: string): ReactNode[] {
 
 type CodeBlockProps = { code: string; language?: 'sql' | 'text'; className?: string }
 
-/** A block of SQL (or text) with a copy button. */
+/** A block of SQL (or text): the shadcn Code Block, with a copy button and our small SQL colouring. */
 export function CodeBlock({ code, language = 'sql', className }: CodeBlockProps) {
-  const [copied, setCopied] = useState(false)
-  const copy = () => {
-    void navigator.clipboard.writeText(code).then(() => {
-      setCopied(true)
-    })
-  }
   return (
-    <div className={cn('group relative rounded-lg border bg-surface-muted', className)}>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className="absolute top-2 right-2"
-        icon={copied ? Tick02Icon : Copy01Icon}
-        onClick={copy}
-        aria-label={copied ? 'Copied' : 'Copy code'}
-      />
-      <pre className="p-4 pr-12 font-mono text-code break-words whitespace-pre-wrap">
-        <code>{language === 'sql' ? highlightSql(code) : code}</code>
-      </pre>
-    </div>
+    <UiCodeBlock className={className}>
+      <CodeBlockActions>
+        <CodeBlockCopyButton value={code} />
+      </CodeBlockActions>
+      <CodeBlockContent wrap>
+        {code.split('\n').map((line, index) => (
+          <CodeBlockLine key={index}>{language === 'sql' ? highlightSql(line) : line}</CodeBlockLine>
+        ))}
+      </CodeBlockContent>
+    </UiCodeBlock>
   )
 }

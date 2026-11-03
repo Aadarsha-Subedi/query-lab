@@ -18,6 +18,18 @@ describe('Reasoning', () => {
     expect(screen.getByRole('list', { name: 'Tables it looked at' })).toHaveTextContent('orders')
   })
 
+  it('reads Thought, with the step count, once the agent is done', () => {
+    render(
+      <Reasoning
+        stages={['Planning the query', 'Running the query']}
+        reasoning={['a note']}
+        active={false}
+      />,
+    )
+    expect(screen.getByRole('status')).toHaveTextContent('Thought')
+    expect(screen.getByRole('status')).toHaveTextContent('2 steps')
+  })
+
   it('shows nothing before there is a stage', () => {
     const { container } = render(<Reasoning stages={[]} />)
     expect(container).toBeEmptyDOMElement()

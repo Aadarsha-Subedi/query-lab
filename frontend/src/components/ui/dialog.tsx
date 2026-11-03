@@ -1,4 +1,6 @@
 import * as React from 'react'
+
+import { PortalContainerContext } from '@/components/ui/portal-container'
 import { cn } from '@/lib/utils'
 import { Cancel01Icon } from '@hugeicons/core-free-icons'
 import { Dialog as DialogPrimitive } from 'radix-ui'
@@ -43,10 +45,12 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  const [element, setElement] = React.useState<HTMLElement | null>(null)
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
       <DialogPrimitive.Content
+        ref={setElement}
         data-slot="dialog-content"
         className={cn(
           'fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-surface p-6 shadow-lg duration-base outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg',
@@ -54,7 +58,7 @@ function DialogContent({
         )}
         {...props}
       >
-        {children}
+        <PortalContainerContext value={element}>{children}</PortalContainerContext>
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"

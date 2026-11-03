@@ -16,7 +16,7 @@ const SCREENS = [
   '/ask?run=5',
   '/ask?tab=schema',
   '/runs/5/replay',
-  '/workspaces/7',
+  '/ask?workspace=7&tab=schema',
   '/workbench/runs',
   '/workbench/runs/5',
   '/workbench/cases',

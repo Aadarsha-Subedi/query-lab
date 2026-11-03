@@ -37,7 +37,7 @@ src/
   lib/api/error-text.ts, form-errors.ts  turn an ApiError into text / field errors
   lib/query-client.ts  TanStack Query defaults (no retries, no refetch on focus/reconnect)
   features/<name>/   per-feature queries (api.ts) and components: auth, health, limits, schema, ask,
-                     history, workspaces, llm-keys, workbench, design
+                     history, workspaces (list, import a dump, read-only query), llm-keys, workbench, design
   components/QueryBoundary.tsx  a component's loading / error / empty / success
   styles/boot.css    the boot screen (linked from index.html)
   styles/tokens.css  every design token (light + dark); the only place colours are defined
@@ -72,7 +72,7 @@ Route groups are pathless layouts: `_public` (the plan's "(public)") and `_app`
 - Toasts: render `<Toaster />` once; call `toast` from `components/ui/toast-api`.
 - Design showcase: `pnpm dev`, then open `/design` (dev only; `build.test.ts` checks it never ships).
 - Package manager: **pnpm** only (`packageManager` in package.json; `pnpm-lock.yaml` is the lockfile). Never run npm or yarn here: mixing them breaks node_modules.
-- UI components are plain shadcn/ui (Radix + Tailwind), adapted to our tokens. After `shadcn add`, replace its Lucide icons with `<Icon>` (Hugeicons), import `cn` from `@/lib/utils`, and keep the variant names used on `/design`. Animations come from `tw-animate-css` with our `duration-*` tokens.
+- UI components are plain shadcn/ui (Radix + Tailwind), adapted to our tokens. **Select is the shadcn base-nova one (Base UI, `@base-ui/react`)**, ported with Hugeicons: keep its look when changing fields (input, select and textarea share the `rounded-lg` radius, `border-input` and the surface fill). `<Select>` passes the string value to `onValueChange` and builds its `items` from the `<SelectItem>` children, so the trigger shows labels. After `shadcn add`, replace its Lucide icons with `<Icon>` (Hugeicons), import `cn` from `@/lib/utils`, and keep the variant names used on `/design`. Animations come from `tw-animate-css` with our `duration-*` tokens.
 - Don't skip or disable failing tests; fix the cause.
 - **Contract first.** Types come from `backend/openapi.json` through `Schema<'Name'>`; never hand-write a response type. When the backend changes, run `pnpm gen:api`. Two API schemas with one class name collapse into one in `openapi.json` (a backend test guards this).
 - **No retries, no polling, no timers, no `EventSource`** (owner's rule, enforced by `no-retry.test.ts`). The user reloads, presses a component's Try again, or presses Reconnect on the live run.

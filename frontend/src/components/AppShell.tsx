@@ -9,13 +9,12 @@ import {
 import { Link, Outlet } from '@tanstack/react-router'
 import type { ComponentProps } from 'react'
 
-import { ThemeToggle } from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { Icon, type IconSvgElement } from '@/components/ui/icon'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet'
 import type { User } from '@/features/auth/api'
 import { Logo } from '@/components/Logo'
-import { LimitsIndicator } from '@/features/limits/LimitsIndicator'
+import { HeaderWorkspaceSelect } from '@/features/workspaces/HeaderWorkspaceSelect'
 import { UserMenu } from '@/features/auth/UserMenu'
 import { appName } from '@/lib/app-name'
 import { cn } from '@/lib/utils'
@@ -88,13 +87,15 @@ export function AppShell({ user }: { user: User }) {
           {name}
         </Link>
         <div className="ml-auto flex items-center gap-2">
-          <LimitsIndicator />
-          <ThemeToggle />
+          <HeaderWorkspaceSelect />
           <UserMenu user={user} />
         </div>
       </header>
       <div className="flex flex-1">
-        <aside aria-label="Sidebar" className="hidden w-56 shrink-0 border-r p-3 md:block">
+        <aside
+          aria-label="Sidebar"
+          className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-56 shrink-0 self-start overflow-y-auto border-r p-3 md:block"
+        >
           <NavLinks staff={user.is_staff} />
         </aside>
         <div className="min-w-0 flex-1">

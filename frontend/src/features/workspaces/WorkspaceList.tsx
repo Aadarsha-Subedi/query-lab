@@ -28,7 +28,7 @@ import { workspaceLimitsQuery, workspacesQuery, type WorkspaceInfo } from './api
 import { CreateWorkspaceDialog } from './CreateWorkspaceDialog'
 import { DeleteWorkspaceDialog } from './DeleteWorkspaceDialog'
 
-/** Ask, edit tables and delete, in one menu. The demo can only be asked. */
+/** Ask, import a dump and delete, in one menu. The demo can only be asked. */
 function WorkspaceActions({ workspace, onDelete }: { workspace: WorkspaceInfo; onDelete: () => void }) {
   const demo = workspace.kind === 'demo'
   return (
@@ -51,9 +51,9 @@ function WorkspaceActions({ workspace, onDelete }: { workspace: WorkspaceInfo; o
         {!demo && workspace.id !== null && (
           <>
             <DropdownMenuItem asChild>
-              <Link to="/workspaces/$id" params={{ id: String(workspace.id) }}>
+              <Link to="/ask" search={{ tab: 'schema', workspace: workspace.id }}>
                 <Icon icon={Settings02Icon} size="sm" />
-                Edit tables
+                Import a dump
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -78,7 +78,7 @@ function WorkspaceCard({ workspace }: { workspace: WorkspaceInfo }) {
           {/* The whole card is the link (the stretched ::after), and opens the workspace's schema. */}
           <Link
             to="/ask"
-            search={{ tab: 'schema', ...(demo ? {} : { workspace: workspace.id ?? undefined }) }}
+            search={demo ? { tab: 'schema' } : { tab: 'schema', workspace: workspace.id ?? undefined }}
             className="rounded-sm outline-none after:absolute after:inset-0 after:rounded-lg focus-visible:after:ring-2 focus-visible:after:ring-ring"
           >
             {workspace.name}

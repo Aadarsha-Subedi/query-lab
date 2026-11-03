@@ -27,6 +27,7 @@ import { AddKeyDialog } from './AddKeyDialog'
 import { ProviderLogo } from './ProviderLogo'
 import { PROVIDER_LABEL, PROVIDER_ORDER, type ProviderName } from './providers'
 import { useRefresh } from './use-refresh'
+import { UsageSection } from '@/features/limits/UsageSection'
 
 const SOURCE_LABEL: Record<AiSource, string> = { querylab: 'QueryLab AI', own: 'Custom AI' }
 
@@ -81,7 +82,7 @@ function SourceSetting({ source }: { source: AiSource }) {
           mutation.mutate(next as AiSource)
         }}
       >
-        <SelectTrigger aria-labelledby="ai-source">
+        <SelectTrigger aria-labelledby="ai-source" className="w-full">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -149,7 +150,7 @@ function ModelSelect({
   const options = models.includes(value) || value === '' ? models : [value, ...models]
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger aria-label={label} className="min-w-44" data-provider={provider}>
+      <SelectTrigger aria-label={label} className="w-full min-w-44" data-provider={provider}>
         <SelectValue placeholder="Choose a model" />
       </SelectTrigger>
       <SelectContent>
@@ -343,11 +344,11 @@ function CustomKeys() {
   )
 }
 
-/** Choose QueryLab's AI or a custom one. A saved key is checked with the provider, stored encrypted and never sent back. */
+/** Choose QueryLab's AI or a custom one, and see the usage. A saved key is checked with the provider, stored encrypted and never sent back. */
 export function KeysPage() {
   const settings = useQuery(settingsQuery)
   return (
-    <div className="flex max-w-[var(--content-max)] flex-col gap-8">
+    <div className="flex flex-col divide-y *:py-8 *:first:pt-0 *:last:pb-0">
       <QueryBoundary
         query={settings}
         errorTitle="Couldn't load your AI setting."
@@ -361,6 +362,7 @@ export function KeysPage() {
           </>
         )}
       </QueryBoundary>
+      <UsageSection />
     </div>
   )
 }

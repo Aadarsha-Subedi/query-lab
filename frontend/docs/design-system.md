@@ -68,8 +68,7 @@ Each status colour also gets a `-subtle` background (about 10% strength) and a
 
 Contrast targets: body text and `muted-foreground` at least 4.5:1 on
 `background` and `surface`; `primary` text on `surface` at least 4.5:1; focus
-rings at least 3:1 against what they surround; form-control borders (`input`) at
-least 3:1 on `surface` (WCAG 1.4.11, `n-450` in light, `n-500` in dark; fields sit on the `surface` colour). `/design` computes every pair
+rings at least 3:1 against what they surround; form-control borders are shadcn's own light `input` token (`n-200`; white at 15% in dark), a deliberate choice of the owner over WCAG 1.4.11's 3:1 for field edges (the focus ring and the typed text carry the state). `/design` computes every pair
 live; the lowest text pair is 5.0:1.
 
 ### 2.2 Data colours (charts, step 4 and the eval dashboard)

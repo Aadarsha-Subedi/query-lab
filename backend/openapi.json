@@ -735,45 +735,6 @@
         "title": "ClusterOut",
         "type": "object"
       },
-      "ColumnIn": {
-        "properties": {
-          "default": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Default"
-          },
-          "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "nullable": {
-            "default": true,
-            "title": "Nullable",
-            "type": "boolean"
-          },
-          "type": {
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "type"
-        ],
-        "title": "ColumnIn",
-        "type": "object"
-      },
       "ColumnOut": {
         "properties": {
           "comment": {
@@ -808,56 +769,6 @@
           "samples"
         ],
         "title": "ColumnOut",
-        "type": "object"
-      },
-      "ColumnPatch": {
-        "properties": {
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "nullable": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Nullable"
-          },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          }
-        },
-        "title": "ColumnPatch",
         "type": "object"
       },
       "ComparisonOut": {
@@ -1565,6 +1476,233 @@
         "title": "HealthOut",
         "type": "object"
       },
+      "ImportCreatedOut": {
+        "description": "Returned once, when the import is created: where to PUT the file.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImportFailure"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "max_bytes": {
+            "title": "Max Bytes",
+            "type": "integer"
+          },
+          "replace": {
+            "title": "Replace",
+            "type": "boolean"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "statements_run": {
+            "title": "Statements Run",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "awaiting_upload",
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tables_created": {
+            "title": "Tables Created",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "upload_expires_in": {
+            "title": "Upload Expires In",
+            "type": "integer"
+          },
+          "upload_url": {
+            "title": "Upload Url",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "workspace_id",
+          "status",
+          "replace",
+          "size_bytes",
+          "statements_run",
+          "tables_created",
+          "error",
+          "created_at",
+          "updated_at",
+          "upload_url",
+          "upload_expires_in",
+          "max_bytes"
+        ],
+        "title": "ImportCreatedOut",
+        "type": "object"
+      },
+      "ImportFailure": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "statement": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statement"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "statement",
+          "line"
+        ],
+        "title": "ImportFailure",
+        "type": "object"
+      },
+      "ImportIn": {
+        "properties": {
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "replace": {
+            "default": false,
+            "title": "Replace",
+            "type": "boolean"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "filename",
+          "size"
+        ],
+        "title": "ImportIn",
+        "type": "object"
+      },
+      "ImportOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImportFailure"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "replace": {
+            "title": "Replace",
+            "type": "boolean"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "statements_run": {
+            "title": "Statements Run",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "awaiting_upload",
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tables_created": {
+            "title": "Tables Created",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "workspace_id",
+          "status",
+          "replace",
+          "size_bytes",
+          "statements_run",
+          "tables_created",
+          "error",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ImportOut",
+        "type": "object"
+      },
       "LLMKeyIn": {
         "properties": {
           "api_key": {
@@ -1666,20 +1804,8 @@
           "bytes": {
             "$ref": "#/components/schemas/BytesLimit"
           },
-          "max_columns": {
-            "title": "Max Columns",
-            "type": "integer"
-          },
-          "max_relations": {
-            "title": "Max Relations",
-            "type": "integer"
-          },
-          "max_rows_per_edit": {
-            "title": "Max Rows Per Edit",
-            "type": "integer"
-          },
-          "max_tables": {
-            "title": "Max Tables",
+          "max_dump_bytes": {
+            "title": "Max Dump Bytes",
             "type": "integer"
           },
           "workspaces": {
@@ -1689,10 +1815,7 @@
         "required": [
           "workspaces",
           "bytes",
-          "max_tables",
-          "max_columns",
-          "max_relations",
-          "max_rows_per_edit"
+          "max_dump_bytes"
         ],
         "title": "LimitsOut",
         "type": "object"
@@ -1785,22 +1908,6 @@
         "title": "PendingOut",
         "type": "object"
       },
-      "PrimaryKeyIn": {
-        "properties": {
-          "columns": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Columns",
-            "type": "array"
-          }
-        },
-        "required": [
-          "columns"
-        ],
-        "title": "PrimaryKeyIn",
-        "type": "object"
-      },
       "RejectIn": {
         "properties": {
           "reason": {
@@ -1812,89 +1919,6 @@
           "reason"
         ],
         "title": "RejectIn",
-        "type": "object"
-      },
-      "RelationIn": {
-        "properties": {
-          "child_columns": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Child Columns",
-            "type": "array"
-          },
-          "child_table": {
-            "title": "Child Table",
-            "type": "string"
-          },
-          "on_delete": {
-            "default": "NO ACTION",
-            "title": "On Delete",
-            "type": "string"
-          },
-          "parent_columns": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Parent Columns",
-            "type": "array"
-          },
-          "parent_table": {
-            "title": "Parent Table",
-            "type": "string"
-          }
-        },
-        "required": [
-          "child_table",
-          "child_columns",
-          "parent_table",
-          "parent_columns"
-        ],
-        "title": "RelationIn",
-        "type": "object"
-      },
-      "RelationOut": {
-        "properties": {
-          "child_columns": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Child Columns",
-            "type": "array"
-          },
-          "child_table": {
-            "title": "Child Table",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "on_delete": {
-            "title": "On Delete",
-            "type": "string"
-          },
-          "parent_columns": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Parent Columns",
-            "type": "array"
-          },
-          "parent_table": {
-            "title": "Parent Table",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "child_table",
-          "child_columns",
-          "parent_table",
-          "parent_columns",
-          "on_delete"
-        ],
-        "title": "RelationOut",
         "type": "object"
       },
       "ResultOut": {
@@ -1962,184 +1986,6 @@
           "trace_path"
         ],
         "title": "ResultOut",
-        "type": "object"
-      },
-      "RowOut": {
-        "properties": {
-          "row": {
-            "additionalProperties": true,
-            "title": "Row",
-            "type": "object"
-          }
-        },
-        "required": [
-          "row"
-        ],
-        "title": "RowOut",
-        "type": "object"
-      },
-      "RowPatch": {
-        "properties": {
-          "values": {
-            "additionalProperties": true,
-            "title": "Values",
-            "type": "object"
-          }
-        },
-        "required": [
-          "values"
-        ],
-        "title": "RowPatch",
-        "type": "object"
-      },
-      "RowsDeletedOut": {
-        "properties": {
-          "cascaded": {
-            "title": "Cascaded",
-            "type": "integer"
-          },
-          "deleted": {
-            "title": "Deleted",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "deleted",
-          "cascaded"
-        ],
-        "title": "RowsDeletedOut",
-        "type": "object"
-      },
-      "RowsIn": {
-        "properties": {
-          "rows": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "title": "Rows",
-            "type": "array"
-          }
-        },
-        "required": [
-          "rows"
-        ],
-        "title": "RowsIn",
-        "type": "object"
-      },
-      "RowsInsertedOut": {
-        "properties": {
-          "ids": {
-            "items": {
-              "type": "integer"
-            },
-            "title": "Ids",
-            "type": "array"
-          },
-          "inserted": {
-            "title": "Inserted",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "inserted",
-          "ids"
-        ],
-        "title": "RowsInsertedOut",
-        "type": "object"
-      },
-      "RowsPageColumn": {
-        "properties": {
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "type": {
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "type"
-        ],
-        "title": "RowsPageColumn",
-        "type": "object"
-      },
-      "RowsPageOut": {
-        "properties": {
-          "columns": {
-            "items": {
-              "$ref": "#/components/schemas/RowsPageColumn"
-            },
-            "title": "Columns",
-            "type": "array"
-          },
-          "rows": {
-            "items": {
-              "items": {},
-              "type": "array"
-            },
-            "title": "Rows",
-            "type": "array"
-          },
-          "total": {
-            "title": "Total",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "columns",
-          "rows",
-          "total"
-        ],
-        "title": "RowsPageOut",
-        "type": "object"
-      },
-      "RowsQuery": {
-        "properties": {
-          "descending": {
-            "default": false,
-            "title": "Descending",
-            "type": "boolean"
-          },
-          "filter": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Filter",
-            "type": "array"
-          },
-          "limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Limit"
-          },
-          "offset": {
-            "default": 0,
-            "title": "Offset",
-            "type": "integer"
-          },
-          "order_by": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Order By"
-          }
-        },
-        "title": "RowsQuery",
         "type": "object"
       },
       "RunDetailOut": {
@@ -2667,29 +2513,6 @@
         "title": "SchemaOut",
         "type": "object"
       },
-      "SqlCountsOut": {
-        "properties": {
-          "data": {
-            "title": "Data",
-            "type": "integer"
-          },
-          "ddl": {
-            "title": "Ddl",
-            "type": "integer"
-          },
-          "query": {
-            "title": "Query",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "ddl",
-          "data",
-          "query"
-        ],
-        "title": "SqlCountsOut",
-        "type": "object"
-      },
       "SqlIn": {
         "properties": {
           "sql": {
@@ -2705,9 +2528,6 @@
       },
       "SqlOut": {
         "properties": {
-          "counts": {
-            "$ref": "#/components/schemas/SqlCountsOut"
-          },
           "elapsed_ms": {
             "title": "Elapsed Ms",
             "type": "integer"
@@ -2722,7 +2542,6 @@
         },
         "required": [
           "statements",
-          "counts",
           "elapsed_ms"
         ],
         "title": "SqlOut",
@@ -2745,10 +2564,6 @@
             "title": "Index",
             "type": "integer"
           },
-          "kind": {
-            "title": "Kind",
-            "type": "string"
-          },
           "row_count": {
             "title": "Row Count",
             "type": "integer"
@@ -2769,7 +2584,6 @@
         "required": [
           "index",
           "command",
-          "kind",
           "row_count",
           "columns",
           "rows",
@@ -3154,6 +2968,74 @@
         "title": "SuccessEnvelope[FeedbackOut]",
         "type": "object"
       },
+      "SuccessEnvelope_ImportCreatedOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ImportCreatedOut"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Meta",
+            "type": "object"
+          },
+          "status_code": {
+            "title": "Status Code",
+            "type": "integer"
+          },
+          "success": {
+            "const": true,
+            "default": true,
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status_code",
+          "message",
+          "data"
+        ],
+        "title": "SuccessEnvelope[ImportCreatedOut]",
+        "type": "object"
+      },
+      "SuccessEnvelope_ImportOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ImportOut"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Meta",
+            "type": "object"
+          },
+          "status_code": {
+            "title": "Status Code",
+            "type": "integer"
+          },
+          "success": {
+            "const": true,
+            "default": true,
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status_code",
+          "message",
+          "data"
+        ],
+        "title": "SuccessEnvelope[ImportOut]",
+        "type": "object"
+      },
       "SuccessEnvelope_LLMKeyOut_": {
         "properties": {
           "data": {
@@ -3289,176 +3171,6 @@
           "data"
         ],
         "title": "SuccessEnvelope[NoneType]",
-        "type": "object"
-      },
-      "SuccessEnvelope_RelationOut_": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/RelationOut"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "meta": {
-            "additionalProperties": true,
-            "default": {},
-            "title": "Meta",
-            "type": "object"
-          },
-          "status_code": {
-            "title": "Status Code",
-            "type": "integer"
-          },
-          "success": {
-            "const": true,
-            "default": true,
-            "title": "Success",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "status_code",
-          "message",
-          "data"
-        ],
-        "title": "SuccessEnvelope[RelationOut]",
-        "type": "object"
-      },
-      "SuccessEnvelope_RowOut_": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/RowOut"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "meta": {
-            "additionalProperties": true,
-            "default": {},
-            "title": "Meta",
-            "type": "object"
-          },
-          "status_code": {
-            "title": "Status Code",
-            "type": "integer"
-          },
-          "success": {
-            "const": true,
-            "default": true,
-            "title": "Success",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "status_code",
-          "message",
-          "data"
-        ],
-        "title": "SuccessEnvelope[RowOut]",
-        "type": "object"
-      },
-      "SuccessEnvelope_RowsDeletedOut_": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/RowsDeletedOut"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "meta": {
-            "additionalProperties": true,
-            "default": {},
-            "title": "Meta",
-            "type": "object"
-          },
-          "status_code": {
-            "title": "Status Code",
-            "type": "integer"
-          },
-          "success": {
-            "const": true,
-            "default": true,
-            "title": "Success",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "status_code",
-          "message",
-          "data"
-        ],
-        "title": "SuccessEnvelope[RowsDeletedOut]",
-        "type": "object"
-      },
-      "SuccessEnvelope_RowsInsertedOut_": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/RowsInsertedOut"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "meta": {
-            "additionalProperties": true,
-            "default": {},
-            "title": "Meta",
-            "type": "object"
-          },
-          "status_code": {
-            "title": "Status Code",
-            "type": "integer"
-          },
-          "success": {
-            "const": true,
-            "default": true,
-            "title": "Success",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "status_code",
-          "message",
-          "data"
-        ],
-        "title": "SuccessEnvelope[RowsInsertedOut]",
-        "type": "object"
-      },
-      "SuccessEnvelope_RowsPageOut_": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/RowsPageOut"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "meta": {
-            "additionalProperties": true,
-            "default": {},
-            "title": "Meta",
-            "type": "object"
-          },
-          "status_code": {
-            "title": "Status Code",
-            "type": "integer"
-          },
-          "success": {
-            "const": true,
-            "default": true,
-            "title": "Success",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "status_code",
-          "message",
-          "data"
-        ],
-        "title": "SuccessEnvelope[RowsPageOut]",
         "type": "object"
       },
       "SuccessEnvelope_RunDetailOut_": {
@@ -3801,40 +3513,6 @@
         "title": "SuccessEnvelope[WorkspaceOut]",
         "type": "object"
       },
-      "SuccessEnvelope_WorkspaceTableOut_": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/WorkspaceTableOut"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "meta": {
-            "additionalProperties": true,
-            "default": {},
-            "title": "Meta",
-            "type": "object"
-          },
-          "status_code": {
-            "title": "Status Code",
-            "type": "integer"
-          },
-          "success": {
-            "const": true,
-            "default": true,
-            "title": "Success",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "status_code",
-          "message",
-          "data"
-        ],
-        "title": "SuccessEnvelope[WorkspaceTableOut]",
-        "type": "object"
-      },
       "SuccessEnvelope_list_CaseOut__": {
         "properties": {
           "data": {
@@ -3949,6 +3627,44 @@
         "title": "SuccessEnvelope[list[EvalRunOut]]",
         "type": "object"
       },
+      "SuccessEnvelope_list_ImportOut__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ImportOut"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Meta",
+            "type": "object"
+          },
+          "status_code": {
+            "title": "Status Code",
+            "type": "integer"
+          },
+          "success": {
+            "const": true,
+            "default": true,
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status_code",
+          "message",
+          "data"
+        ],
+        "title": "SuccessEnvelope[list[ImportOut]]",
+        "type": "object"
+      },
       "SuccessEnvelope_list_LLMKeyOut__": {
         "properties": {
           "data": {
@@ -3985,44 +3701,6 @@
           "data"
         ],
         "title": "SuccessEnvelope[list[LLMKeyOut]]",
-        "type": "object"
-      },
-      "SuccessEnvelope_list_RelationOut__": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/RelationOut"
-            },
-            "title": "Data",
-            "type": "array"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "meta": {
-            "additionalProperties": true,
-            "default": {},
-            "title": "Meta",
-            "type": "object"
-          },
-          "status_code": {
-            "title": "Status Code",
-            "type": "integer"
-          },
-          "success": {
-            "const": true,
-            "default": true,
-            "title": "Success",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "status_code",
-          "message",
-          "data"
-        ],
-        "title": "SuccessEnvelope[list[RelationOut]]",
         "type": "object"
       },
       "SuccessEnvelope_list_RunOut__": {
@@ -4101,70 +3779,6 @@
         "title": "SuccessEnvelope[list[WorkspaceOut]]",
         "type": "object"
       },
-      "SuccessEnvelope_list_WorkspaceTableOut__": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/WorkspaceTableOut"
-            },
-            "title": "Data",
-            "type": "array"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "meta": {
-            "additionalProperties": true,
-            "default": {},
-            "title": "Meta",
-            "type": "object"
-          },
-          "status_code": {
-            "title": "Status Code",
-            "type": "integer"
-          },
-          "success": {
-            "const": true,
-            "default": true,
-            "title": "Success",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "status_code",
-          "message",
-          "data"
-        ],
-        "title": "SuccessEnvelope[list[WorkspaceTableOut]]",
-        "type": "object"
-      },
-      "TableIn": {
-        "properties": {
-          "columns": {
-            "items": {
-              "$ref": "#/components/schemas/ColumnIn"
-            },
-            "title": "Columns",
-            "type": "array"
-          },
-          "description": {
-            "default": "",
-            "title": "Description",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "columns"
-        ],
-        "title": "TableIn",
-        "type": "object"
-      },
       "TableOut": {
         "properties": {
           "columns": {
@@ -4217,34 +3831,6 @@
           "columns"
         ],
         "title": "TableOut",
-        "type": "object"
-      },
-      "TablePatch": {
-        "properties": {
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          }
-        },
-        "title": "TablePatch",
         "type": "object"
       },
       "TableRowsOut": {
@@ -4669,6 +4255,17 @@
       },
       "UserOut": {
         "properties": {
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
           "email": {
             "title": "Email",
             "type": "string"
@@ -4703,6 +4300,7 @@
           "first_name",
           "last_name",
           "providers",
+          "avatar_url",
           "is_staff"
         ],
         "title": "UserOut",
@@ -4730,39 +4328,6 @@
           }
         },
         "title": "WorkbenchPageIn",
-        "type": "object"
-      },
-      "WorkspaceColumnOut": {
-        "properties": {
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "hidden": {
-            "title": "Hidden",
-            "type": "boolean"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "nullable": {
-            "title": "Nullable",
-            "type": "boolean"
-          },
-          "type": {
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "type",
-          "nullable",
-          "description",
-          "hidden"
-        ],
-        "title": "WorkspaceColumnOut",
         "type": "object"
       },
       "WorkspaceIn": {
@@ -4874,52 +4439,6 @@
           "name"
         ],
         "title": "WorkspaceRename",
-        "type": "object"
-      },
-      "WorkspaceTableOut": {
-        "properties": {
-          "columns": {
-            "items": {
-              "$ref": "#/components/schemas/WorkspaceColumnOut"
-            },
-            "title": "Columns",
-            "type": "array"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "primary_key": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Primary Key",
-            "type": "array"
-          },
-          "row_estimate": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Row Estimate"
-          }
-        },
-        "required": [
-          "name",
-          "description",
-          "row_estimate",
-          "primary_key",
-          "columns"
-        ],
-        "title": "WorkspaceTableOut",
         "type": "object"
       }
     },
@@ -8815,7 +8334,7 @@
     },
     "/api/workspaces/limits": {
       "get": {
-        "description": "What the caller may still do with workspaces: how many workspaces, how many\nbytes (per workspace and together), and\nthe per-table and per-request caps. Read only.",
+        "description": "What the caller may still do with workspaces: how many workspaces, how many\nbytes (per workspace and together), and\nthe largest dump. Read only.",
         "operationId": "get_workspace_limits",
         "parameters": [],
         "responses": {
@@ -9090,9 +8609,10 @@
         ]
       }
     },
-    "/api/workspaces/{workspace_id}/relations": {
+    "/api/workspaces/{workspace_id}/imports": {
       "get": {
-        "operationId": "list_workspace_relations",
+        "description": "The workspace's last ten imports, newest first.",
+        "operationId": "list_imports",
         "parameters": [
           {
             "in": "path",
@@ -9109,7 +8629,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_list_RelationOut__"
+                  "$ref": "#/components/schemas/SuccessEnvelope_list_ImportOut__"
                 }
               }
             },
@@ -9135,26 +8655,6 @@
             },
             "description": "Not Found"
           },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
           "429": {
             "content": {
               "application/json": {
@@ -9164,16 +8664,6 @@
               }
             },
             "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
           }
         },
         "security": [
@@ -9181,14 +8671,14 @@
             "SessionAuth": []
           }
         ],
-        "summary": "List Workspace Relations",
+        "summary": "List Imports",
         "tags": [
-          "workspace tables"
+          "workspace imports"
         ]
       },
       "post": {
-        "description": "Relate a child table's column(s) to a parent table's primary key or unique\ncolumn(s), both in this workspace. Existing rows are checked: the first row\nwith no parent is named in a 409 `constraint_violation`.",
-        "operationId": "create_workspace_relation",
+        "description": "Start a dump import. Send the file's name (`.sql` or `.sql.gz`) and exact\nsize in bytes; PUT the file to `upload_url` with that exact length, then call\n`start`. Fails with `workspace_not_empty` at run time unless `replace` is set\nor the workspace has no tables.",
+        "operationId": "create_import",
         "parameters": [
           {
             "in": "path",
@@ -9204,7 +8694,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RelationIn"
+                "$ref": "#/components/schemas/ImportIn"
               }
             }
           },
@@ -9215,7 +8705,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_RelationOut_"
+                  "$ref": "#/components/schemas/SuccessEnvelope_ImportCreatedOut_"
                 }
               }
             },
@@ -9270,16 +8760,6 @@
               }
             },
             "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
           }
         },
         "security": [
@@ -9287,15 +8767,16 @@
             "SessionAuth": []
           }
         ],
-        "summary": "Create Workspace Relation",
+        "summary": "Create Import",
         "tags": [
-          "workspace tables"
+          "workspace imports"
         ]
       }
     },
-    "/api/workspaces/{workspace_id}/relations/{name}": {
-      "delete": {
-        "operationId": "delete_workspace_relation",
+    "/api/workspaces/{workspace_id}/imports/{job_id}": {
+      "get": {
+        "description": "The status of one import; poll until `succeeded` or `failed`.",
+        "operationId": "get_import",
         "parameters": [
           {
             "in": "path",
@@ -9308,11 +8789,11 @@
           },
           {
             "in": "path",
-            "name": "name",
+            "name": "job_id",
             "required": true,
             "schema": {
-              "title": "Name",
-              "type": "string"
+              "title": "Job Id",
+              "type": "integer"
             }
           }
         ],
@@ -9321,7 +8802,84 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_NoneType_"
+                  "$ref": "#/components/schemas/SuccessEnvelope_ImportOut_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          }
+        ],
+        "summary": "Get Import",
+        "tags": [
+          "workspace imports"
+        ]
+      }
+    },
+    "/api/workspaces/{workspace_id}/imports/{job_id}/start": {
+      "post": {
+        "description": "Say the upload is done. Checks the file is in the bucket and within the\ncap, then queues the job; poll `GET` for the result.",
+        "operationId": "start_import",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_ImportOut_"
                 }
               }
             },
@@ -9376,16 +8934,6 @@
               }
             },
             "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
           }
         },
         "security": [
@@ -9393,15 +8941,15 @@
             "SessionAuth": []
           }
         ],
-        "summary": "Delete Workspace Relation",
+        "summary": "Start Import",
         "tags": [
-          "workspace tables"
+          "workspace imports"
         ]
       }
     },
     "/api/workspaces/{workspace_id}/sql": {
       "post": {
-        "description": "Run your own SQL on your own workspace: full control inside the schema\n(CREATE, ALTER, DROP, INSERT, UPDATE, DELETE, SELECT, views, indexes, several\nstatements). The whole request is one transaction: any failing statement\nrolls everything back and answers 422 `sql_failed` with the Postgres code and\nmessage. Transaction control and COPY are refused (`sql_invalid`); a request\nthat makes the workspace bigger than its cap is rolled back with\n`workspace_full`. Structural statements are logged; the agent sees them on its\nnext read.",
+        "description": "Run your own read-only SQL on your own workspace: `SELECT`, `WITH`,\n`EXPLAIN`, `SHOW` or `VALUES`, one or several statements in one read-only\ntransaction. Anything that would change data or structure is refused with\n`sql_invalid` before it runs, and the database role cannot write either.\nA failing statement answers 422 `sql_failed` with the Postgres code and\nmessage; one that runs too long is stopped (`query_timeout`). To change the\ndata, import a new dump.",
         "operationId": "run_workspace_sql",
         "parameters": [
           {
@@ -9513,1654 +9061,7 @@
         ],
         "summary": "Run Workspace Sql",
         "tags": [
-          "workspace tables"
-        ]
-      }
-    },
-    "/api/workspaces/{workspace_id}/tables": {
-      "get": {
-        "description": "The workspace's tables with their columns, including the hidden `_row_id`.",
-        "operationId": "list_workspace_tables",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "title": "Workspace Id",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_list_WorkspaceTableOut__"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          }
-        ],
-        "summary": "List Workspace Tables",
-        "tags": [
-          "workspace tables"
-        ]
-      },
-      "post": {
-        "description": "Create an empty table from a column spec. It gets a hidden identity key\n`_row_id`. `table_limit_reached` / `column_limit_reached` name the cap.",
-        "operationId": "create_workspace_table",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "title": "Workspace Id",
-              "type": "integer"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TableIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_WorkspaceTableOut_"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          }
-        ],
-        "summary": "Create Workspace Table",
-        "tags": [
-          "workspace tables"
-        ]
-      }
-    },
-    "/api/workspaces/{workspace_id}/tables/{table}": {
-      "delete": {
-        "description": "Drop the table and its rows for good, with relations that point at it.",
-        "operationId": "delete_workspace_table",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "title": "Workspace Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "path",
-            "name": "table",
-            "required": true,
-            "schema": {
-              "title": "Table",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_NoneType_"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          }
-        ],
-        "summary": "Delete Workspace Table",
-        "tags": [
-          "workspace tables"
-        ]
-      },
-      "get": {
-        "operationId": "get_workspace_table",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "title": "Workspace Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "path",
-            "name": "table",
-            "required": true,
-            "schema": {
-              "title": "Table",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_WorkspaceTableOut_"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          }
-        ],
-        "summary": "Get Workspace Table",
-        "tags": [
-          "workspace tables"
-        ]
-      },
-      "patch": {
-        "description": "Rename a table and/or set its description.",
-        "operationId": "update_workspace_table",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "title": "Workspace Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "path",
-            "name": "table",
-            "required": true,
-            "schema": {
-              "title": "Table",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TablePatch"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_WorkspaceTableOut_"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          }
-        ],
-        "summary": "Update Workspace Table",
-        "tags": [
-          "workspace tables"
-        ]
-      }
-    },
-    "/api/workspaces/{workspace_id}/tables/{table}/columns": {
-      "post": {
-        "description": "Add a column. A NOT NULL column on a table that has rows needs a default.",
-        "operationId": "add_workspace_column",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "title": "Workspace Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "path",
-            "name": "table",
-            "required": true,
-            "schema": {
-              "title": "Table",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ColumnIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_WorkspaceTableOut_"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          }
-        ],
-        "summary": "Add Workspace Column",
-        "tags": [
-          "workspace tables"
-        ]
-      }
-    },
-    "/api/workspaces/{workspace_id}/tables/{table}/columns/{column}": {
-      "delete": {
-        "description": "Drop a column (and the keys and relations that use it). The last column\ncannot be dropped.",
-        "operationId": "delete_workspace_column",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "title": "Workspace Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "path",
-            "name": "table",
-            "required": true,
-            "schema": {
-              "title": "Table",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "column",
-            "required": true,
-            "schema": {
-              "title": "Column",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_WorkspaceTableOut_"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          }
-        ],
-        "summary": "Delete Workspace Column",
-        "tags": [
-          "workspace tables"
-        ]
-      },
-      "patch": {
-        "description": "Rename a column, set its description or nullability, or change its type. A\nretype converts every value inside one transaction; a value that does not\nconvert is a 422 `cast_failed` naming its row id, and nothing changes.",
-        "operationId": "update_workspace_column",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "title": "Workspace Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "path",
-            "name": "table",
-            "required": true,
-            "schema": {
-              "title": "Table",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "column",
-            "required": true,
-            "schema": {
-              "title": "Column",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ColumnPatch"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_WorkspaceTableOut_"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          }
-        ],
-        "summary": "Update Workspace Column",
-        "tags": [
-          "workspace tables"
-        ]
-      }
-    },
-    "/api/workspaces/{workspace_id}/tables/{table}/primary-key": {
-      "put": {
-        "description": "Make these columns the table's primary key (replacing any earlier one).\nExisting rows are checked: a repeated or empty value is a 409\n`constraint_violation` naming its row id, and nothing changes.",
-        "operationId": "set_workspace_primary_key",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "title": "Workspace Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "path",
-            "name": "table",
-            "required": true,
-            "schema": {
-              "title": "Table",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PrimaryKeyIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_WorkspaceTableOut_"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          }
-        ],
-        "summary": "Set Workspace Primary Key",
-        "tags": [
-          "workspace tables"
-        ]
-      }
-    },
-    "/api/workspaces/{workspace_id}/tables/{table}/rows": {
-      "delete": {
-        "description": "Delete several rows by `ids=1&ids=2` (capped). There is no way to send a\nWHERE clause.",
-        "operationId": "delete_workspace_rows",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "title": "Workspace Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "path",
-            "name": "table",
-            "required": true,
-            "schema": {
-              "title": "Table",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "ids",
-            "required": true,
-            "schema": {
-              "items": {
-                "type": "integer"
-              },
-              "title": "Ids",
-              "type": "array"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_RowsDeletedOut_"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          }
-        ],
-        "summary": "Delete Workspace Rows",
-        "tags": [
-          "workspace tables"
-        ]
-      },
-      "get": {
-        "description": "A page of rows, ordered by `order_by` (default `_row_id`), filtered by\n`filter=column:eq:value` / `column:contains:value`. Read with the workspace's\nread-only role, so a row written a moment ago may take a moment to show when\nreads go to a replica.",
-        "operationId": "list_workspace_rows",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "title": "Workspace Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "path",
-            "name": "table",
-            "required": true,
-            "schema": {
-              "title": "Table",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Limit"
-            }
-          },
-          {
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "default": 0,
-              "title": "Offset",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "order_by",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Order By"
-            }
-          },
-          {
-            "in": "query",
-            "name": "descending",
-            "required": false,
-            "schema": {
-              "default": false,
-              "title": "Descending",
-              "type": "boolean"
-            }
-          },
-          {
-            "in": "query",
-            "name": "filter",
-            "required": false,
-            "schema": {
-              "default": [],
-              "items": {
-                "type": "string"
-              },
-              "title": "Filter",
-              "type": "array"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_RowsPageOut_"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          }
-        ],
-        "summary": "List Workspace Rows",
-        "tags": [
-          "workspace tables"
-        ]
-      },
-      "post": {
-        "description": "Insert up to `WORKSPACE_MAX_ROWS_PER_EDIT` rows. Values are converted to the\ncolumn's type; a bad one is a 422 `row_invalid` naming `rows[i].column`. All or\nnothing. A broken key or relation is a 409 `constraint_violation`; a full\nworkspace is `workspace_full`.",
-        "operationId": "insert_workspace_rows",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "title": "Workspace Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "path",
-            "name": "table",
-            "required": true,
-            "schema": {
-              "title": "Table",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RowsIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_RowsInsertedOut_"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          }
-        ],
-        "summary": "Insert Workspace Rows",
-        "tags": [
-          "workspace tables"
-        ]
-      }
-    },
-    "/api/workspaces/{workspace_id}/tables/{table}/rows/{row_id}": {
-      "delete": {
-        "operationId": "delete_workspace_row",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "title": "Workspace Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "path",
-            "name": "table",
-            "required": true,
-            "schema": {
-              "title": "Table",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "row_id",
-            "required": true,
-            "schema": {
-              "title": "Row Id",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_RowsDeletedOut_"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          }
-        ],
-        "summary": "Delete Workspace Row",
-        "tags": [
-          "workspace tables"
-        ]
-      },
-      "patch": {
-        "description": "Change some columns of one row by its `_row_id`.",
-        "operationId": "update_workspace_row",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "title": "Workspace Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "path",
-            "name": "table",
-            "required": true,
-            "schema": {
-              "title": "Table",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "row_id",
-            "required": true,
-            "schema": {
-              "title": "Row Id",
-              "type": "integer"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RowPatch"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessEnvelope_RowOut_"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "504": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Gateway Timeout"
-          }
-        },
-        "security": [
-          {
-            "SessionAuth": []
-          }
-        ],
-        "summary": "Update Workspace Row",
-        "tags": [
-          "workspace tables"
+          "workspace sql"
         ]
       }
     }

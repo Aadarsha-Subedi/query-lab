@@ -30,6 +30,7 @@ export const ME = {
   first_name: 'Ada',
   last_name: '',
   providers: ['google'],
+  avatar_url: null,
   is_staff: false,
 }
 export const signedIn = () => ({

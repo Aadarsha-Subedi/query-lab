@@ -4,7 +4,7 @@ import { Link } from '@tanstack/react-router'
 import { useState, type SyntheticEvent, type KeyboardEvent } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
+import { InputGroup, InputGroupAddon, InputGroupTextarea } from '@/components/ui/input-group'
 
 import { ApiError } from '@/lib/api'
 
@@ -58,11 +58,11 @@ export function AskBox({ initialQuestion = '', workspace, disabled, onStarted }:
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-2">
-      <div className="relative">
-        <Textarea
+      <InputGroup>
+        <InputGroupTextarea
           aria-label="Your question"
           placeholder="Ask a question about your data, for example: which product categories sold best last month?"
-          className="min-h-24 resize-none pr-14 pb-12"
+          className="min-h-16 p-3"
           value={question}
           onChange={(event) => {
             setQuestion(event.target.value)
@@ -71,16 +71,18 @@ export function AskBox({ initialQuestion = '', workspace, disabled, onStarted }:
           aria-invalid={failure ? true : undefined}
           aria-describedby={failure ? 'ask-error' : 'ask-hint'}
         />
-        <Button
-          type="submit"
-          size="icon-sm"
-          icon={SentIcon}
-          aria-label="Send question"
-          className="absolute right-2 bottom-2"
-          loading={mutation.isPending}
-          disabled={disabled || !question.trim()}
-        />
-      </div>
+        <InputGroupAddon align="block-end">
+          <Button
+            type="submit"
+            size="icon-sm"
+            icon={SentIcon}
+            aria-label="Send question"
+            className="ml-auto rounded-full"
+            loading={mutation.isPending}
+            disabled={disabled || !question.trim()}
+          />
+        </InputGroupAddon>
+      </InputGroup>
       {failure && (
         <p id="ask-error" role="alert" className="text-small text-danger-foreground">
           {failure.message} {failure.hint}

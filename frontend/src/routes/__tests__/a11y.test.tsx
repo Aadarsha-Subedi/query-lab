@@ -103,9 +103,6 @@ const ANSWERS: Record<string, () => Response> = {
     ok({
       workspaces: { used: 1, allowed: 3 },
       bytes: { used: 10, allowed: 300, per_workspace: 100 },
-      max_tables: 5,
-      max_columns: 5,
-      max_relations: 5,
       max_rows_per_edit: 50,
     }),
   '/api/workspaces/7': () =>
@@ -138,8 +135,8 @@ const SCREENS: [string, string][] = [
   ['history', '/history'],
   ['replay', '/runs/5/replay'],
   ['workspaces', '/workspaces'],
-  ['workspace editor', '/workspaces/7?table=products'],
-  ['sql console', '/workspaces/7?tab=sql'],
+  ['private workspace schema', '/ask?workspace=7&tab=schema'],
+  ['sql console', '/ask?workspace=7&tab=sql'],
   ['ai settings', '/settings'],
   ['traces', '/workbench/runs'],
   ['cases', '/workbench/cases'],

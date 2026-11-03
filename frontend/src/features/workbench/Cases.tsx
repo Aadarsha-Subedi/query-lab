@@ -105,7 +105,7 @@ export function Cases({ filters }: { filters: CasesFilters }) {
               })
             }}
           >
-            <SelectTrigger aria-label="Case status">
+            <SelectTrigger aria-label="Case status" className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

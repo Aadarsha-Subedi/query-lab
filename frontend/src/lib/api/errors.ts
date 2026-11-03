@@ -271,56 +271,10 @@ export const ERROR_INFO: Record<string, ErrorInfo> = {
       "A run's workspace was deleted: its trace can still be replayed, but its result can no longer be fetched.",
     hint: 'Show the trace only.',
   },
-  invalid_spec: {
-    message: 'A table or column spec is unusable (no columns, the last column, a bad on_delete).',
-    hint: 'Show the message.',
-  },
-  table_name_taken: {
-    message: 'The workspace already has a table with this name.',
-    hint: 'Ask for another name.',
-  },
-  column_name_taken: {
-    message: 'The table already has a column with this name.',
-    hint: 'Ask for another name.',
-  },
-  table_limit_reached: {
-    message: 'The workspace has the maximum number of tables.',
-    hint: 'Offer to drop one.',
-  },
-  column_limit_reached: {
-    message: 'The table has the maximum number of columns.',
-    hint: 'Offer to drop one.',
-  },
-  relation_limit_reached: {
-    message: 'The workspace has the maximum number of relations.',
-    hint: 'Offer to remove one.',
-  },
-  column_not_found: {
-    message: 'No such column (the hidden _row_id cannot be addressed either).',
-    hint: 'Refresh the table.',
-  },
-  relation_not_found: {
-    message: 'No such relation.',
-    hint: 'Refresh the relation list.',
-  },
-  relation_invalid: {
-    message: 'The parent columns are not a primary key or unique, or the types differ.',
-    hint: 'Show the message; pick other columns.',
-  },
-  cast_failed: {
-    message:
-      'A value cannot be converted to the new column type. errors[0].message names the first bad row id. Nothing changed.',
-    hint: 'Show the row; offer to fix the value or pick text.',
-  },
-  constraint_violation: {
-    message:
-      'Existing rows break the key, relation or NOT NULL being added (or a row edit would break one). errors[0].message names the first row. Nothing changed.',
-    hint: 'Show the row; fix the data first.',
-  },
   sql_invalid: {
     message:
-      'The SQL console refused the request before running it (empty, too long, too many statements, BEGIN/COMMIT/ROLLBACK, COPY).',
-    hint: 'Show the message.',
+      "This query runner only reads (SELECT, WITH, EXPLAIN, SHOW), and the SQL can't be empty or too long.",
+    hint: 'Change the SQL and run it again. To change data, import a dump.',
   },
   sql_failed: {
     message:
@@ -332,29 +286,64 @@ export const ERROR_INFO: Record<string, ErrorInfo> = {
     hint: 'Wait for it, then run again.',
   },
   workspace_full: {
-    message: 'The write would take the workspace over its size cap (and it was rolled back).',
-    hint: 'Offer to delete data or tables.',
+    message: 'The dump would take the workspace over its size limit, so nothing was imported.',
+    hint: 'Use a smaller dump or delete the workspace data first.',
   },
   user_storage_full: {
-    message: "The write would take the user's workspaces over their total size cap.",
-    hint: 'Offer to delete data or a workspace.',
-  },
-  row_not_found: {
-    message:
-      "No row with this _row_id in the table (also another user's row: the workspace itself is a 404).",
-    hint: 'Refresh the rows.',
-  },
-  row_invalid: {
-    message: 'A value does not fit its column. errors[0].field is rows[i].column. Nothing was written.',
-    hint: 'Mark the cell.',
-  },
-  too_many_rows: {
-    message: 'More rows in one request than the per-request cap.',
-    hint: 'Send fewer rows.',
+    message: 'The dump would take your workspaces over their total size limit.',
+    hint: 'Delete a workspace you no longer need, or use a smaller dump.',
   },
   invalid_name: {
-    message: 'A workspace, table or column name or a column type cannot be used.',
-    hint: 'Show the message next to the field.',
+    message: "That name can't be used, or the file is empty or not a .sql or .sql.gz file.",
+    hint: 'Check the name or choose a pg_dump file.',
+  },
+  dump_too_large: {
+    message: 'The dump is too large.',
+    hint: 'Make a smaller dump, for example one schema or fewer tables.',
+  },
+  dump_upload_missing: {
+    message: 'The uploaded file was not found.',
+    hint: 'Upload the file again.',
+  },
+  import_in_progress: {
+    message: 'You already have an import running.',
+    hint: 'Wait for it to finish, then try again.',
+  },
+  import_not_found: {
+    message: 'No such import in this workspace.',
+    hint: 'Go back to the workspace.',
+  },
+  import_not_ready: {
+    message: 'This import is not waiting for an upload.',
+    hint: 'Check its status.',
+  },
+  workspace_not_empty: {
+    message: 'This workspace already has tables.',
+    hint: "Tick 'Replace the tables already here' and import again.",
+  },
+  dump_refused: {
+    message: 'The dump ends in the middle of a statement.',
+    hint: 'Make the dump again and upload the whole file.',
+  },
+  dump_failed: {
+    message: 'Postgres refused a statement in the dump.',
+    hint: 'Fix that statement and upload again.',
+  },
+  dump_timeout: {
+    message: 'The import took too long and was stopped.',
+    hint: 'Use a smaller dump.',
+  },
+  dump_encoding: {
+    message: 'The dump must be UTF-8 text.',
+    hint: 'Dump again with UTF-8 encoding.',
+  },
+  dump_interrupted: {
+    message: 'The import was interrupted.',
+    hint: 'Upload the dump again.',
+  },
+  dump_replaced: {
+    message: 'An upload that never finished was replaced by your next import.',
+    hint: 'Nothing to do.',
   },
   workspace_provisioning_failed: {
     message: 'The schema and roles could not be created; everything was cleaned up.',
