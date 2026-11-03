@@ -50,10 +50,7 @@ export function ProductPreview() {
       </Step>
       <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
         <Step order={1} className="min-w-0">
-          <CodeBlock
-            code={SQL}
-            className="h-full [&_button]:bg-surface-muted [&_pre]:overflow-x-auto [&_pre]:break-normal [&_pre]:whitespace-pre"
-          />
+          <CodeBlock code={SQL} wrap={false} className="h-full" />
         </Step>
         <Step order={2} className="flex min-w-0 flex-col gap-3">
           <Table>

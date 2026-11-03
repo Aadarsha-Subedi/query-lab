@@ -55,16 +55,16 @@ function highlightSql(sql: string): ReactNode[] {
   })
 }
 
-type CodeBlockProps = { code: string; language?: 'sql' | 'text'; className?: string }
+type CodeBlockProps = { code: string; language?: 'sql' | 'text'; wrap?: boolean; className?: string }
 
 /** A block of SQL (or text): the shadcn Code Block, with a copy button and our small SQL colouring. */
-export function CodeBlock({ code, language = 'sql', className }: CodeBlockProps) {
+export function CodeBlock({ code, language = 'sql', wrap = true, className }: CodeBlockProps) {
   return (
     <UiCodeBlock className={className}>
       <CodeBlockActions>
         <CodeBlockCopyButton value={code} />
       </CodeBlockActions>
-      <CodeBlockContent wrap>
+      <CodeBlockContent wrap={wrap}>
         {code.split('\n').map((line, index) => (
           <CodeBlockLine key={index}>{language === 'sql' ? highlightSql(line) : line}</CodeBlockLine>
         ))}
