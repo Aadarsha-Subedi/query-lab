@@ -6,7 +6,10 @@ FRONTEND := $(COMPOSE) exec frontend
 
 .PHONY: setup up down dev logs migrate bootstrap-db load-demo createsuperuser \
         eval eval-gate openapi test test-backend test-frontend lint lint-backend lint-frontend \
-        typecheck typecheck-backend typecheck-frontend format
+        typecheck typecheck-backend typecheck-frontend format \
+        build-frontend-prod deploy deploy-first keep-awake prod-manage
+
+PROD_ORIGIN := https://querylab.aadarsha-subedi.com.np
 
 ## setup: install local dependencies (for editors) and create .env files from the examples
 setup:
@@ -92,3 +95,31 @@ typecheck-frontend:
 format:
 	cd backend && uv run ruff format . && uv run ruff check --fix .
 	cd frontend && pnpm format
+
+## build-frontend-prod: static files for the Worker. Shell variables win over frontend/.env.
+build-frontend-prod:
+	cd frontend && VITE_API_BASE_URL=$(PROD_ORIGIN) VITE_APP_NAME=Querylab VITE_QUERY_STALE_TIME_MS=30000 pnpm build
+
+## deploy: the normal deploy. Removes the seed files, so the container only starts web + worker.
+deploy: build-frontend-prod
+	rm -rf backend/.first-deploy
+	cd backend/cloudflare && pnpm run deploy
+
+## deploy-first: the first deploy only. The image also holds infra/sql and the Olist CSVs, and
+## every start runs migrate, bootstrap_data_db and load_demo. Run `make keep-awake` while it
+## seeds, then `make deploy` straight after, because a restart repeats the load.
+deploy-first: build-frontend-prod
+	rm -rf backend/.first-deploy
+	mkdir -p backend/.first-deploy
+	cp -r infra/sql backend/.first-deploy/sql
+	cp -r infra/data/olist backend/.first-deploy/olist
+	cd backend/cloudflare && pnpm run deploy; status=$$?; rm -rf ../../backend/.first-deploy; exit $$status
+
+## keep-awake: one request a minute, because the container sleeps after 3 idle minutes and that
+## would kill a running load_demo. Stop with Ctrl+C.
+keep-awake:
+	while true; do curl -s -o /dev/null -w '%{http_code}\n' $(PROD_ORIGIN)/api/health; sleep 60; done
+
+## prod-manage: one manage.py command against production, e.g. make prod-manage ARGS="migrate"
+prod-manage:
+	backend/cloudflare/prod-manage.sh $(ARGS)

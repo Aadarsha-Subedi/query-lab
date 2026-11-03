@@ -1,0 +1,45 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "querylab",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-10-01",
+
+	// One public origin, so session cookies stay same-origin and DJANGO_ALLOWED_HOSTS stays one name
+	"routes": [{ "pattern": "querylab.aadarsha-subedi.com.np", "custom_domain": true }],
+	"workers_dev": false,
+	"preview_urls": false,
+
+	// The Django image: the Dockerfile's last stage (prod), built with the backend folder as context
+	"containers": [
+		{
+			"class_name": "BackendContainer",
+			"image": "../Dockerfile",
+			"image_build_context": "..",
+			"image_vars": { "UV_HTTP_TIMEOUT": "600", "UV_CONCURRENT_DOWNLOADS": "4" },
+			"instance_type": "basic",
+			"max_instances": 1,
+			// Run in Asia Pacific, next to the databases
+			"constraints": { "regions": ["APAC"] },
+		},
+	],
+
+	// The built frontend (`make build-frontend-prod`). Only these paths reach the Worker (and the
+	// container); every other path is a static file, or index.html for the SPA.
+	"assets": {
+		"directory": "../../frontend/dist",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": ["/api/*", "/_allauth/*", "/accounts/*"],
+	},
+
+	// Worker and container logs, shown in the dashboard (Workers Logs: billed per event)
+	"observability": {
+		"enabled": true,
+	},
+
+	"durable_objects": {
+		"bindings": [{ "name": "BACKEND", "class_name": "BackendContainer" }],
+	},
+	"exports": {
+		"BackendContainer": { "type": "durable-object", "storage": "sqlite" },
+	},
+}

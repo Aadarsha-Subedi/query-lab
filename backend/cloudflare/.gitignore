@@ -1,0 +1,6 @@
+node_modules
+.wrangler
+# Local secrets for `wrangler dev`; never commit
+.dev.vars
+# Real values for `wrangler secret bulk`; never commit (secrets.example.json is the template)
+secrets.json

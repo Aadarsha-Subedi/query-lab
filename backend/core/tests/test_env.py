@@ -1,6 +1,7 @@
 """The keys the code reads must match `.env.example` (and `.env.test`)
 exactly, and a missing key must stop the process."""
 
+import json
 import os
 import re
 import subprocess
@@ -82,3 +83,11 @@ def test_missing_key_stops_startup() -> None:
     )
     assert result.returncode != 0
     assert "Set the REDIS_URL environment variable" in result.stderr
+
+
+def test_cloudflare_files_hold_exactly_the_keys_the_code_reads() -> None:
+    folder = BACKEND / "cloudflare"
+    tuning = set(json.loads((folder / "settings.json").read_text()))
+    secrets = set(json.loads((folder / "secrets.example.json").read_text()))
+    assert not tuning & secrets
+    assert tuning | secrets == keys_read_by_code()
