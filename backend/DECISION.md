@@ -523,3 +523,4 @@ only to page it is worse than an unstable order.
 - **Image:** 305 MB with boto3 against a 400 MB budget (CI `IMAGE_SIZE_BUDGET_MB`).
 - **Not measured yet (owner tasks):** a real R2 bucket round trip (CORS on the bucket must allow PUT from the app origin, plus a 1-day lifecycle rule on `dumps/`), time and memory for a 50 MB dump on the 0.25 vCPU / 1 GiB container, and the real-Neon checks (5.9.7). `test_neon_like_owner` fails on a dev database that already holds other `ws_` roles; it passes on a clean one.
 
+**Workspace storage cap (2026-11-03, owner):** `WORKSPACE_MAX_BYTES` is 50 MB per private workspace. `USER_MAX_BYTES` is unchanged at 250 MB (three workspaces of 50 MB now total 150 MB, so the user cap no longer binds; lower it if you want a tighter total).
