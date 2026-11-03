@@ -24,6 +24,9 @@ Run from the repo root (everything goes through Docker Compose):
 | Rewrite `backend/openapi.json` after any endpoint change (CI and a test fail when it is stale) | `make openapi` |
 | Lint / format | `make lint-backend` / `make format` |
 | Types (on the host) | `make typecheck-backend` |
+| First deploy only: image holds the seed files, and every start migrates, bootstraps and loads the demo | `make deploy-first`, `make keep-awake`, then `make deploy` |
+| Normal deploy (builds the frontend for production, then `wrangler deploy`) | `make deploy` |
+| One `manage.py` command against production, such as a later migration | `make prod-manage ARGS="migrate"` |
 
 Lint and types run on the host (`uv sync`, then `uv run ruff ...` and
 `uv run mypy .`); the dev image has only runtime + `test` dependencies. Tests
@@ -95,6 +98,7 @@ API_ERRORS.md      every error code, its HTTP status and what the screen should 
 - One small commit per atomic task.
 - Every new or changed endpoint is added to `postman/collection.json` in the same commit, and `make openapi` is re-run so `openapi.json` matches. New error codes go in `API_ERRORS.md` (a test checks it).
 - Every endpoint (except `/api/health`) answers in the envelope from `common/response/domain.py`; errors raise an `AppException` subclass.
+- A new setting goes in `.env.example`, `.env.test`, and either `cloudflare/settings.json` (not secret) or `cloudflare/secrets.example.json` plus your `secrets.json` (secret). A test fails otherwise. Never commit `secrets.json`, and keep `cloudflare` in `.dockerignore`, or the secrets end up in the image.
 - New dependencies: runtime ones only if they fit the container budget (image < 400 MB, idle web + worker < 500 MB). Test tools go in `test`, lint/type/hook tools in `lint` (host and CI only), heavy tools in `offline`.
 
 ## Hard rules

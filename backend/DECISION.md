@@ -169,7 +169,7 @@ from `READER_STATEMENT_TIMEOUT_MS`. The folder path is `DATA_SQL_DIR`.
 
 - **Image:** multi-stage `Dockerfile` on `python:3.12-slim`; the build stage runs
   `uv sync --frozen --no-dev`, the final stage copies only the virtualenv and the
-  code and runs as a non-root user. Budget: under 300 MB (checked in CI with
+  code and runs as a non-root user. Budget: under 400 MB since boto3 (checked in CI with
   `IMAGE_SIZE_BUDGET_MB`). Measured on 2026-10-30: 291 MB of files (83 MB
   compressed). The build drops every non-English translation the packages
   ship (about 20 MB; the app is English only) and keeps the compiled
@@ -186,11 +186,11 @@ from `READER_STATEMENT_TIMEOUT_MS`. The folder path is `DATA_SQL_DIR`.
 - **Jobs:** `entrypoint.sh` starts `run_huey` beside gunicorn in the same
   container; a separate worker container would sleep without requests and stop
   consuming jobs. If either process exits, the container exits and restarts.
-- **No local disk:** logs to stdout, uploads stream into Postgres (R2 later).
+- **No local disk:** logs to stdout, uploads go from the browser to R2.
 - **No heavy work in the container:** Spider runs, clustering and LoRA training run
   locally, in CI or on Colab and write results to the database.
-- **Frontend is not in the container:** a static Vite build on Cloudflare (Workers
-  static assets or Pages) on the same domain as the API, so session cookies work.
+- **Frontend is not in the container:** a static Vite build served by the same Worker
+  as static assets, on the same domain as the API, so session cookies work.
 - **LLM SDKs:** `openai` and `google-genai` are runtime dependencies (the agent
   calls them from the web process). Both are pure Python over httpx.
 
@@ -534,3 +534,17 @@ user's accounts, else null. The image itself is loaded by the browser straight f
 **The dump allowlist was a mistake and is gone (2026-11-03, owner: "user imports do not need any restrictions").** The first version refused every statement type it had not been told about, on the theory that it was a friendly first line. It was written against my idea of a dump and never tried on a real one, so a real `pg_dump` hit a new refusal on every attempt (`\\restrict`, `CREATE SCHEMA`, `ALTER`). It also protected nothing: the `_rw` role is the boundary. Now every statement goes to Postgres, and `dump.py` only sets aside what belongs to the source server or would break the copy: `SET`, `GRANT`, `REVOKE`, `OWNER TO`, roles, databases, extensions, publications, tablespaces, psql commands; transaction control (a `COMMIT` would end the one transaction before the size check); `DROP` (`--clean`; the workspace is empty); row security and policies (they name roles that do not exist here and would hide the rows from `_ro`). Removed with it: `DUMP_MAX_STATEMENTS`, `WORKSPACE_MAX_TABLES`, `WORKSPACE_MAX_COLUMNS`, `WORKSPACE_MAX_RELATIONS`. Limits that stay, because they protect the container and the database: the 50 MB file, the 50 MB workspace and 250 MB user storage, the unzipped size and the total time. `workspaces/tests/fixtures/real_pg_dump.sql` is unedited `pg_dump` output of a rich schema and is imported and replaced in the tests.
 
 **What a dump can now do, accepted:** it runs functions, triggers and `DO` blocks as `_rw`. Tests prove it cannot read another schema, run programs, read server files, create roles or `SET ROLE`. A `SECURITY DEFINER` function cannot write through `_ro`, because the transaction is read-only. The worst case is damage to its own workspace (`DROP SCHEMA`, changing the `_rw` password), which deleting the workspace cleans up (tested). A skipped statement can still be run from inside a `DO` block; that is the same self-harm case. An extension is left out, so a table or function that needs one fails with Postgres's own error.
+
+## Step 10: Cloudflare deploy (2026-11-03)
+
+Copied from the owner's project-management and resolve-ai: one `backend/cloudflare/` folder, one Worker serving the local frontend build and forwarding backend paths to one basic container in APAC, secrets through `wrangler secret bulk`. What differs, and why:
+
+- **Settings split in two.** Querylab reads 138 settings and a Worker allows 128 variables, so the references' "every setting is a secret" fails here. 20 real secrets and connection strings are Worker secrets; the other 118 are in committed `cloudflare/settings.json`, bundled into the Worker. Changing a limit is a reviewed commit and a deploy. A test holds the two files equal to the keys the code reads. The Worker takes secret names from `secrets.example.json`, so they are listed once.
+- **`/accounts/*` reaches the Worker**, beside `/api/*` and `/_allauth/*`, because the OAuth callbacks live there. There is no Django admin, so `/admin/*` is not forwarded.
+- **Own domain, `workers_dev: false`.** One origin keeps `DJANGO_ALLOWED_HOSTS`, CORS, cookies and OAuth callbacks simple.
+- **`cloudflare` is in `.dockerignore`.** The folder is inside the build context, so `COPY . .` would otherwise bake `secrets.json` into the image.
+- **The first deploy seeds itself (owner).** Seed files reach the image through a staged, git-ignored `.first-deploy` folder, and its presence switches the seed on. Alternatives rejected: commenting entrypoint lines in and out (the references' way; easy to leave on, and `load_demo` truncates on every start); widening the build context to the repo root (changes CI and compose for one deploy). That image is 425 MB and short-lived. Cost: until `make deploy` replaces it, each start repeats the load, so the runbook runs `make deploy` straight after.
+- **Sleep after 3 minutes (owner),** the references' value. Activity counts requests only, so a job can be killed mid-run. Accepted: imports report `dump_interrupted` and the user retries. To be checked with a real 50 MB dump.
+- **One Redis database.** Managed Redis usually offers database 0 only, so `REDIS_URL` and `CACHE_URL` share it. Huey, cache and agent keys have separate prefixes, and `cache.clear()` runs only in tests.
+
+**Measured locally at 1 GiB and 0.25 CPU (throwaway Postgres and Redis):** image 305 MB; seed 135 s, about 375 MiB; cold start to a healthy `/api/health` 40 s; idle 363 MiB. Not measured: anything against real Neon, Redis or Cloudflare, including Huey's Redis command use, which matters on a free tier with a monthly limit.

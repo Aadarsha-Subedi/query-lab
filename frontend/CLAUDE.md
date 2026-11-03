@@ -1,7 +1,9 @@
 # Frontend: CLAUDE.md
 
-Vite + React 19 + TypeScript (strict) for Querylab. Static build, served from
-Cloudflare on the same domain as the API in production.
+Vite + React 19 + TypeScript (strict) for Querylab. Static build, served by the
+backend's Cloudflare Worker on the same domain as the API in production. Build it
+with `make build-frontend-prod` from the repo root, never plain `pnpm build`
+(which would bake in `localhost` from `.env`).
 
 ## Commands
 

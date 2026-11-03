@@ -37,7 +37,52 @@ step 9 on the approved design system, just before deployment.
 - [ ] 7. LoRA fine-tune (stretch; code done, data built; your remaining steps: finish the Colab training (7.3.5-7.3.6), run the prediction notebook (7.4.4), score base and tuned with `run_eval --predictions` (7.6), record the result in `DECISION.md` (7.8.1); [plan](docs/plan/07-lora-fine-tune.md))
 - [ ] 8. Schema-RAG + semantic cache (optional)
 - [x] 9. Frontend (built and checked against the running stack; your Google/GitHub sign-in click-through, 9.11.2, remains; [plan](docs/plan/09-frontend.md))
-- [ ] 10. Deploy + portfolio polish
+- [ ] 10. Deploy + portfolio polish (deploy built, your first deploy remains: [plan](docs/plan/10-deploy.md); dashboard, demo script and final results to come)
+
+## Deploy
+
+Production is one Cloudflare Worker at `https://querylab.aadarsha-subedi.com.np`: it serves the frontend build and forwards `/api`, `/_allauth` and `/accounts` to one basic container. Everything is in `backend/cloudflare/`. [The plan](docs/plan/10-deploy.md) lists each step.
+
+Before the first deploy:
+
+1. Neon, in Asia Pacific (the container runs there): databases `querylab_app` and `querylab`, and a read replica of `querylab`.
+2. Redis, in Asia Pacific, with TLS.
+3. A new GitHub OAuth app with callback `https://querylab.aadarsha-subedi.com.np/accounts/github/login/callback/`. In Google, add that origin and `.../accounts/google/login/callback/`.
+4. An R2 bucket: from `backend/cloudflare`, `pnpm wrangler r2 bucket cors set <bucket> --file r2-cors.json`; add a 1-day lifecycle rule on `dumps/`; make an API token for that bucket.
+5. Fill in `backend/cloudflare/secrets.json` (git-ignored):
+
+| Key | Value |
+|-----|-------|
+| `APP_DATABASE_URL`, `DATA_PRIMARY_URL` | Neon direct (non-pooled) URLs for `querylab_app` and `querylab`, with `?sslmode=require` |
+| `DATA_READER_URL` | `postgres://querylab_reader:<new password>@<replica host>/querylab?sslmode=require`; `bootstrap_data_db` creates the role with this password |
+| `WORKSPACE_PRIMARY_CONNINFO`, `WORKSPACE_READER_CONNINFO` | `host=<pooled host> port=5432 dbname=querylab sslmode=require`, for the primary and the replica |
+| `REDIS_URL`, `CACHE_URL` | Both the same `rediss://...` URL, database 0 |
+| `DJANGO_SECRET_KEY`, `MASTER_WORKSPACE_SECRET` | New long random strings (`openssl rand -base64 48`), not the local ones |
+| `ENCRYPTION_KEYS` | A new Fernet key. Losing this one or the master secret breaks saved API keys and workspace passwords |
+| `GOOGLE_*`, `GITHUB_*`, `LLM_DEFAULT_GEMINI_API_KEY` | From the providers |
+| `R2_*` | `R2_ENDPOINT_URL` is `https://<account id>.r2.cloudflarestorage.com` |
+
+First deploy, in order:
+
+```bash
+make deploy-first
+```
+
+```bash
+cd backend/cloudflare && pnpm wrangler secret bulk secrets.json
+```
+
+```bash
+make keep-awake
+```
+
+Watch the container logs in the Cloudflare dashboard until `Demo data loaded.` appears, stop `keep-awake`, and straight away replace the seeding image, because it repeats the load on every start:
+
+```bash
+make deploy
+```
+
+Later deploys are `make deploy`. For a new migration, run `make prod-manage ARGS="migrate"` first.
 
 ## Demo data
 

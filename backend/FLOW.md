@@ -569,3 +569,20 @@ make load-demo      core/demo.py: TRUNCATE demo.*, then per CSV:
 `backend/postman/` holds a Postman collection for every endpoint and a local
 environment (see its README). Run _Get CSRF cookie and current user_ first; the
 collection then sends the CSRF token on every write.
+
+## Production: request path and deploys
+
+```
+browser -> querylab.aadarsha-subedi.com.np -> Worker `querylab` (backend/cloudflare)
+  /api/*, /_allauth/*, /accounts/*  -> Worker checks the settings, sets X-Forwarded-Proto and X-Forwarded-For
+                                       -> BackendContainer (one Durable Object, one basic container, APAC)
+                                       -> gunicorn on 8080; Huey beside it
+  anything else                     -> frontend/dist static file, or index.html (no Worker code, no container wake)
+```
+
+- **Settings:** the container environment is `cloudflare/settings.json` (bundled into the Worker) plus the Worker secrets named by `cloudflare/secrets.example.json`. A missing or `FILL_ME` secret gives a 500 that names the secret, and the container does not start. When the settings change, `syncSettings` restarts the container.
+- **Sleep:** the container stops after 3 minutes with no request and starts again on the next one, about 40 seconds at 0.25 CPU (measured locally). Queued jobs and `expire_stale_runs` wait for the next wake. A job running when it stops is lost; a dump import then shows `dump_interrupted`.
+- **`make deploy`:** build the frontend with the production `VITE_*` values given in the shell, remove `backend/.first-deploy`, `wrangler deploy` (image, Worker, assets).
+- **`make deploy-first`:** the same, with `infra/sql` and the Olist CSVs staged in `backend/.first-deploy` for the image build. The entrypoint sees the folder and runs `migrate`, `bootstrap_data_db` and `load_demo` before Huey, on every start, until a plain `make deploy` replaces the image. `make keep-awake` stops the container sleeping during the load. `load_demo` is one transaction, so a killed load leaves nothing half done and the next start repeats it.
+- **Later migrations:** `make prod-manage ARGS="migrate"` runs the production image on this machine with the production settings. Nothing is written to disk.
+

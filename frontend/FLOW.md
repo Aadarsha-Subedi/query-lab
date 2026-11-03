@@ -145,3 +145,8 @@ GET .../imports -> Past imports table in the same popup (own loading / error / e
 ```
 
 The Run query sheet (`SqlConsole`) runs `POST /workspaces/{id}/sql`: read-only SELECT / WITH / EXPLAIN / SHOW. Removed: `TablesTab`, `TableEditor`, `ColumnsPanel`, `CreateTableDialog`, `RowsGrid`, `RowDialog`, `RelationsTab`, `contract.ts`. `/workspaces/$id` still redirects old links to Ask on Schema (or Query).
+
+## Production build and serving
+
+`make build-frontend-prod` runs `pnpm build` with `VITE_API_BASE_URL`, `VITE_APP_NAME` and `VITE_QUERY_STALE_TIME_MS` set in the shell; those win over `frontend/.env`. The Worker in `backend/cloudflare` uploads `dist/` as static assets. Any path except `/api/*`, `/_allauth/*` and `/accounts/*` gets a file, or `index.html` so the router can take it, without waking the backend container. A first API call after 3 idle minutes waits for the container to start (about 40 seconds measured locally).
+
