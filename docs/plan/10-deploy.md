@@ -109,6 +109,6 @@
 - [x] F.5 Straight after: stop `keep-awake` and run `make deploy`. Until then every container start repeats the load.
 - [x] F.6 Smoke test: `GET /api/health` is 200; the landing page and a deep link load.
 - [ ] F.7 Sign in with Google and with GitHub.
-- [ ] F.8 Ask a demo question: the agent reads through the replica, the SSE stream stays open, approve and replay work. Gemini failed here from Hong Kong, so the shared key moved to Groq (see `backend/DECISION.md`); first test of Groq from the container.
+- [ ] F.8 Ask a demo question: the agent reads through the replica, the SSE stream stays open, approve and replay work. Gemini failed here from Hong Kong, so the shared key moved to Mistral (see `backend/DECISION.md`); first test of Mistral from the container.
 - [ ] F.9 Create a workspace and import a real dump through R2 (closes D.10 of the dump import plan and 5.9.7's real-Neon checks), then measure a 50 MB dump (closes D.11) and tune `DUMP_STATEMENT_TIMEOUT_MS`.
 - [ ] F.10 Let the container sleep and record the real cold start.

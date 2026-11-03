@@ -3,9 +3,9 @@
 PROVIDER_GEMINI = "gemini"
 PROVIDER_OPENAI = "openai"
 PROVIDERS = (PROVIDER_GEMINI, PROVIDER_OPENAI)
-# QueryLab's shared key only; users do not save Groq keys, so it is not in PROVIDERS.
-PROVIDER_GROQ = "groq"
-GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+# QueryLab's shared key only; users do not save Mistral keys, so it is not in PROVIDERS.
+PROVIDER_MISTRAL = "mistral"
+MISTRAL_BASE_URL = "https://api.mistral.ai/v1"
 
 # OpenAI reasoning models spend part of the token budget thinking. With a small
 # budget they can think all of it away and return no text, so they think as

@@ -365,4 +365,4 @@ only the Ask tab (the chat) fills the screen and scrolls inside itself.
 
 **Production values come from the shell, not a file (2026-11-03).** The project rule allows no `.env.production`, and Vite lets process variables override `.env` files, so the Makefile passes the three `VITE_*` values at build time. They are public anyway; they end up in the bundle. The frontend must not use `/api`, `/_allauth` or `/accounts` as route paths, because the Worker sends those to Django.
 
-**The shared key is Groq (2026-11-03).** Settings picks QueryLab AI's model from the new `groq` list in `/api/llm-keys-models`; the `gemini` and `openai` lists stay for saved keys. The landing eval strip still quotes the Gemini run, labelled with its model and date, until the Groq run replaces it.
+**The shared key is Mistral (2026-11-03).** Settings picks QueryLab AI's model from the new `mistral` list in `/api/llm-keys-models`; the `gemini` and `openai` lists stay for saved keys. The landing eval strip still quotes the Gemini run, labelled with its model and date, until a Mistral run replaces it.

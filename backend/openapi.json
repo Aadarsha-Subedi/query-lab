@@ -1784,11 +1784,11 @@
             "title": "Gemini",
             "type": "array"
           },
-          "groq": {
+          "mistral": {
             "items": {
               "type": "string"
             },
-            "title": "Groq",
+            "title": "Mistral",
             "type": "array"
           },
           "openai": {
@@ -1801,7 +1801,7 @@
         },
         "required": [
           "gemini",
-          "groq",
+          "mistral",
           "openai"
         ],
         "title": "LLMModelsOut",

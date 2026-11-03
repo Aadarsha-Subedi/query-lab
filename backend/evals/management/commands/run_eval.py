@@ -15,7 +15,7 @@ from evals.targets.base import EvalQuestion, Target
 class Command(BaseCommand):
     help = (
         "Score a model on a question set (execution accuracy). Run it in the dev "
-        "container: make eval ARGS='run_eval --target olist --model qwen/qwen3.8-27b'"
+        "container: make eval ARGS='run_eval --target olist --model codestral-2508'"
     )
 
     def add_arguments(self, parser: CommandParser) -> None:

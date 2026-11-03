@@ -70,12 +70,12 @@ export function PrivacyPage() {
             <strong>Google or GitHub</strong>, whichever you sign in with, for sign-in.
           </li>
           <li>
-            <strong>The LLM provider.</strong> That is Groq on the shared key, or the provider of your own key
-            (Google or OpenAI). It receives your question and the workspace&apos;s schema, which means table
-            and column names, comments, and common values from text columns with few distinct values. It also
-            receives the SQL and any error. When the agent checks a result that looks odd, it receives a few
-            result rows too. This applies to private workspaces as well as the demo. Each provider&apos;s own
-            terms apply, and on a free tier they may let the provider use what it receives to improve its
+            <strong>The LLM provider.</strong> That is Mistral AI on the shared key, or the provider of your
+            own key (Google or OpenAI). It receives your question and the workspace&apos;s schema, which means
+            table and column names, comments, and common values from text columns with few distinct values. It
+            also receives the SQL and any error. When the agent checks a result that looks odd, it receives a
+            few result rows too. This applies to private workspaces as well as the demo. Each provider&apos;s
+            own terms apply, and on a free tier they may let the provider use what it receives to improve its
             products.
           </li>
           <li>

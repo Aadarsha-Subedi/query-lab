@@ -46,7 +46,7 @@ createsuperuser:
 	$(BACKEND) python manage.py createsuperuser
 
 ## eval: run an evals command in the dev container, e.g.
-##   make eval ARGS="run_eval --target olist --model qwen/qwen3.8-27b"
+##   make eval ARGS="run_eval --target olist --model codestral-2508"
 eval:
 	$(BACKEND) python manage.py $(ARGS)
 
@@ -54,8 +54,8 @@ eval:
 ## Each run is compared with the latest earlier run of the same target, runner and prompt
 ## version, and the command fails when accuracy drops by more than EVAL_GATE_MAX_DROP_POINTS.
 ## Needs the live key, so it runs in the dev container only:
-##   make eval-gate MODEL=qwen/qwen3.8-27b RUNNER=ask
-MODEL ?= qwen/qwen3.8-27b
+##   make eval-gate MODEL=codestral-2508 RUNNER=ask
+MODEL ?= codestral-2508
 RUNNER ?= ask
 eval-gate:
 	$(BACKEND) python manage.py run_eval --target olist --model $(MODEL) --runner $(RUNNER) --yes --gate

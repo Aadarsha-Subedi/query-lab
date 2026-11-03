@@ -1,7 +1,7 @@
-"""OpenAI, and Groq through its OpenAI-compatible API, with the official openai SDK."""
+"""OpenAI, and Mistral through its OpenAI-compatible API, with the official openai SDK."""
 
 import logging
-from typing import Any, ClassVar
+from typing import Any
 
 import openai
 from django.conf import settings
@@ -19,11 +19,11 @@ from common.llm.base import (
     LLMUnavailableError,
 )
 from common.llm.constants import (
-    GROQ_BASE_URL,
+    MISTRAL_BASE_URL,
     OPENAI_REASONING_EFFORT,
     OPENAI_REASONING_MODEL_PREFIX,
     OPENAI_REASONING_TOKEN_FACTOR,
-    PROVIDER_GROQ,
+    PROVIDER_MISTRAL,
     PROVIDER_OPENAI,
 )
 
@@ -46,9 +46,6 @@ def _map_error(exc: Exception) -> LLMError:
         return LLMTimeoutError()
     if isinstance(exc, (openai.AuthenticationError, openai.PermissionDeniedError)):
         return LLMInvalidKeyError()
-    # 413 is Groq's answer when one request alone exceeds its tokens-per-minute limit.
-    if getattr(exc, "status_code", None) == 413:
-        return LLMRateLimitedError()
     if isinstance(exc, openai.RateLimitError):
         # The same 429 also means the account has run out of credit.
         if getattr(exc, "code", None) == "insufficient_quota":
@@ -60,9 +57,7 @@ def _map_error(exc: Exception) -> LLMError:
 class OpenAIProvider(LLMProvider):
     provider = PROVIDER_OPENAI
     base_url: str | None = None
-    json_mode = True
     sends_temperature = False
-    extra_options: ClassVar[dict[str, Any]] = {}
 
     def __init__(self, api_key: str, model: str):
         self.model = model
@@ -83,11 +78,10 @@ class OpenAIProvider(LLMProvider):
         if self.model.startswith(OPENAI_REASONING_MODEL_PREFIX):
             options["reasoning_effort"] = OPENAI_REASONING_EFFORT
             max_tokens *= OPENAI_REASONING_TOKEN_FACTOR
-        if request.json_output and self.json_mode:
+        if request.json_output:
             options["response_format"] = {"type": "json_object"}
         if self.sends_temperature:
             options["temperature"] = request.temperature
-        options.update(self.extra_options)
         try:
             # No temperature for OpenAI: its reasoning models reject anything but the default.
             response = self._client.chat.completions.create(
@@ -121,14 +115,7 @@ class OpenAIProvider(LLMProvider):
             raise _map_error(exc) from None
 
 
-class GroqProvider(OpenAIProvider):
-    provider = PROVIDER_GROQ
-    base_url = GROQ_BASE_URL
-    # Groq's JSON mode fails the whole request with a 400 when the model strays from
-    # JSON. Without it a stray reply reaches our parsers, which ask again.
-    json_mode = False
+class MistralProvider(OpenAIProvider):
+    provider = PROVIDER_MISTRAL
+    base_url = MISTRAL_BASE_URL
     sends_temperature = True
-    # The reasoning text would otherwise arrive inside the reply and break the parse.
-    extra_options: ClassVar[dict[str, Any]] = {
-        "extra_body": {"reasoning_format": "hidden"}
-    }

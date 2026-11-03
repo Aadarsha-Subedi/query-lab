@@ -118,7 +118,7 @@ function QuerylabModelSetting({ model }: { model: string }) {
           <ModelSelect
             provider="gemini"
             value={model}
-            models={available.groq}
+            models={available.mistral}
             label="QueryLab AI model"
             disabled={mutation.isPending}
             onChange={(next) => {

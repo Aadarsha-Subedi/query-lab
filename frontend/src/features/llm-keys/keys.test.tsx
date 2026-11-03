@@ -17,7 +17,7 @@ function show() {
   )
 }
 
-const MODELS = { gemini: ['gem-a', 'gem-b'], openai: ['gpt-a', 'gpt-b'], groq: ['groq-a', 'groq-b'] }
+const MODELS = { gemini: ['gem-a', 'gem-b'], openai: ['gpt-a', 'gpt-b'], mistral: ['mis-a', 'mis-b'] }
 const key = (provider: string, over: Record<string, unknown> = {}) => ({
   provider,
   key_last4: 'wxyz',
@@ -27,7 +27,7 @@ const key = (provider: string, over: Record<string, unknown> = {}) => ({
   ...over,
 })
 const base = (source: 'querylab' | 'own', saved: unknown[] = []) => ({
-  'GET /api/llm-settings': () => ok({ source, querylab_model: 'groq-a' }),
+  'GET /api/llm-settings': () => ok({ source, querylab_model: 'mis-a' }),
   'GET /api/llm-keys': () => ok(saved),
   'GET /api/llm-keys-models': () => ok(MODELS),
   'GET /api/agent/limits': () =>
@@ -61,16 +61,16 @@ describe('KeysPage', () => {
       ...base('querylab'),
       'PUT /api/llm-settings': (request) => {
         sent = request.body
-        return ok({ source: 'querylab', querylab_model: 'groq-b' })
+        return ok({ source: 'querylab', querylab_model: 'mis-b' })
       },
     })
     show()
     const field = await screen.findByRole('combobox', { name: 'QueryLab AI model' })
-    expect(field).toHaveTextContent('groq-a')
+    expect(field).toHaveTextContent('mis-a')
     await userEvent.click(field)
-    await userEvent.click(await screen.findByRole('option', { name: 'groq-b' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'mis-b' }))
     await waitFor(() => {
-      expect(sent).toEqual({ querylab_model: 'groq-b' })
+      expect(sent).toEqual({ querylab_model: 'mis-b' })
     })
   })
 

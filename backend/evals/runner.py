@@ -22,7 +22,7 @@ from ask.errors import (
 )
 from common.exception.domain import AppException
 from common.llm import LLMProvider, allowed_models, create_provider
-from common.llm.constants import PROVIDER_GROQ, PROVIDER_OPENAI
+from common.llm.constants import PROVIDER_MISTRAL, PROVIDER_OPENAI
 from evals import compare
 from evals.models import EvalResult, EvalRun
 from evals.targets.base import EvalQuestion, Target
@@ -40,12 +40,14 @@ class EvalConfigError(Exception):
 def build_provider(model: str) -> tuple[str, LLMProvider]:
     """The provider for `model`, from the harness keys in .env (no user keys)."""
     for provider, key in (
-        (PROVIDER_GROQ, settings.QUERY_LAB_API_KEY),
+        (PROVIDER_MISTRAL, settings.LLM_DEFAULT_API_KEY),
         (PROVIDER_OPENAI, settings.EVAL_OPENAI_API_KEY),
     ):
         if model in allowed_models(provider):
             return provider, create_provider(provider, key, model)
-    raise EvalConfigError(f"Model not in LLM_GROQ_MODELS or LLM_OPENAI_MODELS: {model}")
+    raise EvalConfigError(
+        f"Model not in LLM_MISTRAL_MODELS or LLM_OPENAI_MODELS: {model}"
+    )
 
 
 @dataclass
