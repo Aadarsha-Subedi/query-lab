@@ -34,7 +34,8 @@ export function Navbar() {
       >
         <Link to="/" className="flex items-center gap-2 rounded-sm text-body font-semibold">
           <Logo />
-          {appName()}
+          {/* The pill has no room for the name on the narrowest phones. */}
+          <span className="max-[400px]:sr-only">{appName()}</span>
         </Link>
         {!signedIn && (
           <ul className="ml-4 hidden items-center gap-1 md:flex">
@@ -84,7 +85,7 @@ function MobileMenu() {
           <SheetTitle>Menu</SheetTitle>
           <SheetDescription className="sr-only">Jump to a part of the home page.</SheetDescription>
         </SheetHeader>
-        <ul className="flex flex-col gap-1">
+        <ul className="-mx-3 flex flex-col gap-1">
           {LANDING_SECTIONS.map(({ hash, label }) => (
             <li key={hash}>
               <SheetClose asChild>

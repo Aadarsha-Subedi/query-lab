@@ -67,7 +67,7 @@ export function Faq() {
                 <span>{question}</span>
               </span>
             </AccordionTrigger>
-            <AccordionContent className="pl-8">{answer}</AccordionContent>
+            <AccordionContent className="max-w-[70ch] pl-8">{answer}</AccordionContent>
           </AccordionItem>
         ))}
       </Accordion>

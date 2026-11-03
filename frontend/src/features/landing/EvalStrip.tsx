@@ -29,7 +29,7 @@ export function EvalStrip() {
           {SCORES.map((score) => (
             <div key={score.name} className="flex flex-col gap-1">
               <dt className="text-small font-medium">{score.name}, baseline</dt>
-              <dd className="text-display font-semibold tracking-[var(--tracking-heading)] tabular-nums">
+              <dd className="text-h1 font-semibold tracking-[var(--tracking-heading)] tabular-nums">
                 {score.value}
               </dd>
               <dd className="text-small text-muted-foreground">{score.detail}</dd>

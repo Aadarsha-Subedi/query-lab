@@ -6,7 +6,8 @@ import { appName } from '@/lib/app-name'
 
 import { OLIST_LICENCE_URL, REPO_URL } from './links'
 
-const FOOTER_LINK = 'text-small text-muted-foreground underline underline-offset-4 hover:text-foreground'
+const FOOTER_LINK =
+  'pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center text-small text-muted-foreground underline underline-offset-4 hover:text-foreground'
 
 export function Footer() {
   return (

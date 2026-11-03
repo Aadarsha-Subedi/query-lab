@@ -1,6 +1,7 @@
 import { Heading } from '@/components/typography/Heading'
 import { Text } from '@/components/typography/Text'
 import { SignInButtons } from '@/features/auth/SignInButtons'
+import { SignInNote } from '@/features/auth/SignInNote'
 
 export function CtaBand() {
   return (
@@ -14,7 +15,11 @@ export function CtaBand() {
             The Olist workspace is ready, and nothing runs until you approve it.
           </Text>
         </div>
-        <SignInButtons className="w-full max-w-xs shrink-0 sm:w-auto sm:max-w-none sm:flex-row" />
+        <div className="flex w-full max-w-xs shrink-0 flex-col gap-3 sm:w-auto sm:max-w-none">
+          {/* The band is the primary colour, so the focus ring flips to stay visible. */}
+          <SignInButtons className="sm:flex-row [&_button]:focus-visible:ring-primary-foreground [&_button]:focus-visible:ring-offset-primary" />
+          <SignInNote className="text-primary-foreground [&_a]:rounded-sm [&_a]:focus-visible:outline-primary-foreground" />
+        </div>
       </div>
     </section>
   )

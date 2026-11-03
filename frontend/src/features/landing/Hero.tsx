@@ -1,6 +1,7 @@
 import { Heading } from '@/components/typography/Heading'
 import { Text } from '@/components/typography/Text'
 import { SignInButtons } from '@/features/auth/SignInButtons'
+import { SignInNote } from '@/features/auth/SignInNote'
 
 import { ProductPreview } from './ProductPreview'
 
@@ -15,6 +16,7 @@ export function Hero() {
           Querylab turns a question into reviewed SQL, shows its work, and scores how well the AI did.
         </Text>
         <SignInButtons className="w-full max-w-xs sm:max-w-none sm:flex-row sm:justify-center" />
+        <SignInNote />
       </div>
       <div className="w-full">
         <ProductPreview />

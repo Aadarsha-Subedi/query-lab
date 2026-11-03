@@ -41,8 +41,8 @@ export function TermsPage() {
 
       <LegalSection title="AI answers can be wrong">
         <Text>
-          The SQL and the answers come from an AI model and can be wrong, even when they look right or carry a
-          &quot;checked&quot; label. Check them before you rely on them.
+          The SQL and the answers come from an AI model and can be wrong, even when they look right. Check
+          them before you rely on them.
         </Text>
       </LegalSection>
 

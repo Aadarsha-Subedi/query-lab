@@ -17,7 +17,7 @@ GROUP BY c.customer_state
 ORDER BY late_orders DESC
 LIMIT 4`
 
-/** Counted from the Olist CSVs with exactly the SQL above. Update both together. */
+/** Counted from the full Olist CSVs with the same filter as the SQL above. Update both together. */
 const ROWS = [
   { state: 'SP', late: '2,387' },
   { state: 'RJ', late: '1,664' },
@@ -41,16 +41,19 @@ function Step({ order, className, children }: { order: 0 | 1 | 2; className?: st
   )
 }
 
-/** A still of the Ask page. Static: no request is made and nothing here runs. */
+/** Styled after the Ask page, with real demo numbers. Static: no request is made and nothing here runs. */
 export function ProductPreview() {
   return (
-    <figure className="flex flex-col gap-4 rounded-lg border bg-surface p-4 text-left shadow-lg md:p-6">
+    <figure className="flex flex-col gap-4 rounded-lg border bg-surface p-4 text-left md:p-6">
       <Step order={0} className="flex justify-end">
         <p className="max-w-prose rounded-lg bg-surface-muted px-3 py-2 text-body">{QUESTION}</p>
       </Step>
       <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
         <Step order={1} className="min-w-0">
-          <CodeBlock code={SQL} className="h-full" />
+          <CodeBlock
+            code={SQL}
+            className="h-full [&_button]:bg-surface-muted [&_pre]:overflow-x-auto [&_pre]:break-normal [&_pre]:whitespace-pre"
+          />
         </Step>
         <Step order={2} className="flex min-w-0 flex-col gap-3">
           <Table>
@@ -63,8 +66,8 @@ export function ProductPreview() {
             <TableBody>
               {ROWS.map((row) => (
                 <TableRow key={row.state}>
-                  <TableCell>{row.state}</TableCell>
-                  <TableCell className="text-right tabular-nums">{row.late}</TableCell>
+                  <TableCell className="font-mono">{row.state}</TableCell>
+                  <TableCell className="text-right font-mono tabular-nums">{row.late}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

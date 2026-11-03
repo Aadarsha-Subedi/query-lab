@@ -18,7 +18,7 @@ export function IssuesLink({ children }: { children: ReactNode }) {
 /** One heading, then readable text at reading width; the project notice always comes first. */
 export function LegalPage({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <article className="mx-auto flex max-w-[var(--reading-max)] flex-col gap-8 px-6 py-16">
+    <article className="mx-auto flex max-w-[70ch] flex-col gap-8 px-6 py-16">
       <header className="flex flex-col gap-2">
         <Heading level={1}>{title}</Heading>
         <Text variant="small" muted>
