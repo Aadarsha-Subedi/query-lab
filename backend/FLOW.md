@@ -476,7 +476,7 @@ A run remembers its workspace: `AgentRun.workspace_id` (null = demo), `excluded_
 ### Filling a workspace: the dump import (2026-11-03)
 
 A workspace is a read-only copy of the user's database. Tables and data come only from a plain-SQL `pg_dump`
-(`--no-owner --no-privileges`, `.sql` or `.sql.gz`, up to `DUMP_MAX_FILE_BYTES`, 50 MB). There are no endpoints to
+(`.sql` or `.sql.gz`, up to `DUMP_MAX_FILE_BYTES`, 50 MB). There are no endpoints to
 create, alter or drop tables, columns, keys or relations, or to insert, update or delete rows (removed 2026-11-02).
 
 ```
@@ -490,9 +490,11 @@ POST /workspaces/{id}/imports/{job}/start
     workspace_connection(AS ws_<id>_rw): set statement and idle timeouts (DUMP_STATEMENT_TIMEOUT_MS)
     replace ? drop the workspace's tables/views/sequences : refuse if it already has any (workspace_not_empty)
     storage.read_lines (stream, gunzip, strict UTF-8, DUMP_MAX_TEXT_BYTES) ─> dump.read:
-        one statement at a time; run / copy / skip / refuse (statement number + file line); `public.` removed
+        one statement at a time; run / copy / skip. Everything runs as `_rw` (Postgres refuses what the role may not do, with
+        the statement number + file line); only source-server statements are skipped. `public.` and the name of any
+        schema the dump creates itself are removed from object names
         COPY ... FROM STDIN is fed to psycopg copy(); size checked after each COPY and every 500 statements
-    after the last statement: table / column / foreign-key caps, then quota.ensure_within  ─> COMMIT
+    after the last statement: quota.ensure_within  ─> COMMIT
     any failure rolls everything back (a failed replace keeps the old tables)
   finally: delete the R2 object, forget the cached size, bump the schema version
   job -> succeeded (statements_run, tables_created) or failed (error code, message, statement, line); a DDL log row
