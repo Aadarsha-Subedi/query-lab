@@ -13,8 +13,10 @@ BEGIN
 END
 $$;
 
+-- No NOSUPERUSER here: on managed Postgres (Neon) the owner is not a superuser and may not
+-- name that attribute at all. A role it creates cannot be a superuser anyway.
 ALTER ROLE {reader_role} WITH LOGIN PASSWORD {reader_password}
-    NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;
+    NOCREATEDB NOCREATEROLE NOREPLICATION;
 
 -- Every transaction is read-only and every statement has a time limit. These
 -- are role defaults the agent could SET differently, so the privileges below
