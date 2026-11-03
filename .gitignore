@@ -37,3 +37,7 @@ graphify-out/
 
 # Committed test env for the backend (throwaway values only).
 !backend/.env.test
+
+# Cloudflare: real secrets, and the seed files staged by `make deploy-first`.
+backend/cloudflare/secrets.json
+backend/.first-deploy/

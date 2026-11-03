@@ -7,3 +7,5 @@
 Dockerfile
 .dockerignore
 .env.*
+cloudflare
+postman
