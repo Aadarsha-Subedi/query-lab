@@ -185,7 +185,9 @@ standard, pure CSS) at the durations below. Our rules:
 ## 8. Iconography (Hugeicons)
 
 - Library: `@hugeicons/react` with `@hugeicons/core-free-icons`, the only icon
-  source. One style throughout: **stroke rounded**, 1.5 px stroke.
+  source. One style throughout: **stroke rounded**, 1.5 px stroke. The one exception
+  is a company's own logo (`src/assets/providers`), on sign-in buttons and AI
+  settings, always 20 px and decorative.
 - Sizes: 16 px inline with `small` / `body` text, 20 px in buttons and nav,
   24 px for empty states and page headers. Icons inherit `currentColor`.
 - **Every button has an icon** next to its label (start by default, `end` for

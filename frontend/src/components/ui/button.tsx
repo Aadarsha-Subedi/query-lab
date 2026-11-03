@@ -38,8 +38,8 @@ const ICON_SIZE: Record<NonNullable<VariantProps<typeof buttonVariants>['size']>
 
 type BaseProps = Omit<React.ComponentProps<'button'>, 'children' | 'aria-label'> &
   Pick<VariantProps<typeof buttonVariants>, 'variant'> & {
-    /** Every button has an icon (design-system rule). */
-    icon: IconSvgElement
+    /** Every button has an icon (design-system rule): a Hugeicon, or an element for a brand logo. */
+    icon: IconSvgElement | React.ReactElement
     /** Which side of the label the icon sits on. */
     iconPosition?: 'start' | 'end'
     /** Swaps the icon for a spinner in the same spot (no layout shift), disables and sets aria-busy. */
@@ -76,13 +76,16 @@ function Button({
   ...props
 }: ButtonProps) {
   const Comp = asChild ? Slot.Root : 'button'
-  const glyph = (
-    <Icon
-      icon={loading ? Loading03Icon : icon}
-      size={ICON_SIZE[size]}
-      className={loading ? 'animate-spin' : undefined}
-    />
-  )
+  const glyph =
+    React.isValidElement(icon) && !loading ? (
+      icon
+    ) : (
+      <Icon
+        icon={loading ? Loading03Icon : (icon as IconSvgElement)}
+        size={ICON_SIZE[size]}
+        className={loading ? 'animate-spin' : undefined}
+      />
+    )
 
   return (
     <Comp

@@ -36,6 +36,9 @@ describe('landing page', () => {
     ).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Continue with Google' })).toHaveLength(2)
     expect(screen.getAllByRole('button', { name: 'Continue with GitHub' })).toHaveLength(2)
+    for (const button of screen.getAllByRole('button', { name: /^Continue with/ })) {
+      expect(button.querySelector('img')).toHaveAttribute('alt', '')
+    }
   })
 
   it('links the navbar to a section for every anchor, and to sign-in', async () => {

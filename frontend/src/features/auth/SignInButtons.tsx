@@ -1,15 +1,15 @@
-import { GithubIcon, GoogleIcon } from '@hugeicons/core-free-icons'
-
+import githubLogo from '@/assets/providers/github.png'
+import googleLogo from '@/assets/providers/google.png'
 import { Button } from '@/components/ui/button'
-import { type IconSvgElement } from '@/components/ui/icon'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 import { ALLAUTH_PROVIDER_REDIRECT, AUTH_CALLBACK_PATH, type Provider } from './api'
 
-const PROVIDERS: { provider: Provider; label: string; icon: IconSvgElement }[] = [
-  { provider: 'google', label: 'Continue with Google', icon: GoogleIcon },
-  { provider: 'github', label: 'Continue with GitHub', icon: GithubIcon },
+// The GitHub mark is black on transparent: inverted on the dark theme, like the OpenAI logo.
+const PROVIDERS: { provider: Provider; label: string; logo: string; logoClassName?: string }[] = [
+  { provider: 'google', label: 'Continue with Google', logo: googleLogo },
+  { provider: 'github', label: 'Continue with GitHub', logo: githubLogo, logoClassName: 'dark:invert' },
 ]
 
 function csrfToken(): string {
@@ -24,7 +24,7 @@ function csrfToken(): string {
 export function SignInButtons({ className }: { className?: string }) {
   return (
     <div className={cn('flex flex-col gap-3', className)}>
-      {PROVIDERS.map(({ provider, label, icon }) => (
+      {PROVIDERS.map(({ provider, label, logo, logoClassName }) => (
         <form key={provider} method="post" action={api.url(ALLAUTH_PROVIDER_REDIRECT)}>
           <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken()} />
           <input type="hidden" name="provider" value={provider} />
@@ -34,7 +34,20 @@ export function SignInButtons({ className }: { className?: string }) {
             name="callback_url"
             value={new URL(AUTH_CALLBACK_PATH, window.location.origin).toString()}
           />
-          <Button type="submit" variant="secondary" icon={icon} className="w-full">
+          <Button
+            type="submit"
+            variant="secondary"
+            icon={
+              <img
+                src={logo}
+                alt=""
+                width={20}
+                height={20}
+                className={cn('size-5 shrink-0', logoClassName)}
+              />
+            }
+            className="w-full"
+          >
             {label}
           </Button>
         </form>
