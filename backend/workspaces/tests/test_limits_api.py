@@ -35,7 +35,7 @@ def test_limits_report_what_is_used_and_allowed(client: Client, user: User) -> N
     assert data["workspaces"]["used"] == 1
     assert data["bytes"]["used"] > 50_000
     assert (
-        data["bytes"]["per_workspace"] == 104857600
+        data["bytes"]["per_workspace"] == 52428800
         and data["bytes"]["allowed"] == 262144000
     )
     assert {
@@ -48,7 +48,7 @@ def test_limits_report_what_is_used_and_allowed(client: Client, user: User) -> N
     listed = client.get("/api/workspaces").json()["data"][1]
     assert (
         listed["bytes_used"] == data["bytes"]["used"]
-        and listed["bytes_allowed"] == 104857600
+        and listed["bytes_allowed"] == 52428800
     )
     assert listed["tables"] == 1
 
