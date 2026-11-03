@@ -18,9 +18,9 @@
 			"image_vars": { "UV_HTTP_TIMEOUT": "600", "UV_CONCURRENT_DOWNLOADS": "4" },
 			"instance_type": "basic",
 			"max_instances": 1,
-			// Singapore, next to the databases. APAC alone placed it in Hong Kong, where the Gemini API
-			// is not available. `cities` is not in wrangler's schema yet, but wrangler sends it.
-			"constraints": { "regions": ["APAC"], "cities": ["sin"] },
+			// Asia Pacific, next to the databases. Cloudflare picks the city, and it has been Hong Kong;
+			// pinning a city (`cities`) needs a capability this account does not have.
+			"constraints": { "regions": ["APAC"] },
 		},
 	],
 
