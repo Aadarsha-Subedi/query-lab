@@ -1,6 +1,6 @@
 # Step 10a: Deploy to Cloudflare
 
-**Status:** approved by the owner on 2026-11-03. Parts A to D are built and committed locally. Parts E and F are the owner's.
+**Status:** live at `https://querylab.aadarsha-subedi.com.np` since 2026-11-03. What is left is F.7 to F.10, which need a signed-in browser or a real dump.
 
 **Owner decisions (2026-11-03):** sub-domain `querylab.aadarsha-subedi.com.np`; the container sleeps after 3 idle minutes; the first deploy runs migrations and every management command itself; the owner creates Neon and Redis and fills in the secrets before deploying.
 
@@ -45,6 +45,13 @@
 - Seed (migrate, bootstrap, load 99,441 orders): 135 seconds from container start. Neon over the network will be slower. Peak memory about 375 MiB.
 - With 1 gunicorn worker (4 threads) and 2 Huey workers, the owner's choice to match the other projects: cold start to `/api/health` 200 took 33 and 55 seconds on two runs; idle memory 249 MiB (budget 500). With 2 gunicorn workers: 40 seconds, 363 MiB.
 - A stop signal shuts the container down in 1 second.
+
+## First deploy on real Neon (2026-11-03)
+
+- `bootstrap_data_db` failed at first: on Postgres 18, a non-superuser may not even name `NOSUPERUSER` in `ALTER ROLE` ("Only roles with the SUPERUSER attribute may change the SUPERUSER attribute"). The clause is gone from `infra/sql/001_roles.sql`. Local Postgres never showed this because the local owner is a superuser.
+- With the fix, the seed took about 4.5 minutes through Neon's pooled endpoint from container start.
+- `querylab_reader` checked directly on the replica: not a superuser, no extra attributes, member of nothing, and `CREATE TABLE` is refused, also after `SET default_transaction_read_only = off` (the replica itself refuses, so this does not prove the grants; the local isolation tests do).
+- The container library pings with `Host: ping`, so each start logs a few harmless `DisallowedHost` errors.
 
 ## Atomic steps
 
@@ -95,12 +102,12 @@
 
 ### F. First deploy (after your go, run by whichever of us you choose)
 
-- [ ] F.1 `wrangler whoami`: the logged-in account owns the `aadarsha-subedi.com.np` zone.
-- [ ] F.2 `make deploy-first`. Until secrets exist, the Worker answers 500 and names what is missing, so no half-configured app is public.
-- [ ] F.3 `pnpm wrangler secret bulk secrets.json` in `backend/cloudflare`.
-- [ ] F.4 `make keep-awake` in a second terminal. Watch the container logs in the dashboard until `Demo data loaded.` appears. `/api/health` may answer 503 until the databases are ready.
-- [ ] F.5 Straight after: stop `keep-awake` and run `make deploy`. Until then every container start repeats the load.
-- [ ] F.6 Smoke test: `GET /api/health` is 200; the landing page and a deep link load.
+- [x] F.1 `wrangler whoami`: the logged-in account owns the `aadarsha-subedi.com.np` zone.
+- [x] F.2 `make deploy-first`. Until secrets exist, the Worker answers 500 and names what is missing, so no half-configured app is public.
+- [x] F.3 `pnpm wrangler secret bulk secrets.json` in `backend/cloudflare`.
+- [x] F.4 `make keep-awake` in a second terminal. Watch the container logs in the dashboard until `Demo data loaded.` appears. `/api/health` may answer 503 until the databases are ready.
+- [x] F.5 Straight after: stop `keep-awake` and run `make deploy`. Until then every container start repeats the load.
+- [x] F.6 Smoke test: `GET /api/health` is 200; the landing page and a deep link load.
 - [ ] F.7 Sign in with Google and with GitHub.
 - [ ] F.8 Ask a demo question: the agent reads through the replica, the SSE stream stays open, approve and replay work.
 - [ ] F.9 Create a workspace and import a real dump through R2 (closes D.10 of the dump import plan and 5.9.7's real-Neon checks), then measure a 50 MB dump (closes D.11) and tune `DUMP_STATEMENT_TIMEOUT_MS`.
