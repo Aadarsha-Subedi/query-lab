@@ -32,7 +32,8 @@ not a marketing site.
   spacing scale is compact, with generous space only around page-level sections.
 
 What it is not: no gradients on surfaces, no glassmorphism, no decorative
-illustrations in the app, no animation that delays reading.
+illustrations in the app, no animation that delays reading. The one exception is the landing page's hero: a soft
+neutral glow made from `primary-subtle` behind the page, never on a surface.
 
 ## 2. Colour
 
@@ -252,7 +253,7 @@ ghost, destructive, link; sizes sm/md/icon/icon-sm; always with an icon;
 loading and disabled), input, label,
 form (react-hook-form + Zod messages), card, dialog, dropdown-menu, table,
 tabs, badge (neutral, primary, success, warning, danger, info), toast (sonner), skeleton,
-avatar, separator, tooltip.
+avatar, separator, tooltip, accordion.
 
 ## 13. Data states
 
