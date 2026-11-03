@@ -40,6 +40,6 @@ export const activateKey = (provider: ProviderName) =>
 export const setSource = (source: AiSource) =>
   api.put<Schema<'AISettingOut'>>('/api/llm-settings', { source })
 
-/** The Gemini model used on QueryLab's key. */
+/** The Groq model used on QueryLab's key. */
 export const setQuerylabModel = (querylab_model: string) =>
   api.put<Schema<'AISettingOut'>>('/api/llm-settings', { querylab_model })

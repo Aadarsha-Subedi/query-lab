@@ -14,7 +14,7 @@ from ask.models import UserAISetting, UserLLMKey
 from common import crypto
 from common.exception.domain import BadRequestException
 from common.llm import LLMError, LLMProvider, allowed_models, create_provider
-from common.llm.constants import PROVIDER_GEMINI, PROVIDERS
+from common.llm.constants import PROVIDER_GROQ, PROVIDERS
 
 KEY_MIN_CHARS = 8
 KEY_MAX_CHARS = 512
@@ -124,17 +124,17 @@ def set_ai_source(user: User, source: str) -> str:
 
 
 def querylab_model(user: User) -> str:
-    """The Gemini model this user's asks use on QueryLab's key. A saved choice that is
+    """The Groq model this user's asks use on QueryLab's key. A saved choice that is
     no longer on the allowed list quietly falls back to the default model."""
     setting = UserAISetting.objects.filter(user=user).first()
     chosen = setting.querylab_model if setting else ""
-    if chosen and chosen in allowed_models(PROVIDER_GEMINI):
+    if chosen and chosen in allowed_models(PROVIDER_GROQ):
         return chosen
     return settings.LLM_DEFAULT_MODEL
 
 
 def set_querylab_model(user: User, model: str) -> str:
-    if model not in allowed_models(PROVIDER_GEMINI):
+    if model not in allowed_models(PROVIDER_GROQ):
         raise BadRequestException(
             "That model is not available.", error_code="model_invalid"
         )
@@ -159,11 +159,11 @@ def resolve_provider(user: User) -> ResolvedProvider:
         )
         return ResolvedProvider(provider, own.provider, KEY_OWN)
     provider = create_provider(
-        PROVIDER_GEMINI,
-        settings.LLM_DEFAULT_GEMINI_API_KEY,
+        PROVIDER_GROQ,
+        settings.QUERY_LAB_API_KEY,
         querylab_model(user),
     )
-    return ResolvedProvider(provider, PROVIDER_GEMINI, KEY_DEFAULT)
+    return ResolvedProvider(provider, PROVIDER_GROQ, KEY_DEFAULT)
 
 
 def _day_key(user: User) -> str:

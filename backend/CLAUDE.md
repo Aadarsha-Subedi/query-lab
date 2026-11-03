@@ -16,11 +16,11 @@ Run from the repo root (everything goes through Docker Compose):
 | Create the demo schema, reader role and grants (`querylab`) | `make bootstrap-db` |
 | Load the Olist CSVs into `demo` | `make load-demo` |
 | Tests (re-bootstraps the test reader role first) | `make test-backend` |
-| Eval commands in the dev container (step 2) | `make eval ARGS="run_eval --target olist --model gemini-3.5-flash"` |
-| Agent eval (step 3, Olist only, up to AGENT_MAX_LLM_CALLS calls per question) | `make eval ARGS="run_eval --target olist --runner agent --model gemini-3.5-flash-lite --yes"` |
+| Eval commands in the dev container (step 2) | `make eval ARGS="run_eval --target olist --model qwen/qwen3.8-27b"` |
+| Agent eval (step 3, Olist only, up to AGENT_MAX_LLM_CALLS calls per question) | `make eval ARGS="run_eval --target olist --runner agent --model qwen/qwen3.8-27b-lite --yes"` |
 | Does the confidence score separate right from wrong? | `make eval ARGS="confidence_report --run <id>"` |
-| Trace evals (step 6): build cases, draft SQL, score approved cases | `make eval ARGS="build_trace_cases"`, `make eval ARGS="draft_trace_cases"`, `make eval ARGS="run_eval --target traces --model gemini-3.5-flash --gate"` |
-| Regression gate on Olist and the trace set (dev container only) | `make eval-gate MODEL=gemini-3.5-flash RUNNER=ask` |
+| Trace evals (step 6): build cases, draft SQL, score approved cases | `make eval ARGS="build_trace_cases"`, `make eval ARGS="draft_trace_cases"`, `make eval ARGS="run_eval --target traces --model qwen/qwen3.8-27b --gate"` |
+| Regression gate on Olist and the trace set (dev container only) | `make eval-gate MODEL=qwen/qwen3.8-27b RUNNER=ask` |
 | Rewrite `backend/openapi.json` after any endpoint change (CI and a test fail when it is stale) | `make openapi` |
 | Lint / format | `make lint-backend` / `make format` |
 | Types (on the host) | `make typecheck-backend` |
@@ -82,7 +82,7 @@ common/            shared building blocks (from resolve-ai / Pro-Goal, rewritten
   throttling/      AnonThrottle, UserThrottle, AskThrottle (rates from settings)
   logger/ observability/       request id, request logging, JSON logs, Server-Timing
   email/utils.py   normalize_email, mask_email
-  llm/             provider interface, OpenAI + Gemini, fake provider (bring-your-own-key)
+  llm/             provider interface, OpenAI + Gemini (own keys), Groq (shared key), fake provider
   models/ validators/ cache/ crypto.py redis.py tasks.py
 postman/           Postman collection + local environment for every endpoint
 openapi.json       the API contract the frontend generates its types from (`make openapi`)
@@ -113,7 +113,7 @@ API_ERRORS.md      every error code, its HTTP status and what the screen should 
 6. **No local disk writes** in app code: logs go to stdout; dump uploads go from the browser straight to R2 (`workspaces/storage.py`) and are read back as a stream, never saved on the container.
 7. Don't skip or disable failing tests; fix the cause.
 8. **SQL from an LLM is untrusted.** It runs only after `ask.guard.check` and only through `ask.runner.run`, which uses the reader connection. Never execute model SQL any other way, never loosen the guard to make a test pass, and never put result rows into a prompt or an `AskLog`.
-9. **Keys:** a user's LLM key is stored only encrypted (`common.crypto`) and never returned, logged or echoed (only its last four characters). QueryLab's default key lives only in `.env` (`LLM_DEFAULT_GEMINI_API_KEY`).
+9. **Keys:** a user's LLM key is stored only encrypted (`common.crypto`) and never returned, logged or echoed (only its last four characters). QueryLab's shared key lives only in `.env` (`QUERY_LAB_API_KEY`, Groq).
 10. **`ask` settings** (`ASK_*`, `CONFIDENCE_*`, `LLM_DEFAULT_*`) follow rule 2: add new ones to `.env.example`, `.env.test` and settings together.
 11. **Evals run in the dev container, never in the production one** (`make eval ARGS=...`). Gold SQL and gold rows never reach a prompt, and `EvalResult` stores SQL, never result rows. Spider is read from `EVAL_SPIDER_DIR` and never committed or put in the image. The Olist target goes through the real guard and reader connection; Spider runs on a read-only SQLite file (`mode=ro`, `query_only`, a read-only authorizer). New `EVAL_*` settings follow rule 2 (`.env.example`, `.env.test`, settings together).
 12. **Agent execution happens only in the loop, after approval** (step 3). The model's tools (`agent/tools/`) never import `ask.runner` or a database connection; `propose_sql` only guards and stores SQL, and `agent/loop.py` alone calls `runner.run`, for SQL a person approved, edited (and the guard accepted) or the eval harness auto-approved (`actor=eval`). Never add a tool that executes SQL, never skip the pause, and never store or send result rows beyond the preview capped by `AGENT_RESULT_PREVIEW_ROWS` and `AGENT_STEP_OUTPUT_MAX_CHARS`. Run state in Redis is a cache: the stored `AgentStep` rows are the source of truth, and a paused run must stay rebuildable from them. The one other place SQL runs is `/result` (rule 14).

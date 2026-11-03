@@ -126,7 +126,7 @@ def test_bad_files_are_refused(tmp_path: Path, text: str) -> None:
 def test_the_file_needs_no_provider_key(
     spider_dir: Path, split: None, tmp_path: Path, settings
 ) -> None:
-    settings.LLM_DEFAULT_GEMINI_API_KEY = ""
+    settings.QUERY_LAB_API_KEY = ""
     file = write_file(tmp_path / "p.jsonl", {"dev-0000": "SELECT count(*) FROM item"})
     run(file)
     assert EvalRun.objects.count() == 1

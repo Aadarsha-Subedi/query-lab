@@ -1,18 +1,19 @@
 """Builds the provider a call should use. This is the only place that knows the vendors.
 
-Querylab is bring-your-own-key: every provider is built from a user's own key.
+Providers are built from a user's own key, or from QueryLab's shared Groq key.
 """
 
 from django.conf import settings
 
 from common.llm.base import LLMProvider
-from common.llm.constants import PROVIDER_GEMINI, PROVIDER_OPENAI
+from common.llm.constants import PROVIDER_GEMINI, PROVIDER_GROQ, PROVIDER_OPENAI
 from common.llm.gemini import GeminiProvider
-from common.llm.openai_provider import OpenAIProvider
+from common.llm.openai_provider import GroqProvider, OpenAIProvider
 
 _PROVIDER_CLASSES: dict[str, type[GeminiProvider] | type[OpenAIProvider]] = {
     PROVIDER_GEMINI: GeminiProvider,
     PROVIDER_OPENAI: OpenAIProvider,
+    PROVIDER_GROQ: GroqProvider,
 }
 
 
@@ -21,6 +22,7 @@ def allowed_models(provider: str) -> list[str]:
     return {
         PROVIDER_GEMINI: settings.LLM_GEMINI_MODELS,
         PROVIDER_OPENAI: settings.LLM_OPENAI_MODELS,
+        PROVIDER_GROQ: settings.LLM_GROQ_MODELS,
     }[provider]
 
 

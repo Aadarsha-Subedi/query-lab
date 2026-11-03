@@ -198,7 +198,7 @@ def test_unknown_model_is_refused() -> None:
 
 
 def test_known_models_get_the_right_provider() -> None:
-    assert runner.build_provider("gemini-3.5-flash")[0] == "gemini"
+    assert runner.build_provider("openai/gpt-oss-120b")[0] == "groq"
     assert runner.build_provider("gpt-5-mini")[0] == "openai"
 
 
@@ -363,5 +363,5 @@ def test_retry_failed_asks_llm_failed_questions_again(
 def test_retry_failed_needs_resume() -> None:
     with pytest.raises(CommandError, match="--resume"):
         call_command(
-            "run_eval", target="olist", model="gemini-3.5-flash", retry_failed=True
+            "run_eval", target="olist", model="openai/gpt-oss-120b", retry_failed=True
         )

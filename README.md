@@ -59,7 +59,7 @@ Before the first deploy:
 | `REDIS_URL`, `CACHE_URL` | Both the same `rediss://...` URL, database 0 |
 | `DJANGO_SECRET_KEY`, `MASTER_WORKSPACE_SECRET` | New long random strings (`openssl rand -base64 48`), not the local ones |
 | `ENCRYPTION_KEYS` | A new Fernet key. Losing this one or the master secret breaks saved API keys and workspace passwords |
-| `GOOGLE_*`, `GITHUB_*`, `LLM_DEFAULT_GEMINI_API_KEY` | From the providers |
+| `GOOGLE_*`, `GITHUB_*`, `QUERY_LAB_API_KEY` | From the providers (`QUERY_LAB_API_KEY` is a Groq key) |
 | `R2_*` | `R2_ENDPOINT_URL` is `https://<account id>.r2.cloudflarestorage.com` |
 
 First deploy, in order:

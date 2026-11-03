@@ -97,7 +97,7 @@ function SourceSetting({ source }: { source: AiSource }) {
   )
 }
 
-/** Which Gemini model answers on QueryLab's shared key. */
+/** Which model answers on QueryLab's shared key. */
 function QuerylabModelSetting({ model }: { model: string }) {
   const refresh = useRefresh()
   const models = useQuery(modelsQuery)
@@ -112,13 +112,13 @@ function QuerylabModelSetting({ model }: { model: string }) {
         <SettingRow
           id="querylab-model"
           title="QueryLab AI model"
-          description="The Gemini model that answers on our shared key. Larger models can be slower."
+          description="The model that answers on our shared key. Larger models can be slower."
           failure={mutation.isError ? errorText(mutation.error) : null}
         >
           <ModelSelect
             provider="gemini"
             value={model}
-            models={available.gemini}
+            models={available.groq}
             label="QueryLab AI model"
             disabled={mutation.isPending}
             onChange={(next) => {

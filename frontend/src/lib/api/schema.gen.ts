@@ -1605,6 +1605,8 @@ export interface components {
         LLMModelsOut: {
             /** Gemini */
             gemini: string[];
+            /** Groq */
+            groq: string[];
             /** Openai */
             openai: string[];
         };

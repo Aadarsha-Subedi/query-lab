@@ -81,7 +81,7 @@ function KeyChoices() {
     <dl className="grid gap-4 border-t pt-4 sm:grid-cols-2">
       <div className="flex flex-col gap-1">
         <dt className="text-small font-medium">QueryLab AI</dt>
-        <dd className="text-small text-muted-foreground">Our Gemini key, with a daily limit per user.</dd>
+        <dd className="text-small text-muted-foreground">Our Groq key, with a daily limit per user.</dd>
       </div>
       <div className="flex flex-col gap-1">
         <dt className="text-small font-medium">Custom AI</dt>

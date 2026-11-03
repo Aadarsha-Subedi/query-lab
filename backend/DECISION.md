@@ -555,4 +555,16 @@ Copied from the owner's project-management and resolve-ai: one `backend/cloudfla
 
 **First deploy found one real Neon difference.** A non-superuser may not name `NOSUPERUSER` in `ALTER ROLE`, so `001_roles.sql` no longer does; a role the owner creates cannot be a superuser anyway. The seed took about 4.5 minutes over the pooled endpoint.
 
-**Gemini from Hong Kong (2026-11-03, open).** `regions: ["APAC"]` placed the container in Hong Kong, which is not on Gemini's list of available regions, and every Gemini call came back as 400 while the same key and request worked from Nepal. Cloudflare refused `cities: ["sin"]` ("City-level placement requires INTERNAL or CITIES_CONSTRAINT capability"), and `OC` cannot be used alone. Gemini's error message is deliberately not logged, because it can quote the key, so the cause is inferred until a call succeeds from elsewhere.
+## Shared key moved from Gemini to Groq (2026-11-03, owner)
+
+**Why.** Cloudflare placed the container in `hkg09`, resolve-ai's runs in `nrt15`, and with the same code and key every Gemini call from querylab came back as 400. Hong Kong is not on Gemini's list of available regions. City pinning is refused on this account ("City-level placement requires INTERNAL or CITIES_CONSTRAINT capability") and `OC` cannot be used alone. The Gemini error text is deliberately not logged, because it can quote the key, so location is a strong inference and was not read from the error. The owner chose to change provider over a proxy Worker.
+
+**What changed.** `QUERY_LAB_API_KEY` is a Groq key, and asks on QueryLab's key go through `GroqProvider`. `LLM_DEFAULT_GEMINI_API_KEY` is gone, and evals use Groq too. Gemini and OpenAI remain for keys users save themselves. Those can fail in production for the same location reason while the container is in Hong Kong; this is unresolved.
+
+**Why the openai SDK and not `groq`:** Groq's API is OpenAI-compatible and `openai` is already in the image, so there is no new dependency to fit in the budget.
+
+**Why `qwen/qwen3.8-27b`.** Five Olist questions through the agent runner on this key: qwen 5/5, `openai/gpt-oss-120b` 3/5. An earlier three-question run with JSON mode on gave `openai/gpt-oss-20b` 1/3. `llama-3.3-70b-versatile` is not available to this key. Five questions is a sample, not an accuracy figure; the 95.1% on the landing page is Gemini's and has not been re-measured on Groq.
+
+**JSON mode is off for Groq.** It fails the whole request with a 400 (`json_validate_failed`, `tool_use_failed`) when the model strays. Without it a stray reply reaches our parsers, which tolerate fences and ask again. `reasoning_format` is hidden so reasoning text cannot land inside the reply, and the temperature is sent, which OpenAI's reasoning models would refuse.
+
+**Limits.** The free tier allows few tokens per minute, and a run spends about 3,400 tokens (5-question mean). Rapid questions hit a 429, which production reports as `llm_rate_limited` with no retry. Not tested yet: calling Groq from Hong Kong.

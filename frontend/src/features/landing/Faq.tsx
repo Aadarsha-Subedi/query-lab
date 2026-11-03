@@ -29,7 +29,7 @@ const QUESTIONS: { question: string; answer: ReactNode }[] = [
   {
     question: 'Which models?',
     answer:
-      'Gemini models on the shared key. With your own key, Gemini or OpenAI models. The Settings page lists what you can pick.',
+      'Open models served by Groq on the shared key. With your own key, Gemini or OpenAI models. The Settings page lists what you can pick.',
   },
   {
     question: 'Is it free?',

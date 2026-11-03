@@ -42,6 +42,7 @@ class LLMModelsOut(Schema):
     """The models a user may pick, per provider; the first of each list is the default."""
 
     gemini: list[str]
+    groq: list[str]
     openai: list[str]
 
 
@@ -121,7 +122,9 @@ def list_llm_models(request: HttpRequest) -> dict:
     """The models allowed per provider (from settings)."""
     return success(
         LLMModelsOut(
-            gemini=allowed_models("gemini"), openai=allowed_models("openai")
+            gemini=allowed_models("gemini"),
+            openai=allowed_models("openai"),
+            groq=allowed_models("groq"),
         ).dict()
     )
 

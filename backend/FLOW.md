@@ -101,7 +101,7 @@ callback returns to the host you opened, so the provider apps need
 question
   -> validate (length, control chars, our own tags removed)           ask/prompt.py
   -> resolve LLM key: user's own (OpenAI/Gemini) else the default     ask/keys.py
-       Gemini key; default key counts against a per-user daily cap
+       Groq key; default key counts against a per-user daily cap
   -> schema text (tables, columns, keys, COMMENT ON text, sample      ask/schema.py
        values for low-cardinality columns), cached in Redis
   -> prompt (rules + schema + <question>) -> LLM -> JSON reply        common/llm

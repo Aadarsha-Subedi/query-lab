@@ -1784,6 +1784,13 @@
             "title": "Gemini",
             "type": "array"
           },
+          "groq": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Groq",
+            "type": "array"
+          },
           "openai": {
             "items": {
               "type": "string"
@@ -1794,6 +1801,7 @@
         },
         "required": [
           "gemini",
+          "groq",
           "openai"
         ],
         "title": "LLMModelsOut",

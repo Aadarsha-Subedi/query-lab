@@ -255,6 +255,7 @@ LLM_MAX_OUTPUT_TOKENS = env.int("LLM_MAX_OUTPUT_TOKENS")
 LLM_TEMPERATURE = env.float("LLM_TEMPERATURE")
 LLM_OPENAI_MODELS = env.list("LLM_OPENAI_MODELS")
 LLM_GEMINI_MODELS = env.list("LLM_GEMINI_MODELS")
+LLM_GROQ_MODELS = env.list("LLM_GROQ_MODELS")
 
 # ── Ask: text-to-SQL (step 1) ─────────────────────────────────────────────
 
@@ -268,9 +269,9 @@ ASK_SAMPLE_VALUES_MAX_DISTINCT = env.int("ASK_SAMPLE_VALUES_MAX_DISTINCT")
 ASK_DENIED_FUNCTIONS = [name.lower() for name in env.list("ASK_DENIED_FUNCTIONS")]
 ASK_DEFAULT_KEY_DAILY_LIMIT = env.int("ASK_DEFAULT_KEY_DAILY_LIMIT")
 
-# QueryLab's own key, used when a user has not saved one. Never stored in the
+# QueryLab's own Groq key, used when a user has not saved one. Never stored in the
 # database or logged.
-LLM_DEFAULT_GEMINI_API_KEY = env.str("LLM_DEFAULT_GEMINI_API_KEY")
+QUERY_LAB_API_KEY = env.str("QUERY_LAB_API_KEY")
 LLM_DEFAULT_MODEL = env.str("LLM_DEFAULT_MODEL")
 
 # Confidence heuristic (shared by /ask and the agent). The model's own rating is
