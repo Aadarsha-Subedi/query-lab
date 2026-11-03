@@ -24,11 +24,12 @@ logger = logging.getLogger(__name__)
 
 
 def _map_error(exc: Exception) -> LLMError:
-    # Class and status only: Google's message can quote the key.
+    # Class, status and one yes/no only: Google's message can quote the key.
     logger.warning(
-        "Gemini request failed: %s code=%s",
+        "Gemini request failed: %s code=%s location_refused=%s",
         type(exc).__name__,
         getattr(exc, "code", None),
+        "location" in (getattr(exc, "message", None) or "").lower(),
     )
     if isinstance(exc, httpx.TimeoutException):
         return LLMTimeoutError()
