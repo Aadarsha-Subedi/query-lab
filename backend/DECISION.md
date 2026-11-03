@@ -165,7 +165,7 @@ from `READER_STATEMENT_TIMEOUT_MS`. The folder path is `DATA_SQL_DIR`.
 
 ## Deployment target: Cloudflare Container, basic
 
-1/4 vCPU, 1 GiB RAM, 4 GB disk; sleeps after ~10 idle minutes; disk wiped on restart.
+1/4 vCPU, 1 GiB RAM, 4 GB disk; sleeps after 3 idle minutes (`sleepAfter`); disk wiped on restart.
 
 - **Image:** multi-stage `Dockerfile` on `python:3.12-slim`; the build stage runs
   `uv sync --frozen --no-dev`, the final stage copies only the virtualenv and the
