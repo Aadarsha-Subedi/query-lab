@@ -121,3 +121,25 @@ def test_copy_data_lines_are_streamed_to_the_caller() -> None:
     assert first.kind == "copy"
     assert list(first.data) == ["1\n", "2; x\n"]
     assert next(stream).kind == "run"
+
+
+def test_pg_dump_restrict_lines_are_skipped() -> None:
+    result = items("\\restrict aB3xYz\nCREATE TABLE t (a int);\n\\unrestrict aB3xYz\n")
+    assert [(i.kind, i.number, i.line) for i in result] == [("run", 1, 2)]
+
+
+def test_other_psql_commands_are_refused() -> None:
+    with pytest.raises(dump.DumpRefused) as error:
+        items("CREATE TABLE t (a int);\n\\connect other\n")
+    assert "psql command" in error.value.message
+    assert (error.value.number, error.value.line) == (2, 2)
+
+
+def test_public_prefix_inside_a_regclass_cast_is_removed() -> None:
+    text = "ALTER TABLE ONLY public.t ALTER COLUMN id SET DEFAULT nextval('public.t_id_seq'::regclass);"
+    assert dump.strip_public(text) == (
+        "ALTER TABLE ONLY t ALTER COLUMN id SET DEFAULT nextval('t_id_seq'::regclass);"
+    )
+    assert dump.strip_public("INSERT INTO t VALUES ('public.x');") == (
+        "INSERT INTO t VALUES ('public.x');"
+    )

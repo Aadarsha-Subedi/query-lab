@@ -211,3 +211,54 @@ def test_the_workspace_cannot_be_written_by_its_reader_afterwards(
         ) as connection,
     ):
         connection.execute("DELETE FROM customer")
+
+
+MODERN_DUMP = """\
+--
+-- PostgreSQL database dump
+--
+
+\\restrict Zk3jQ9mXaPq
+
+SET statement_timeout = 0;
+SET default_tablespace = '';
+SET default_table_access_method = heap;
+
+CREATE TABLE public.users (
+    id integer NOT NULL,
+    email character varying(255) NOT NULL
+);
+
+ALTER TABLE public.users OWNER TO postgres;
+
+CREATE SEQUENCE public.users_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
+
+ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+
+COPY public.users (id, email) FROM stdin;
+1\ta@example.com
+\\.
+
+SELECT pg_catalog.setval('public.users_id_seq', 1, true);
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+\\unrestrict Zk3jQ9mXaPq
+"""
+
+
+def test_a_modern_pg_dump_with_restrict_and_sequences_imports(
+    run_dump: Callable[..., ImportJob], workspace: Workspace
+) -> None:
+    job = run_dump(MODERN_DUMP)
+    assert job.status == ImportJob.SUCCEEDED, (job.error_message, job.error_line)
+    assert rows(workspace, "SELECT email FROM users") == [("a@example.com",)]

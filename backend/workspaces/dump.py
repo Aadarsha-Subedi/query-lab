@@ -28,6 +28,8 @@ from workspaces import sqltext
 Kind = Literal["run", "skip", "copy"]
 
 SKIP_WORDS = frozenset(["set", "grant", "revoke", "reset"])
+# Newer pg_dump wraps its output in these (a guard for psql, harmless to skip).
+PSQL_SKIPPED = frozenset(["\\restrict", "\\unrestrict"])
 REFUSED = {
     "drop": "DROP is not allowed in a dump import.",
     "delete": "DELETE is not allowed in a dump import.",
@@ -86,7 +88,8 @@ SELECT_SKIPPED = re.compile(
 _PUBLIC = re.compile(
     r"""
     (?P<keep>
-        '(?:[^']|'')*'
+        (?P<regclass>'(?:[^']|'')*')(?=::regclass)
+      | '(?:[^']|'')*'
       | "public"\s*\.\s*(?P<quoted>)
       | "(?:[^"]|"")*"
       | (?P<tag>\$[A-Za-z_0-9]*\$).*?(?P=tag)
@@ -125,6 +128,8 @@ def strip_public(text: str) -> str:
     def replace(match: re.Match[str]) -> str:
         if match.group("keep") is None:
             return ""  # bare `public.`
+        if match.group("regclass") is not None:  # nextval('public.t_id_seq'::regclass)
+            return re.sub(r"^'(?:\"?public\"?\.)", "'", match.group(0))
         if match.group("quoted") is not None:
             return ""  # `"public".`
         return match.group(0)
@@ -197,8 +202,18 @@ def read(lines: Iterable[str]) -> Iterator[Item]:
     number = 0
     for raw in source:
         line_no += 1
-        if not buffer.strip():
+        if not sqltext.first_word(buffer):  # blank or only comments so far
             buffer, buffer_line = "", line_no
+            command = raw.strip()
+            if command.startswith("\\"):  # a psql meta-command, not SQL
+                word = command.split(None, 1)[0]
+                if word in PSQL_SKIPPED:
+                    continue
+                raise DumpRefused(
+                    number + 1,
+                    line_no,
+                    f"{word} is a psql command, not SQL. Dump with plain pg_dump output only.",
+                )
         buffer += raw if raw.endswith("\n") else raw + "\n"
         statements, rest = sqltext.split_partial(buffer)
         for text in statements:
