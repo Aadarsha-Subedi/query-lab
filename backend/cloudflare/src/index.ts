@@ -48,10 +48,30 @@ function containerEnv(env: Env): Record<string, string> {
 
 class SettingsError extends Error {}
 
+const IDLE_MS = 3 * 60 * 1000;
+
 /** The Django container. It sleeps when idle and starts again on the next request. */
 export class BackendContainer extends Container<Env> {
 	defaultPort = 8080;
 	sleepAfter = "3m";
+
+	private lastRequestAt = Date.now();
+
+	override async fetch(request: Request): Promise<Response> {
+		this.lastRequestAt = Date.now();
+		return super.fetch(request);
+	}
+
+	/**
+	 * `sleepAfter` alone never fires once a client drops a request mid-way: the library
+	 * then counts it as open forever (cloudflare/containers#241, #242).
+	 */
+	override async alarm(alarmProps?: AlarmInvocationInfo): Promise<void> {
+		if (this.ctx.container?.running && Date.now() - this.lastRequestAt >= IDLE_MS) {
+			await this.stop();
+		}
+		return super.alarm(alarmProps);
+	}
 
 	/**
 	 * Called by the Worker on every request with the settings it sees right now. A running
