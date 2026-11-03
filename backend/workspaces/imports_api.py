@@ -11,7 +11,7 @@ from typing import cast
 
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q, QuerySet
+from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.utils import timezone
 from ninja import Router
@@ -35,6 +35,7 @@ from workspaces.import_schemas import (
     ImportOut,
     import_dict,
 )
+from workspaces.importer import CODE_REPLACED
 from workspaces.models import ImportJob
 from workspaces.tasks import run_import
 
@@ -46,16 +47,26 @@ def _user(request: HttpRequest) -> User:
 
 
 def _active(user: User) -> QuerySet[ImportJob]:
-    """Jobs that still hold the user's one import slot. An upload nobody finished
-    (its URL has expired) and a job that stopped reporting do not."""
-    now = timezone.now()
-    upload_window = now - timedelta(seconds=settings.DUMP_PRESIGN_SECONDS)
-    stale = now - timedelta(seconds=importer.STALE_AFTER_SECONDS)
-    return ImportJob.objects.filter(owner=user).filter(
-        Q(status=ImportJob.AWAITING_UPLOAD, created_at__gte=upload_window)
-        | Q(status=ImportJob.QUEUED, updated_at__gte=stale)
-        | Q(status=ImportJob.RUNNING, updated_at__gte=stale)
+    """Jobs that still hold the user's one import slot: queued or running ones that
+    are still reporting. A job waiting for an upload holds nothing (no worker, no
+    database work), so it never blocks: a new import replaces it."""
+    stale = timezone.now() - timedelta(seconds=importer.STALE_AFTER_SECONDS)
+    return ImportJob.objects.filter(
+        owner=user,
+        status__in=(ImportJob.QUEUED, ImportJob.RUNNING),
+        updated_at__gte=stale,
     )
+
+
+def _drop_unfinished_uploads(user: User) -> None:
+    """A failed or abandoned upload (a closed tab, a refused PUT) is replaced by the
+    user's next attempt instead of locking them out until its URL expires."""
+    for job in ImportJob.objects.filter(owner=user, status=ImportJob.AWAITING_UPLOAD):
+        storage.delete(job.object_key)
+        job.status = ImportJob.FAILED
+        job.error_code = CODE_REPLACED
+        job.error_message = "Replaced by a newer import."
+        job.save()
 
 
 def _job(user: User, workspace_id: int, job_id: int) -> ImportJob:
@@ -94,6 +105,7 @@ def create_import(request: HttpRequest, workspace_id: int, payload: ImportIn) ->
         User.objects.select_for_update().get(pk=user.pk)  # one active import per user
         if _active(user).exists():
             raise ImportInProgress()
+        _drop_unfinished_uploads(user)
         key = storage.new_key(user.pk, workspace.pk, gzipped=name.endswith(".gz"))
         job = ImportJob.objects.create(
             workspace=workspace,

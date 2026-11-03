@@ -80,7 +80,7 @@ Every error answers in the envelope `{success: false, status_code, message, code
 | `workspace_provisioning_failed` | 503 | The schema and roles could not be created; everything was cleaned up. | Retry later. |
 | `dump_too_large` | 422 | The dump is over `DUMP_MAX_FILE_BYTES` (50 MB), or unzips to more than the allowed text size. | Ask for a smaller dump. |
 | `dump_upload_missing` | 422 | `start` was called before the file reached the bucket. | Upload again, then start. |
-| `import_in_progress` | 409 | The user already has an import that is waiting for an upload, queued or running. | Wait for it to finish. |
+| `import_in_progress` | 409 | The user already has an import that is queued or running (an unfinished upload does not count). | Wait for it to finish. |
 | `import_not_found` | 404 | No such import in this workspace. | Go back to the workspace. |
 | `import_not_ready` | 409 | `start` on an import that is not waiting for an upload. | Reload the import's status. |
 | `workspace_not_empty` | 409 | The workspace already has tables and the import was not a replace (shown as an import error code). | Offer Replace data. |
@@ -120,4 +120,5 @@ These are not HTTP errors: they sit in `ImportOut.error` of an import with statu
 | `dump_encoding` | The dump is not UTF-8 text. | Ask for a UTF-8 dump. |
 | `dump_too_many_statements` / `dump_too_many_tables` / `dump_too_many_columns` / `dump_too_many_relations` | A cap was hit. The message gives the limit. | Show the message. |
 | `dump_interrupted` | The worker stopped before the import finished. | Upload the dump again. |
+| `dump_replaced` | An upload that never finished was replaced by the user's next import. | Nothing; show the newer import. |
 | `dump_too_large`, `dump_upload_missing`, `workspace_full`, `user_storage_full`, `workspace_not_empty` | As in the table above. | As above. |

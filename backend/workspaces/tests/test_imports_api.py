@@ -140,12 +140,25 @@ def test_bad_requests(client: Client, ws: int, body: dict, code: str) -> None:
 
 
 @override_settings(**R2)
-def test_one_active_import_per_user(
+def test_a_queued_import_blocks_a_second_one(
     client: Client, ws: int, fake_r2: dict[str, Any]
 ) -> None:
-    assert create(client, ws).status_code == 200
+    first = create(client, ws).json()["data"]
+    ImportJob.objects.filter(pk=first["id"]).update(status=ImportJob.QUEUED)
     second = create(client, ws)
     assert second.status_code == 409 and second.json()["code"] == "import_in_progress"
+
+
+@override_settings(**R2)
+def test_an_unfinished_upload_is_replaced_by_the_next_attempt(
+    client: Client, ws: int, fake_r2: dict[str, Any]
+) -> None:
+    first = create(client, ws).json()["data"]  # e.g. the PUT was refused
+    second = create(client, ws)
+    assert second.status_code == 200
+    old = ImportJob.objects.get(pk=first["id"])
+    assert (old.status, old.error_code) == (ImportJob.FAILED, "dump_replaced")
+    assert old.object_key in fake_r2["deleted"]
 
 
 @override_settings(**R2)
