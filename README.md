@@ -2,87 +2,74 @@
 
 > Ask your database in plain English, then measure how well the AI answered.
 
-**Status:** In progress (steps 0, 1, 2 and 3 done in code; step 3's live-Gemini checks remain; step 4 done in code; its browser check remains; step 5 done in code; its real-Neon checks remain)
+**Status:** Complete · Live at [querylab.aadarsha-subedi.com.np](https://querylab.aadarsha-subedi.com.np)
 
-Querylab is a text-to-SQL analyst agent with its own evaluation and fine-tuning loop. Visitors ask questions about a database in plain English and get a result table, the exact SQL that ran, and a replayable trace of how the agent got there. Behind it, a workbench turns those traces into an eval set, scores every model version, and benchmarks a LoRA fine-tuned model against its base.
+Querylab is a text-to-SQL analyst agent with its own evaluation and fine-tuning loop. Visitors ask questions about a database in plain English and get a result table, the exact SQL that ran, and a replayable trace of how the agent got there. Behind it, a staff workbench turns those traces into an eval set, scores every model version, and can benchmark a LoRA fine-tuned model against its base.
 
-## Roadmap
+## Features
 
-Sub-steps for each milestone will be added as they are planned.
+- **Plan / act / reflect agent** — typed tools, Redis state, an approval checkpoint before any SQL runs, step logs and one-step-at-a-time replay
+- **SQL guard** — sqlglot parse; one `SELECT` on known tables; runs only on a read-only role with a statement timeout
+- **Shared demo + private workspaces** — every user gets the Olist demo; up to 3 private workspaces, each a read-only copy of a `pg_dump` (≤ 50 MB)
+- **Bring your own LLM key** — shared Mistral key with a daily limit, or your encrypted Gemini / OpenAI key
+- **Trace-driven evals** — staff workbench clusters demo runs, drafts expected SQL, hand-reviews cases, scores models and gates regressions
+- **Offline LoRA loop** — build an instruction dataset, train on Colab, score predictions with the same harness (never in the production container)
 
-Steps 1 to 8 are backend-only (APIs, evals, training); every screen is built in
-step 9 on the approved design system, just before deployment.
+## Baseline scores
 
-| # | Milestone | Covers |
-|---|-----------|--------|
-| 0 | Foundation | Repo layout, Django + django-ninja, Docker Compose, two databases + read-only reader, Redis + Huey, auth API (allauth: Google and GitHub sign-in), CI; frontend tooling and the approved design system |
-| 1 | Text-to-SQL core | Item 6: schema + question prompt, sqlglot guard, read-only replica run, confidence score, results + SQL (API) |
-| 2 | Eval harness skeleton | Item 4d: Spider with a held-out split, execution accuracy, API-model baseline |
-| 3 | Agent | Item 2: plan / act / reflect, typed tools, Redis state, approval checkpoint, step logs + replay |
-| 4 | Analyst API | The endpoints the analyst UI needs: ask, history, approve / edit / cancel, SQL + results, schema browser |
-| 5 | User workspaces | The shared read-only demo plus up to 3 private workspaces per user (a schema and two login roles each, isolation proved against real roles), creating tables and editing rows, columns, keys, relations and descriptions freely, a SQL console, size and count caps; the agent answers against the workspace with the same guard, approval and replay |
-| 6 | Trace-driven evals | Item 4: trace API, clustering, LLM-drafted expected SQL with hand review, eval results API, regression gate |
-| 7 | LoRA fine-tune *(time-boxed stretch)* | Item 5: instruction dataset, 4-bit load, PEFT adapters, W&B tracking, merge + benchmark |
-| 8 | Schema-RAG + semantic cache *(optional)* | Retrieve table and business definitions before writing SQL; cache question → SQL |
-| 9 | Frontend | The whole UI, built against the contract in [`backend/FLOW.md`](backend/FLOW.md) ("The analyst screen's contract") and the generated `backend/openapi.json`: on the design system: a sign-in page (Continue with Google / GitHub) and logout, landing page, analyst chat with schema panel, approve / edit / cancel, history, workspaces + CSV upload, trace viewer, eval dashboard |
-| 10 | Deploy + portfolio polish | Hosting (Cloudflare Container + static frontend), public read-only eval dashboard, demo script, final results |
+Execution accuracy: a question is correct when the model's SQL returns the same rows as the reference. Measured on one direct question-to-SQL call with `gemini-3.5-flash-lite`, prompt `v1`, on 2026-10-31. Numbers live in [`backend/DECISION.md`](backend/DECISION.md) and on the landing page.
 
-- [x] 0. Foundation (your GitHub and OAuth setup tasks remain)
-- [x] 1. Text-to-SQL core (your real-LLM check, 1.12.3, remains)
-- [x] 2. Eval harness skeleton
-- [x] 3. Agent (your live-Gemini checks remain: 3.9.2 confidence analysis, 3.10.3 Olist agent run; [plan](docs/plan/03-agent.md))
-- [x] 4. Analyst API (your real-browser CORS check, 4.7.5, remains; [plan](docs/plan/04-analyst-api.md))
-- [x] 5. User workspaces (now read-only copies of a `pg_dump`: [dump import plan](docs/plan/05a-dump-import.md) replaces CSV import and all table / row editing; your real-Neon checks, 5.9.7, and a real R2 round trip remain; [plan](docs/plan/05-user-workspaces.md))
-- [x] 6. Trace-driven evals (backend only; your review of the first drafted batch and the live Olist agent eval, 6.9.2, remain, then 6.9.3; [plan](docs/plan/06-trace-driven-evals.md))
-- [ ] 7. LoRA fine-tune (stretch; code done, data built; your remaining steps: finish the Colab training (7.3.5-7.3.6), run the prediction notebook (7.4.4), score base and tuned with `run_eval --predictions` (7.6), record the result in `DECISION.md` (7.8.1); [plan](docs/plan/07-lora-fine-tune.md))
-- [ ] 8. Schema-RAG + semantic cache (optional)
-- [x] 9. Frontend (built and checked against the running stack; your Google/GitHub sign-in click-through, 9.11.2, remains; [plan](docs/plan/09-frontend.md))
-- [ ] 10. Deploy + portfolio polish (live at https://querylab.aadarsha-subedi.com.np; your sign-in, agent and real dump checks remain: [plan](docs/plan/10-deploy.md); dashboard, demo script and final results to come)
+| Target | Score | Detail |
+|--------|-------|--------|
+| Olist golden set | **95.1%** | 39 of 41 questions |
+| Spider held-out | **86.6%** | 362 of 418 scored; 84.2% if the 12 failed provider calls count as wrong |
 
-## Deploy
+## Stack
 
-Production is one Cloudflare Worker at `https://querylab.aadarsha-subedi.com.np`: it serves the frontend build and forwards `/api`, `/_allauth` and `/accounts` to one basic container. Everything is in `backend/cloudflare/`. [The plan](docs/plan/10-deploy.md) lists each step.
+| Layer | Choice |
+|-------|--------|
+| API | Django 6 + django-ninja, Python 3.12 (`uv`) |
+| UI | Vite, React 19, TypeScript, TanStack Router + Query, Tailwind 4 |
+| Data | Postgres (app DB + data DB), Redis, Huey |
+| Auth | django-allauth headless — Google and GitHub only |
+| Hosting | One Cloudflare Worker (static frontend + container proxy) and one basic Container |
 
-Before the first deploy:
+## Quick start
 
-1. Neon, in Asia Pacific (the container runs there): databases `querylab_app` and `querylab`, and a read replica of `querylab`.
-2. Redis, in Asia Pacific, with TLS.
-3. A new GitHub OAuth app with callback `https://querylab.aadarsha-subedi.com.np/accounts/github/login/callback/`. In Google, add that origin and `.../accounts/google/login/callback/`.
-4. An R2 bucket: from `backend/cloudflare`, `pnpm wrangler r2 bucket cors set <bucket> --file r2-cors.json`; add a 1-day lifecycle rule on `dumps/`; make an API token for that bucket.
-5. Fill in `backend/cloudflare/secrets.json` (git-ignored):
-
-| Key | Value |
-|-----|-------|
-| `APP_DATABASE_URL`, `DATA_PRIMARY_URL` | Neon direct (non-pooled) URLs for `querylab_app` and `querylab`, with `?sslmode=require` |
-| `DATA_READER_URL` | `postgres://querylab_reader:<new password>@<replica host>/querylab?sslmode=require`; `bootstrap_data_db` creates the role with this password |
-| `WORKSPACE_PRIMARY_CONNINFO`, `WORKSPACE_READER_CONNINFO` | `host=<pooled host> port=5432 dbname=querylab sslmode=require`, for the primary and the replica |
-| `REDIS_URL`, `CACHE_URL` | Both the same `rediss://...` URL, database 0 |
-| `DJANGO_SECRET_KEY`, `MASTER_WORKSPACE_SECRET` | New long random strings (`openssl rand -base64 48`), not the local ones |
-| `ENCRYPTION_KEYS` | A new Fernet key. Losing this one or the master secret breaks saved API keys and workspace passwords |
-| `GOOGLE_*`, `GITHUB_*`, `LLM_DEFAULT_API_KEY` | From the providers (`LLM_DEFAULT_API_KEY` is a Mistral key) |
-| `R2_*` | `R2_ENDPOINT_URL` is `https://<account id>.r2.cloudflarestorage.com` |
-
-First deploy, in order:
+Needs Docker, and on the host: `uv` (backend editor tooling) and `pnpm` (frontend).
 
 ```bash
-make deploy-first
+make setup          # copies .env examples; uv sync + pnpm install
+# Fill in backend/.env: Google/GitHub OAuth apps, LLM_DEFAULT_API_KEY (Mistral), …
+# Download Olist CSVs into infra/data/olist/ (see Demo data)
+
+make up             # or `make dev` for foreground logs
+make migrate
+make bootstrap-db   # demo schema, reader role, grants
+make load-demo      # Olist into the shared demo workspace
 ```
 
-```bash
-cd backend/cloudflare && pnpm wrangler secret bulk secrets.json
+Open `http://localhost:3000`. Sign in with Google or GitHub (callback URLs must include `http://localhost:3000/accounts/<provider>/login/callback/`).
+
+Useful checks:
+
+| Task | Command |
+|------|---------|
+| Tests | `make test` |
+| Lint / types / format | `make lint` · `make typecheck` · `make format` |
+| Refresh OpenAPI | `make openapi` (then `cd frontend && pnpm gen:api`) |
+| Eval (dev container only) | `make eval ARGS="run_eval --target olist --model …"` |
+
+## Layout
+
+```
+backend/     Django API, agent, workspaces, evals, finetune tooling, Cloudflare Worker
+frontend/    React app (same origin as the API in production)
+infra/       Compose, Postgres init, data-DB SQL, Olist/Spider/finetune data dirs
+docs/plan/   Milestone plans (foundation → deploy)
 ```
 
-```bash
-make keep-awake
-```
-
-Watch the container logs in the Cloudflare dashboard until `Demo data loaded.` appears, stop `keep-awake`, and straight away replace the seeding image, because it repeats the load on every start:
-
-```bash
-make deploy
-```
-
-Later deploys are `make deploy`. For a new migration, run `make prod-manage ARGS="migrate"` first.
+Deeper notes: [`backend/CLAUDE.md`](backend/CLAUDE.md), [`frontend/CLAUDE.md`](frontend/CLAUDE.md), flows in `FLOW.md`, decisions in `DECISION.md`, errors in [`backend/API_ERRORS.md`](backend/API_ERRORS.md), Postman in [`backend/postman/`](backend/postman/).
 
 ## Demo data
 
@@ -90,4 +77,64 @@ Every signed-up user gets a shared, read-only demo workspace built from the
 [Olist Brazilian e-commerce dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
 (about 100k orders, 2016 to 2018, dates shifted forward to recent months).
 Licence: [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) (non-commercial).
-The CSVs are downloaded into `infra/data/olist/` and never committed.
+The CSVs go into `infra/data/olist/` and are never committed.
+
+## Deploy
+
+Production is one Cloudflare Worker at `https://querylab.aadarsha-subedi.com.np`: it serves the frontend build and forwards `/api`, `/_allauth` and `/accounts` to one basic container. Worker sources live in `backend/cloudflare/`. The full runbook is in [`docs/plan/10-deploy.md`](docs/plan/10-deploy.md).
+
+Before the first deploy:
+
+1. Neon, Asia Pacific: databases `querylab_app` and `querylab`, plus a read replica of `querylab`.
+2. Redis, Asia Pacific, with TLS.
+3. GitHub OAuth app with callback `https://querylab.aadarsha-subedi.com.np/accounts/github/login/callback/`. In Google, add that origin and `.../accounts/google/login/callback/`.
+4. An R2 bucket: from `backend/cloudflare`, `pnpm wrangler r2 bucket cors set <bucket> --file r2-cors.json`; 1-day lifecycle on `dumps/`; API token for that bucket.
+5. Fill `backend/cloudflare/secrets.json` (git-ignored):
+
+| Key | Value |
+|-----|-------|
+| `APP_DATABASE_URL`, `DATA_PRIMARY_URL` | Neon direct (non-pooled) URLs for `querylab_app` and `querylab`, with `?sslmode=require` |
+| `DATA_READER_URL` | `postgres://querylab_reader:<password>@<replica host>/querylab?sslmode=require`; `bootstrap_data_db` creates the role with this password |
+| `WORKSPACE_PRIMARY_CONNINFO`, `WORKSPACE_READER_CONNINFO` | `host=<pooled host> port=5432 dbname=querylab sslmode=require`, for primary and replica |
+| `REDIS_URL`, `CACHE_URL` | Same `rediss://...` URL, database 0 |
+| `DJANGO_SECRET_KEY`, `MASTER_WORKSPACE_SECRET` | New long random strings (`openssl rand -base64 48`), not the local ones |
+| `ENCRYPTION_KEYS` | A new Fernet key. Losing this or the master secret breaks saved API keys and workspace passwords |
+| `GOOGLE_*`, `GITHUB_*`, `LLM_DEFAULT_API_KEY` | From the providers (`LLM_DEFAULT_API_KEY` is a Mistral key) |
+| `R2_*` | `R2_ENDPOINT_URL` is `https://<account id>.r2.cloudflarestorage.com` |
+
+First deploy, in order:
+
+```bash
+make deploy-first
+cd backend/cloudflare && pnpm wrangler secret bulk secrets.json
+make keep-awake
+```
+
+Watch the container logs until `Demo data loaded.` appears, stop `keep-awake`, then replace the seeding image (it would reload on every start):
+
+```bash
+make deploy
+```
+
+Later deploys are `make deploy`. For a new migration: `make prod-manage ARGS="migrate"` first.
+
+## What was built
+
+| # | Milestone | Notes |
+|---|-----------|--------|
+| 0 | Foundation | Repo, Compose, two DBs + reader, Redis + Huey, OAuth, CI, design system |
+| 1 | Text-to-SQL core | Schema prompt, guard, reader run, confidence / check label |
+| 2 | Eval harness | Spider held-out split, execution accuracy, Gemini baseline |
+| 3 | Agent | Plan / act / reflect, tools, Redis state, approval, replay |
+| 4 | Analyst API | Ask, history, approve / edit / cancel, schema browser, result rows |
+| 5 | User workspaces | Demo + up to 3 private schemas from a dump; SQL console; quotas |
+| 6 | Trace-driven evals | Clustering, LLM-drafted gold, review, gate |
+| 7 | LoRA fine-tune *(stretch)* | Dataset builder + Colab notebooks + `--predictions` scoring; Colab training results are offline |
+| 9 | Frontend | Landing, ask / schema / workspaces, history, replay, settings, staff workbench |
+| 10 | Deploy | Live on Cloudflare Container + Worker |
+
+Step 8 (schema-RAG + semantic cache) stayed optional and was not built. Milestone plans are under [`docs/plan/`](docs/plan/).
+
+## License
+
+MIT — see [LICENSE](LICENSE). Demo data remains CC BY-NC-SA 4.0 (non-commercial).
